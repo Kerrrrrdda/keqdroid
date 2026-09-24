@@ -603,13 +603,14 @@ class ConfigGeneratorV2 {
       final fragmentOutbound = <String, dynamic>{
         'protocol': 'freedom',
         'tag': _fragmentTag,
-        'settings': {
-          // Тот же резолв, что и у прокси-аутбаунда без фрагментации: домен
-          // сервера должен идти через DNS-блок конфига, а не через системный
-          // резолвер Go — на Android его просто нет (см.
-          // [_applyServerDomainStrategy]).
-          'domainStrategy': _freedomDomainStrategy(core),
-          'fragment': fragment,
+        'settings': {'fragment': fragment},
+        // Тот же резолв, что и у прокси-аутбаунда без фрагментации: домен
+        // сервера должен идти через DNS-блок конфига, а не через системный
+        // резолвер Go — на Android его просто нет (см.
+        // [_applyServerDomainStrategy]). Место — `sockopt`, а не настройки
+        // freedom: оттуда ядро поле убирает и само перекладывает его сюда же.
+        'streamSettings': {
+          'sockopt': {'domainStrategy': _freedomDomainStrategy(core)},
         },
       };
       // Наружу звонит этот аутбаунд, а не прокси над ним (у того стоит

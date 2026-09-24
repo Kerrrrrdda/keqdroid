@@ -75,8 +75,11 @@ void main() {
         'interval': '10-20',
       });
       // Резолв домена сервера остаётся на DNS-блоке конфига, а не на
-      // системном резолвере Go — иначе на Android он не отвечает.
-      expect(settings['domainStrategy'], 'UseIPv4');
+      // системном резолвере Go — иначе на Android он не отвечает. Живёт в
+      // `sockopt`: из настроек freedom ядро это поле убирает.
+      expect(settings.containsKey('domainStrategy'), isFalse);
+      final stream = fragment['streamSettings'] as Map<String, dynamic>;
+      expect((stream['sockopt'] as Map)['domainStrategy'], 'UseIPv4');
     });
 
     test('фрагмент-аутбаунд не становится основным', () {
