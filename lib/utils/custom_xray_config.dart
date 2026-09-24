@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'deprecated_xray_fields.dart';
 import 'geo_asset_index.dart';
 import 'geo_rule_sanitizer.dart';
 import 'removed_tls_fields.dart';
@@ -282,6 +283,7 @@ class CustomXrayConfig {
       stripUnknownGeoFromConfig(out, geoIndex);
     }
     stripRemovedTlsFields(out);
+    migrateDeprecatedXrayFields(out);
     return out;
   }
 
@@ -307,6 +309,7 @@ class CustomXrayConfig {
       },
     };
     stripRemovedTlsFields(out);
+    migrateDeprecatedXrayFields(out);
     return out;
   }
 
