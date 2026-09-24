@@ -722,6 +722,21 @@ class ConfigGeneratorV2 {
   /// на случай, если своего у автора нет.
   static const _customDnsTag = 'keq-dns-out';
 
+  /// Настройки `dns`-аутбаунда: A и AAAA отвечает DNS-модуль ядра, всё прочее
+  /// получает REFUSED.
+  ///
+  /// Это ровно то, во что ядро само разворачивало прежний `nonIPQuery: reject`
+  /// (`buildLegacyDNSPolicy`). Старое поле ядро объявило к удалению, а удалённые
+  /// поля оно не игнорирует — отказывается запускать конфиг целиком. Без правил
+  /// вовсе вышел бы пустой успешный ответ вместо REFUSED, поэтому оба правила
+  /// пишутся явно. Свежая копия на каждый вызов: конфиг дальше правят на месте.
+  static Map<String, dynamic> _dnsOutboundSettings() => {
+        'rules': [
+          {'action': 'hijack', 'qType': '1,28'},
+          {'action': 'return', 'rCode': 5},
+        ],
+      };
+
   /// Готовый конфиг ядра в роли сервера.
   ///
   /// Меняем немногое: инбаунды на свои, `log.loglevel` из настроек (ниже `info`
@@ -995,9 +1010,7 @@ class ConfigGeneratorV2 {
         {
           'protocol': 'dns',
           'tag': _customDnsTag,
-          // Не-A/AAAA запросы отклоняем явно: это и так дефолт ядра, но смена
-          // дефолта наверху не должна молча поменять наше поведение.
-          'settings': {'nonIPQuery': 'reject'},
+          'settings': _dnsOutboundSettings(),
         },
     ];
     if (extraOutbounds.isNotEmpty) {
@@ -2188,7 +2201,7 @@ class ConfigGeneratorV2 {
           {
             'protocol': 'dns',
             'tag': 'dns-out',
-            'settings': {'nonIPQuery': 'reject'},
+            'settings': _dnsOutboundSettings(),
           },
       ],
       'routing': {

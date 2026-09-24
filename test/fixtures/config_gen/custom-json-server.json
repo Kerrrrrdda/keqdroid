@@ -13,7 +13,16 @@
       "protocol": "dns",
       "tag": "keq-dns-out",
       "settings": {
-        "nonIPQuery": "reject"
+        "rules": [
+          {
+            "action": "hijack",
+            "qType": "1,28"
+          },
+          {
+            "action": "return",
+            "rCode": 5
+          }
+        ]
       }
     }
   ],

@@ -86,7 +86,15 @@ void main() {
 
       final out = outbounds(config).firstWhere((o) => o['tag'] == 'dns-out');
       expect(out['protocol'], 'dns');
-      expect((out['settings'] as Map)['nonIPQuery'], 'reject');
+      // Прежний `nonIPQuery: reject` в новой записи: A/AAAA отвечает ядро,
+      // остальное — REFUSED. Старое поле рядом не лежит: с ним и `rules`
+      // вместе ядро конфиг не примет.
+      final settings = out['settings'] as Map;
+      expect(settings.containsKey('nonIPQuery'), isFalse);
+      expect(settings['rules'], [
+        {'action': 'hijack', 'qType': '1,28'},
+        {'action': 'return', 'rCode': 5},
+      ]);
     });
 
     // Инбаунд LAN-прокси слушает 0.0.0.0: перехвати мы DNS раньше `lan-deny` —
