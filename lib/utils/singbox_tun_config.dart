@@ -31,6 +31,15 @@ const kLocalIpv6Cidrs = ['::1/128', 'fe80::/10', 'fc00::/7', 'ff00::/8'];
 /// же у любого sing-box-клиента на машине.
 const kTunInterfaceName = 'tun-keqdis';
 
+/// Блок в правиле sing-box — действием, а не выходом `block`: особые выходы
+/// sing-box объявил устаревшими, замена им — `reject`.
+///
+/// Метод `drop`, а не умолчание, ради того же поведения, что было у выхода.
+/// TCP до правила доходит уже прочитанным снифером и так и так просто
+/// закрывается, а UDP выход терял молча. Умолчание ответило бы на UDP
+/// ICMP-ошибкой и после 50 срабатываний за 30 секунд само перешло бы на `drop`.
+const kSingboxBlockAction = {'action': 'reject', 'method': 'drop'};
+
 /// Годится ли строка как значение `ip_cidr`: голый адрес или адрес с маской.
 ///
 /// Домен сюда попадает штатным путём — резолв адреса сервера при неудаче
@@ -250,7 +259,7 @@ class SingBoxTunConfigGen {
         if (parts.domain.isNotEmpty) 'domain': parts.domain,
         if (parts.domainSuffix.isNotEmpty) 'domain_suffix': parts.domainSuffix,
         if (parts.domainRegex.isNotEmpty) 'domain_regex': parts.domainRegex,
-        'outbound': outbound,
+        if (outbound == 'block') ...kSingboxBlockAction else 'outbound': outbound,
       });
     }
 
@@ -422,7 +431,7 @@ class SingBoxTunConfigGen {
       );
     }
     if (blockedIpsForSingBox.isNotEmpty) {
-      rules.add({'ip_cidr': blockedIpsForSingBox, 'outbound': 'block'});
+      rules.add({'ip_cidr': blockedIpsForSingBox, ...kSingboxBlockAction});
     }
 
     // Адрес сервера мимо туннеля — иначе коннект ядра к нему заходит в круг.
@@ -491,7 +500,7 @@ class SingBoxTunConfigGen {
     // — тогда как отправленное в прокси оно висело бы до таймаута на сервере
     // без IPv6. Локальный IPv6 сюда не попадает: он ушёл в `direct` выше.
     if (captureIpv6) {
-      rules.add({'ip_cidr': ['::/0'], 'outbound': 'block'});
+      rules.add({'ip_cidr': ['::/0'], ...kSingboxBlockAction});
     }
 
     // Финальное действие (catch-all). При per-app сплите режим сам диктует финал
@@ -628,6 +637,12 @@ class SingBoxTunConfigGen {
     // нет», и падения через раз на машинах, где стоит второй такой клиент.
     tunInbound['interface_name'] = kTunInterfaceName;
 
+    // `final` у sing-box — только тег выхода, действия туда не записать. Блок
+    // остатка поэтому последнее правило без условий: до `final` после него не
+    // доходит ничего.
+    final blockRest = routeFinal == 'block';
+    if (blockRest) rules.add({...kSingboxBlockAction});
+
     final map = <String, dynamic>{
       'log': {
         'level': 'info',
@@ -664,14 +679,13 @@ class SingBoxTunConfigGen {
       'outbounds': [
         proxyOutbound,
         {'type': 'direct', 'tag': 'direct'},
-        {'type': 'block', 'tag': 'block'},
       ],
       'route': {
         'auto_detect_interface': true,
         'find_process': true,
         'default_domain_resolver': 'proxy-dns',
         'rules': rules,
-        'final': routeFinal,
+        if (!blockRest) 'final': routeFinal,
       },
     };
 

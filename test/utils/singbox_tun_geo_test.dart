@@ -5,6 +5,8 @@ import 'package:keqdroid/models/app_settings.dart';
 import 'package:keqdroid/tunnel/app_routing_mode.dart';
 import 'package:keqdroid/utils/singbox_tun_config.dart';
 
+import '../helpers/singbox_route.dart';
+
 /// sing-box (1.11+) не читает v2fly .dat вообще, поэтому geo-токены в TUN-конфиг
 /// попадать не должны — их исполняет встроенный xray. Раньше `geosite:telegram`
 /// превращался в `domain_suffix: telegram` (мёртвое правило: ни telegram.org,
@@ -24,8 +26,7 @@ List<Map<String, dynamic>> _rules(String json) =>
     (((jsonDecode(json) as Map)['route'] as Map)['rules'] as List)
         .cast<Map<String, dynamic>>();
 
-String _final(String json) =>
-    ((jsonDecode(json) as Map)['route'] as Map)['final'] as String;
+String _final(String json) => effectiveRouteFinal(json);
 
 Iterable<String> _allStrings(List<Map<String, dynamic>> rules, String key) =>
     rules.expand((r) {

@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'singbox_tun_config.dart' show kSingboxBlockAction;
+
 /// Строит единый конфиг для ядра `keqrnel` из уже сгенерированных конфигов
 /// цепочки. Берёт sing-box TUN-конфиг и заменяет его socks-outbound `proxy`
 /// (который шёл в локальный xray) на встроенный xray-outbound
@@ -181,7 +183,6 @@ class KeqrnelConfig {
       'outbounds': [
         {'type': 'xray', 'tag': 'proxy', 'xray': xray},
         {'type': 'direct', 'tag': 'direct'},
-        if (lanTags.isNotEmpty) {'type': 'block', 'tag': 'block'},
       ],
       'route': {
         if (findProcess) 'find_process': true,
@@ -194,7 +195,7 @@ class KeqrnelConfig {
               'source_ip_cidr': _lanAllowedSources,
               'outbound': 'proxy',
             },
-            {'inbound': lanTags, 'outbound': 'block'},
+            {'inbound': lanTags, ...kSingboxBlockAction},
           ],
         'final': 'proxy',
       },

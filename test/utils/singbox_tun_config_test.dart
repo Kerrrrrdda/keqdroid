@@ -379,8 +379,10 @@ void main() {
     );
     expect(splitRule['outbound'], 'proxy');
     expect(splitRule['ip_cidr'] as List, contains('128.0.0.0/1'));
-    // весь несматченный трафик блокируется, а не утекает напрямую
-    expect((map['route'] as Map)['final'], 'block');
+    // весь несматченный трафик блокируется, а не утекает напрямую: последним
+    // правилом без условий, `final` тогда не нужен
+    expect(rules.last, {'action': 'reject', 'method': 'drop'});
+    expect((map['route'] as Map).containsKey('final'), isFalse);
   });
 
   test('kill switch is inert outside allProxy routing', () {

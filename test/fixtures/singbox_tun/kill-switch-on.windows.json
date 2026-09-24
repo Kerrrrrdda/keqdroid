@@ -54,10 +54,6 @@
     {
       "type": "direct",
       "tag": "direct"
-    },
-    {
-      "type": "block",
-      "tag": "block"
     }
   ],
   "route": {
@@ -111,7 +107,8 @@
         "domain_suffix": [
           "ads.example"
         ],
-        "outbound": "block"
+        "action": "reject",
+        "method": "drop"
       },
       {
         "ip_cidr": [
@@ -152,8 +149,11 @@
           "128.0.0.0/1"
         ],
         "outbound": "proxy"
+      },
+      {
+        "action": "reject",
+        "method": "drop"
       }
-    ],
-    "final": "block"
+    ]
   }
 }

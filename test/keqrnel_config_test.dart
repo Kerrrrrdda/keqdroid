@@ -161,12 +161,14 @@ void main() {
       expect(rules[0]['inbound'], ['socks-lan', 'http-lan']);
       expect(rules[0]['source_ip_cidr'], contains('192.168.0.0/16'));
       expect(rules[0]['outbound'], 'proxy');
+      // Блок — действием `reject`, отдельного выхода `block` больше нет.
       expect(rules[1], {
         'inbound': ['socks-lan', 'http-lan'],
-        'outbound': 'block',
+        'action': 'reject',
+        'method': 'drop',
       });
       final outbounds = (m['outbounds'] as List).cast<Map<String, dynamic>>();
-      expect(outbounds.any((o) => o['tag'] == 'block'), isTrue);
+      expect(outbounds.any((o) => o['type'] == 'block'), isFalse);
 
       // у встроенного xray инбаундов не остаётся вовсе.
       final proxy = outbounds.firstWhere((o) => o['tag'] == 'proxy');

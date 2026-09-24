@@ -5,8 +5,9 @@ import 'package:keqdroid/models/app_settings.dart';
 import 'package:keqdroid/tunnel/app_routing_mode.dart';
 import 'package:keqdroid/utils/singbox_tun_config.dart';
 
-String _routeFinal(String json) =>
-    (jsonDecode(json) as Map<String, dynamic>)['route']['final'] as String;
+import '../helpers/singbox_route.dart';
+
+String _routeFinal(String json) => effectiveRouteFinal(json);
 
 List<Map<String, dynamic>> _rules(String json) =>
     (((jsonDecode(json) as Map<String, dynamic>)['route'] as Map)['rules']

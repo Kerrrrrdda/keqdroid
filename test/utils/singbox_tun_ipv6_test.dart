@@ -6,6 +6,8 @@ import 'package:keqdroid/models/tun_settings.dart';
 import 'package:keqdroid/utils/host_ipv6.dart';
 import 'package:keqdroid/utils/singbox_tun_config.dart';
 
+import '../helpers/singbox_route.dart';
+
 /// IPv6 мимо туннеля.
 ///
 /// TUN-интерфейс с одним IPv4-адресом не получает IPv6-маршрутов: на
@@ -59,7 +61,7 @@ void main() {
 
     final blockIndex = rules.indexWhere(
       (r) =>
-          r['outbound'] == 'block' &&
+          isSingboxBlockRule(r) &&
           (r['ip_cidr'] as List?)?.contains('::/0') == true,
     );
     expect(blockIndex, isNot(-1), reason: 'IPv6 обязан быть закрыт');
@@ -87,7 +89,7 @@ void main() {
     final rules = _rules(config);
     final blockIndex = rules.indexWhere(
       (r) =>
-          r['outbound'] == 'block' &&
+          isSingboxBlockRule(r) &&
           (r['ip_cidr'] as List?)?.contains('::/0') == true,
     );
     // Своё IPv6-правило пользователя (proxy) обязано стоять раньше запрета.
@@ -112,7 +114,7 @@ void main() {
     );
     final userBlockIndex = userProxy.indexWhere(
       (r) =>
-          r['outbound'] == 'block' &&
+          isSingboxBlockRule(r) &&
           (r['ip_cidr'] as List?)?.contains('::/0') == true,
     );
 
