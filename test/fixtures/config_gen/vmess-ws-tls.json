@@ -93,9 +93,7 @@
         },
         "wsSettings": {
           "path": "/vmess",
-          "headers": {
-            "Host": "vmess.example"
-          }
+          "host": "vmess.example"
         }
       }
     },

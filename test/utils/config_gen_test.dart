@@ -316,6 +316,34 @@ void main() {
       expect((plain['wsSettings'] as Map)['path'], '/ws');
     });
 
+    // `Host` в `headers` ядро объявило к удалению, а удалённое поле роняет
+    // конфиг целиком. Имя уходит в отдельное `host`, заголовков не остаётся.
+    test('ws host goes to its own field, not to headers', () {
+      Map<String, dynamic> wsOf(String link) {
+        final map = jsonDecode(
+          ConfigGeneratorV2.generateConfig(link, const AppSettings()),
+        ) as Map<String, dynamic>;
+        final outbound = (map['outbounds'] as List).first as Map;
+        return (outbound['streamSettings'] as Map)['wsSettings']
+            as Map<String, dynamic>;
+      }
+
+      final withHost = wsOf(
+        'vless://uuid@198.51.100.10:443?type=ws&security=tls&sni=w.example'
+        '&host=cdn.example&path=%2Fws',
+      );
+      expect(withHost['host'], 'cdn.example');
+      expect(withHost.containsKey('headers'), isFalse);
+
+      // Без `host` в ссылке — имя из SNI, как и прежде в заголовке.
+      final sniOnly = wsOf(
+        'vless://uuid@198.51.100.10:443?type=ws&security=tls&sni=w.example'
+        '&path=%2Fws',
+      );
+      expect(sniOnly['host'], 'w.example');
+      expect(sniOnly.containsKey('headers'), isFalse);
+    });
+
     test('killSwitch does not add split rules to xray routing', () {
       // Правило 0.0.0.0/1+128.0.0.0/1 → proxy было no-op (catch-all ниже и так
       // шлёт всё в proxy); настоящий kill switch — final: block в sing-box

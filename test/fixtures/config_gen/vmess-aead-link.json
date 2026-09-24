@@ -93,9 +93,7 @@
         },
         "wsSettings": {
           "path": "/aead",
-          "headers": {
-            "Host": "aead.example"
-          }
+          "host": "aead.example"
         }
       }
     },

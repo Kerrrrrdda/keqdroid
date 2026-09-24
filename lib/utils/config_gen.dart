@@ -1729,9 +1729,11 @@ class ConfigGeneratorV2 {
 
     switch (type) {
       case 'ws':
+        // Отдельный `host`, а не `Host` в `headers`: заголовок ядро объявило к
+        // удалению и само переносит его в это поле, так что поведение то же.
         stream['wsSettings'] = {
           'path': _pathWithEarlyData(getParam('path', '/'), getParam('ed')),
-          'headers': {'Host': getParam('host', sni)},
+          'host': getParam('host', sni),
         };
       case 'grpc':
         // `authority` — то имя, под которым запрос уезжает в HTTP/2; без него

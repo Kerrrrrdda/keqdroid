@@ -93,9 +93,7 @@
         },
         "wsSettings": {
           "path": "/m",
-          "headers": {
-            "Host": "mux.example"
-          }
+          "host": "mux.example"
         }
       },
       "mux": {
