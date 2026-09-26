@@ -566,23 +566,30 @@ class SubscriptionService {
       }
 
       // часть cdn/waf отдаёт 502 с пустым body именно для dio.
-      // пробуем забрать payload нативным HttpClient с браузерными заголовками
-      try {
-        final parsedViaHttpClient = await _tryFetchWithHttpClientFallback(
-          url,
-          hwid: hwid,
-          hwidHeaders: hwidHeaders,
-          pinnedUserAgent: pinnedUserAgent,
-        );
-        if (parsedViaHttpClient != null) {
-          return parsedViaHttpClient;
+      // пробуем забрать payload нативным HttpClient с браузерными заголовками.
+      //
+      // Только если сервер хоть что-то ответил. Молчащий хост (при живом VPN
+      // так бывает, когда из выходного узла до него не достучаться) другой
+      // клиент не оживит, а каждый его кандидат ждёт свои 15 с: обновление
+      // растягивалось до полутора минут вместо ~30 с на запрос и повтор.
+      if (e.response != null) {
+        try {
+          final parsedViaHttpClient = await _tryFetchWithHttpClientFallback(
+            url,
+            hwid: hwid,
+            hwidHeaders: hwidHeaders,
+            pinnedUserAgent: pinnedUserAgent,
+          );
+          if (parsedViaHttpClient != null) {
+            return parsedViaHttpClient;
+          }
+        } on FormatException catch (fe) {
+          throw SubscriptionFetchException(
+            fe.message,
+            url: url,
+            cause: fe,
+          );
         }
-      } on FormatException catch (fe) {
-        throw SubscriptionFetchException(
-          fe.message,
-          url: url,
-          cause: fe,
-        );
       }
 
       // отменённые и http-ошибки (4xx/5xx) не ретраим
