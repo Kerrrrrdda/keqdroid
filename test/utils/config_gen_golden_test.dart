@@ -106,6 +106,44 @@ void main() {
       );
     });
 
+    // Fake-ip на Android: подменный DNS встаёт перед общими резолверами, пул
+    // заводится в корне конфига, снифер tun-инбаунда узнаёт `fakedns`.
+    _golden('vless-native-tun-fake-ip', () {
+      return ConfigGeneratorV2.generateConfig(
+        'vless://$_uuid@198.51.100.25:443?type=tcp&security=none#nativetun',
+        _settings.copyWith(fakeIp: true),
+        nativeTunInbound: true,
+      );
+    });
+
+    // Готовый конфиг со своим dns-блоком: авторские серверы остаются на
+    // местах, подмена встаёт перед первым общим из них.
+    _golden('custom-json-server-fake-ip', () {
+      return ConfigGeneratorV2.generateConfig(
+        jsonEncode({
+          'dns': {
+            'servers': [
+              {
+                'address': 'https://common.dot.dns.yandex.net/dns-query',
+                'domains': ['domain:ru'],
+                'skipFallback': true,
+              },
+              '1.1.1.1',
+            ],
+          },
+          'outbounds': [
+            {
+              'tag': 'proxy',
+              'protocol': 'freedom',
+              'settings': <String, dynamic>{},
+            },
+          ],
+        }),
+        _settings.copyWith(fakeIp: true),
+        nativeTunInbound: true,
+      );
+    });
+
     _golden('vless-xhttp-extra', () {
       return ConfigGeneratorV2.generateConfig(
         'vless://$_uuid@198.51.100.12:443?type=xhttp&security=reality'

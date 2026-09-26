@@ -4,6 +4,7 @@ import 'dart:io' show InternetAddress;
 import '../models/app_settings.dart';
 import '../models/xray_core_settings.dart';
 import '../utils/custom_xray_config.dart';
+import '../utils/fake_ip.dart';
 import '../utils/geo_asset_index.dart';
 import '../utils/hysteria_uri.dart';
 import '../utils/proxy_chain.dart';
@@ -738,6 +739,74 @@ class ConfigGeneratorV2 {
         ],
       };
 
+  /// Подменять ли адреса (fake-ip). Только со своим туннелем: DNS устройства
+  /// до ядра доходит лишь через tun-инбаунд, и только там есть кому вернуть
+  /// подменный адрес. В пробе пинга подменять нечего.
+  static bool _fakeDnsApplies(
+    AppSettings settings, {
+    required bool nativeTunInbound,
+    required bool isPingMode,
+  }) =>
+      settings.fakeIp && nativeTunInbound && !isPingMode;
+
+  /// Пул подменных адресов — корневой ключ `fakedns` у xray.
+  static List<Map<String, dynamic>> _fakeDnsPool() => [
+        {'ipPool': kFakeIpRange, 'poolSize': 65535},
+      ];
+
+  /// Снифер tun-инбаунда с `fakedns`: без него подменный адрес так и остался бы
+  /// адресом, и ядро повезло бы его на сервер как есть. Выключенный
+  /// пользователем снифер тут включается ровно на это — только по метаданным,
+  /// без разбора содержимого.
+  static Map<String, dynamic> _fakeDnsSniffing(XrayCoreSettings core) {
+    final base = core.buildSniffing();
+    if (base['enabled'] != true) {
+      return {
+        'enabled': true,
+        'destOverride': ['fakedns'],
+        'metadataOnly': true,
+      };
+    }
+    return {
+      ...base,
+      'destOverride': [...(base['destOverride'] as List), 'fakedns'],
+    };
+  }
+
+  /// DNS-блок с подменой: `fakedns` встаёт первым в общий перебор.
+  ///
+  /// Ядро сначала спрашивает серверы, чьи `domains` совпали с запросом, а
+  /// потом все остальные по порядку списка, кроме помеченных `skipFallback`
+  /// (`sortClients` в app/dns). Поэтому подмена встаёт перед первым сервером,
+  /// который в этот перебор попадает: всё, что разложено по доменам (адрес
+  /// сервера, direct-домены, политики, авторские серверы провайдера),
+  /// по-прежнему получает настоящий адрес. Исключениям — своя запись с тем же
+  /// резолвером и `skipFallback`, иначе она отвечала бы за всех раньше подмены.
+  ///
+  /// Собственные запросы ядра (адрес сервера, `IPIfNonMatch`, freedom)
+  /// `fakedns` пропускают сами (`FakeEnable`), и резолверы после него
+  /// продолжают работать на них.
+  static Map<String, dynamic> _withFakeDns(Map<String, dynamic> dns) {
+    final servers = [...((dns['servers'] as List?) ?? const [])];
+    bool inFallback(Object? s) => s is String || (s is Map && s['skipFallback'] != true);
+    final at = servers.indexWhere(inFallback);
+    final general = at < 0 ? null : servers[at];
+    return {
+      ...dns,
+      'servers': [
+        ...servers.take(at < 0 ? servers.length : at),
+        if (general != null)
+          {
+            ...(general is Map ? general.cast<String, dynamic>() : {'address': general}),
+            'domains': fakeIpFilterAsRules(),
+            'skipFallback': true,
+          },
+        {'address': 'fakedns'},
+        if (at >= 0) ...servers.skip(at),
+      ],
+    };
+  }
+
   /// Готовый конфиг ядра в роли сервера.
   ///
   /// Меняем немногое: инбаунды на свои, `log.loglevel` из настроек (ниже `info`
@@ -999,6 +1068,22 @@ class ConfigGeneratorV2 {
       appendRules: appendRules,
       geoIndex: geoIndex,
     );
+
+    // Подмена ложится поверх уже собранного DNS: авторские серверы с доменами
+    // решают по-прежнему сами. Свой fakedns автора не трогаем — у него и пул
+    // свой, и перехват он делает иначе (см. usesFakeDns выше).
+    if (!usesFakeDns &&
+        _fakeDnsApplies(
+          settings,
+          nativeTunInbound: nativeTunInbound,
+          isPingMode: false,
+        )) {
+      final dns = config['dns'];
+      if (dns is Map) {
+        config['dns'] = _withFakeDns(dns.cast<String, dynamic>());
+        config['fakedns'] = _fakeDnsPool();
+      }
+    }
 
     // Дописываем только те аутбаунды, на которые реально кто-то ссылается:
     // правило с несуществующим тегом роняет разбор всего конфига.
@@ -2173,10 +2258,16 @@ class ConfigGeneratorV2 {
       localInboundsNoAuth: localInboundsNoAuth,
       nativeTunInbound: nativeTunInbound,
     );
+    final fakeDns = _fakeDnsApplies(
+      settings,
+      nativeTunInbound: nativeTunInbound,
+      isPingMode: isPingMode,
+    );
 
     return {
       'log': {'loglevel': isPingMode ? 'none' : core.logLevel},
-      'dns': dns,
+      'dns': fakeDns ? _withFakeDns(dns) : dns,
+      if (fakeDns) 'fakedns': _fakeDnsPool(),
       'inbounds': inbounds,
       'outbounds': [
         ...proxyOutbounds,
@@ -2281,7 +2372,13 @@ class ConfigGeneratorV2 {
           'port': 0,
           'protocol': 'tun',
           'settings': {'name': _tunInterfaceName, 'mtu': _defaultTunMtu},
-          'sniffing': core.buildSniffing(),
+          'sniffing': _fakeDnsApplies(
+            settings,
+            nativeTunInbound: nativeTunInbound,
+            isPingMode: isPingMode,
+          )
+              ? _fakeDnsSniffing(core)
+              : core.buildSniffing(),
         },
       if (isPingMode && pingHttpInbound)
         // Desktop ping listens over HTTP, not SOCKS: the Dart probe uses dart:io
