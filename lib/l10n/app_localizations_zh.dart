@@ -726,13 +726,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsTunIpv6Hint => '为 TUN 接口分配 IPv6 地址；否则所有 IPv6 都绕过隧道。';
 
   @override
-  String get settingsMihomoSection => 'mihomo 内核';
+  String get settingsFakeIp => 'Fake IP';
 
   @override
-  String get settingsMihomoFakeIp => 'Fake IP';
-
-  @override
-  String get settingsMihomoFakeIpHint => '用假地址即时解析。代理模式下不生效。';
+  String get settingsFakeIpHint => '用假地址即时解析。代理模式下不生效。';
 
   @override
   String get settingsPingTitle => '服务器 Ping';

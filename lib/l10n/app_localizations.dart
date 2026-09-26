@@ -1469,23 +1469,17 @@ abstract class AppLocalizations {
   /// **'Gives the TUN interface an IPv6 address; without it all IPv6 bypasses the tunnel.'**
   String get settingsTunIpv6Hint;
 
-  /// No description provided for @settingsMihomoSection.
-  ///
-  /// In en, this message translates to:
-  /// **'mihomo core'**
-  String get settingsMihomoSection;
-
-  /// No description provided for @settingsMihomoFakeIp.
+  /// No description provided for @settingsFakeIp.
   ///
   /// In en, this message translates to:
   /// **'Fake IP'**
-  String get settingsMihomoFakeIp;
+  String get settingsFakeIp;
 
-  /// No description provided for @settingsMihomoFakeIpHint.
+  /// No description provided for @settingsFakeIpHint.
   ///
   /// In en, this message translates to:
   /// **'Instant resolution via fake addresses. Not used in Proxy mode.'**
-  String get settingsMihomoFakeIpHint;
+  String get settingsFakeIpHint;
 
   /// No description provided for @settingsPingTitle.
   ///

@@ -726,13 +726,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTunIpv6Hint => 'Gives the TUN interface an IPv6 address; without it all IPv6 bypasses the tunnel.';
 
   @override
-  String get settingsMihomoSection => 'mihomo core';
+  String get settingsFakeIp => 'Fake IP';
 
   @override
-  String get settingsMihomoFakeIp => 'Fake IP';
-
-  @override
-  String get settingsMihomoFakeIpHint => 'Instant resolution via fake addresses. Not used in Proxy mode.';
+  String get settingsFakeIpHint => 'Instant resolution via fake addresses. Not used in Proxy mode.';
 
   @override
   String get settingsPingTitle => 'Server ping';

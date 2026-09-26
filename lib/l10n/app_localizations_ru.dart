@@ -728,13 +728,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settingsTunIpv6Hint => 'Даёт TUN-интерфейсу IPv6-адрес, иначе весь IPv6 идёт мимо туннеля.';
 
   @override
-  String get settingsMihomoSection => 'Ядро mihomo';
+  String get settingsFakeIp => 'Fake IP';
 
   @override
-  String get settingsMihomoFakeIp => 'Fake IP';
-
-  @override
-  String get settingsMihomoFakeIpHint => 'Мгновенный резолв подменными адресами. В режиме «Прокси» не работает.';
+  String get settingsFakeIpHint => 'Мгновенный резолв подменными адресами. В режиме «Прокси» не работает.';
 
   @override
   String get settingsPingTitle => 'Пинг серверов';

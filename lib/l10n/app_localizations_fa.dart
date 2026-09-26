@@ -726,13 +726,10 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsTunIpv6Hint => 'به رابط TUN نشانی IPv6 می‌دهد؛ بدون آن همهٔ IPv6 از تونل بیرون می‌ماند.';
 
   @override
-  String get settingsMihomoSection => 'هسته mihomo';
+  String get settingsFakeIp => 'Fake IP';
 
   @override
-  String get settingsMihomoFakeIp => 'Fake IP';
-
-  @override
-  String get settingsMihomoFakeIpHint => 'تفکیک آنی با نشانی‌های ساختگی. در حالت پراکسی کار نمی‌کند.';
+  String get settingsFakeIpHint => 'تفکیک آنی با نشانی‌های ساختگی. در حالت پراکسی کار نمی‌کند.';
 
   @override
   String get settingsPingTitle => 'پینگ سرور';

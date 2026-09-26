@@ -124,9 +124,9 @@ class _XrayCoreSettingsScreenState extends ConsumerState<_XrayCoreSettingsScreen
           settings.copyWith(
             xrayCore: const XrayCoreSettings(),
             tun: const TunSettings(),
-            // Кнопка сбрасывает всё, что стоит на этом экране, — включая
-            // секцию mihomo. Забытое поле здесь выглядит как «сброс не
-            // сработал».
+            // Кнопка сбрасывает всё, что стоит на этом экране, — включая Fake
+            // IP, хоть он и не часть настроек ядра. Забытое поле здесь
+            // выглядит как «сброс не сработал».
             fakeIp: defaults.fakeIp,
             localPort: portsLocked ? null : defaults.localPort,
             httpPort: portsLocked ? null : defaults.httpPort,
@@ -190,7 +190,6 @@ class _XrayCoreSettingsScreenState extends ConsumerState<_XrayCoreSettingsScreen
         // VpnService, и эти поля туда не едут. Ядру при этом всё равно —
         // стек, MTU и маршруты читают оба.
         if (Platform.isWindows || Platform.isLinux) const _XrayTunSection(),
-        if (!xray) const _XrayMihomoSection(),
         const SizedBox(height: 8),
         OutlinedButton.icon(
           onPressed: () => _resetDefaults(settings),
@@ -339,6 +338,15 @@ class _XrayDnsSection extends ConsumerWidget {
                 activeThumbColor: accent,
                 title: Text(l10n.settingsXrayDnsDisableCache),
               ),
+            // Одна настройка на оба ядра: подменные адреса умеют и mihomo, и
+            // xray (на десктопе их отдаёт sing-box вокруг него).
+            SwitchListTile(
+              value: settings.fakeIp,
+              onChanged: (v) => _saveFakeIp(ref, settings, v),
+              activeThumbColor: accent,
+              title: Text(l10n.settingsFakeIp),
+              subtitle: Text(l10n.settingsFakeIpHint),
+            ),
           ],
         ),
       ],
@@ -1454,48 +1462,6 @@ class _XrayTunSection extends ConsumerWidget {
                 title: Text(l10n.settingsTunIpv6),
                 subtitle: Text(l10n.settingsTunIpv6Hint),
               ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-/// Секция mihomo.
-///
-/// Отдельный виджет, а не кусок общего `build()`: у секции свой `const`
-/// конструктор и своя подписка на настройки, поэтому изменение внутри неё
-/// перестраивает её одну, а не весь экран.
-class _XrayMihomoSection extends ConsumerWidget {
-  const _XrayMihomoSection();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context)!;
-    final settings =
-        ref.watch(settingsNotifierProvider).value ?? const AppSettings();
-    final accent = AppTheme.accent(context);
-    return Column(
-      // Дети слайвера растягиваются по ширине сами. Column по умолчанию
-      // центрирует, и без stretch карточки схлопнулись бы по содержимому.
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _XrayCoreSectionHeader(
-          icon: Icons.alt_route_rounded,
-          title: l10n.settingsMihomoSection,
-        ),
-        _xraySettingsCard(
-          context,
-          children: [
-            SwitchListTile(
-              value: settings.fakeIp,
-              onChanged: (v) => _saveFakeIp(ref, settings, v),
-              activeThumbColor: accent,
-              title: Text(l10n.settingsMihomoFakeIp),
-              subtitle: Text(
-                l10n.settingsMihomoFakeIpHint,
-              ),
-            ),
           ],
         ),
       ],
