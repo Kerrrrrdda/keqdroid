@@ -23,89 +23,8 @@ import '../tunnel/connection_mode.dart';
 import '../tunnel/tunnel_state.dart';
 import '../utils/error_messages.dart';
 import '../utils/process_name_utils.dart';
+import '../utils/russian_apps.dart';
 import '../utils/split_tunneling_entries.dart';
-
-const _kRussianPackagePrefixes = <String>[
-  'ru.yandex.', 'com.yandex.',
-  'com.vkontakte.', 'com.vk.', 'ru.vk.',
-  'com.mailru.', 'ru.mail.',
-  'com.odnoklassniki.', 'ru.ok.',
-  'ru.sberbank.', 'ru.sbrf.', 'com.sberbank.',
-  'com.idamob.tinkoff.', 'ru.tinkoff.',
-  'ru.vtb.', 'ru.vtb24.',
-  'ru.alfabank.',
-  'ru.gazprombank.',
-  'com.gosuslugi.', 'ru.gosuslugi.', 'ru.gov.',
-  'ru.rostel.',
-  'ru.mts.', 'com.mts.', 'ru.megafon.', 'ru.beeline.', 'com.beeline.', 'ru.rt.',
-  'ru.dublgis.',
-  'ru.avito.', 'com.avito.',
-  'ru.hh.',
-  'ru.ozon.',
-  'ru.wildberries.',
-  'ru.lamoda.',
-  'ru.delivery.', 'com.delivery.',
-  'ru.ivi.',
-  'ru.kinopoisk.',
-  'ru.start.',
-  'ru.okko.', 'tv.more.',
-  'ru.raiffeisen.', 'ru.rosbank.', 'ru.open.',
-  'ru.psbank.', 'ru.sovcombank.', 'ru.bspb.', 'ru.mkb.', 'ru.akbars.',
-  'ru.domclick.',
-  'ru.kontur.', 'ru.tensor.', 'ru.taxcom.',
-  'ru.nalog.', 'ru.pfr.',
-  'ru.rosreestr.',
-  'ru.apteki.', 'ru.eapteka.', 'ru.zdravcity.',
-  'ru.superjob.', 'ru.cian.',
-  'ru.auto.', 'ru.drom.',
-  'ru.litres.', 'ru.skyeng.',
-  'ru.rambler.', 'ru.rbc.',
-  'ru.russianpost.', 'com.gnivc.', 'ru.minsvyaz.', 'ru.mchs.', 'ru.mos.',
-  'ru.nspk.',
-  'com.kaspersky.', 'com.kms.', 'com.drweb.', 'com.ncloudtech.',
-  'ru.beru.', 'ru.tander.', 'ru.x5.', 'ru.vkusvill.', 'ru.bstr.', 'ru.dodopizza.',
-  'ru.mvideo.', 'ru.eldorado.', 'ru.dns.shop.', 'ru.sportmaster.', 'ru.detmir.', 'ru.kazanexpress.',
-  'ru.rzd.', 'ru.aeroflot.', 'ru.s7.', 'ru.pobeda.',
-  'com.whoosh.', 'ru.urent.', 'com.citymobil.', 'com.taximaxim.', 'ru.tutu.',
-  'ru.rutube.', 'ru.smotrim.', 'premier.one.', 'ru.tnt.', 'ru.yappy.', 'com.vbc.', 'ru.youla.', 'ru.sports.',
-  'ru.tele2.', 'ru.yota.', 'ru.tinkoff.mobile.',
-  'com.vk.max', 'ru.vk.max', 'ru.oneme.app', 'ru.max',
-];
-
-const _kRussianPackageSegments = <String>[
-  'sberbank', 'sberonline', 'sbrf',
-  'tinkoff', 'idamob',
-  'alfabank',
-  'vtb', 'vtb24',
-  'gosuslugi', 'goskey',
-  'yandex',
-  'vkontakte',
-  'odnoklassniki',
-  'megafon',
-  'beeline',
-  'ozon',
-  'wildberries',
-  'kinopoisk',
-  'avito',
-  'gazprombank',
-  'raiffeisen',
-  'rosbank',
-  'sovcombank',
-  'domclick',
-  'apteki',
-];
-
-// Русскость определяется только по имени пакета (курируемые списки ниже).
-// Язык отображаемого имени (кириллица в app.appName) не используется: на
-// ru-locale системные приложения MIUI/HyperOS и сторонние (клавиатура FUTO
-// и т.п.) локализованы кириллицей и ошибочно попадали в bypass-список.
-bool _isRussianApp(AppInfo app) {
-  final pkg = app.packageName.toLowerCase();
-  if (_kRussianPackagePrefixes.any((p) => pkg.startsWith(p))) return true;
-  if (_kRussianPackageSegments.any((s) => pkg.contains(s))) return true;
-  return false;
-}
-
 
 enum TunnelMode { all, includeOnly, excludeOnly }
 
@@ -370,7 +289,7 @@ class _SplitTunnelingScreenState extends ConsumerState<SplitTunnelingScreen>
     final visibleApps =
         ref.read(installedAppsProvider(_showSystem)).value ?? const <AppInfo>[];
     final quickRussian = visibleApps
-        .where(_isRussianApp)
+        .where((a) => isRussianApp(a.packageName, isSystem: a.isSystem))
         .map((a) => a.packageName)
         .toList();
     var addedTotal = await notifier.addAllExcludes(quickRussian);
@@ -405,9 +324,10 @@ class _SplitTunnelingScreenState extends ConsumerState<SplitTunnelingScreen>
     } catch (_) {
       allApps = const [];
     }
-    final extraAdded = await notifier.addAllExcludes(
-      allApps.where(_isRussianApp).map((a) => a.packageName).toList(),
-    );
+    final extraAdded = await notifier.addAllExcludes([
+      for (final a in allApps)
+        if (isRussianApp(a.packageName, isSystem: a.isSystem)) a.packageName,
+    ]);
     addedTotal += extraAdded;
 
     if (!mounted) return;
