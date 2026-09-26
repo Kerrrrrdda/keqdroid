@@ -153,6 +153,36 @@ void main() {
       expect(saved!.lanPassword, 'local-secret');
       expect(saved!.minimizeToTray, isFalse);
     });
+
+    // До 26.09.2026 fake-ip был настройкой одного mihomo и лежал в копии под
+    // именем `mihomoFakeIp`: восстановление старой копии не должно его терять.
+    test('fake-ip из старой копии доезжает под новым именем', () async {
+      final from = _MockStorageService();
+      when(() => from.getSettings())
+          .thenAnswer((_) async => const AppSettings(fakeIp: true));
+      final built = await SettingsBackupService.buildBackup(
+        from,
+        sections: {BackupSection.appSettings},
+      );
+      final json = jsonDecode(built.toJsonString()) as Map<String, dynamic>;
+      final data = json['data'] as Map<String, dynamic>;
+      final app = data['appSettings'] as Map<String, dynamic>;
+      app['mihomoFakeIp'] = app.remove('fakeIp');
+
+      AppSettings? saved;
+      final to = _MockStorageService();
+      when(() => to.getSettings()).thenAnswer((_) async => const AppSettings());
+      when(() => to.saveSettings(any())).thenAnswer((inv) async {
+        saved = inv.positionalArguments.single as AppSettings;
+      });
+      await SettingsBackupService.applyBackup(
+        to,
+        backup: KeqdisBackup.fromJson(json),
+        sections: {BackupSection.appSettings},
+      );
+
+      expect(saved!.fakeIp, isTrue);
+    });
   });
 
   group('оформление карточек в бэкапе', () {

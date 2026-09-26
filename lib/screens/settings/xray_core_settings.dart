@@ -64,14 +64,14 @@ Future<void> _saveXrayTun(
       .save(settings.copyWith(tun: tun));
 }
 
-Future<void> _saveMihomoFakeIp(
+Future<void> _saveFakeIp(
   WidgetRef ref,
   AppSettings settings,
   bool value,
 ) async {
   await ref
       .read(settingsNotifierProvider.notifier)
-      .save(settings.copyWith(mihomoFakeIp: value));
+      .save(settings.copyWith(fakeIp: value));
 }
 
 /// Строка выбора. Значение подхватывает [RadioGroup] выше по дереву, поэтому
@@ -127,7 +127,7 @@ class _XrayCoreSettingsScreenState extends ConsumerState<_XrayCoreSettingsScreen
             // Кнопка сбрасывает всё, что стоит на этом экране, — включая
             // секцию mihomo. Забытое поле здесь выглядит как «сброс не
             // сработал».
-            mihomoFakeIp: defaults.mihomoFakeIp,
+            fakeIp: defaults.fakeIp,
             localPort: portsLocked ? null : defaults.localPort,
             httpPort: portsLocked ? null : defaults.httpPort,
           ),
@@ -1488,8 +1488,8 @@ class _XrayMihomoSection extends ConsumerWidget {
           context,
           children: [
             SwitchListTile(
-              value: settings.mihomoFakeIp,
-              onChanged: (v) => _saveMihomoFakeIp(ref, settings, v),
+              value: settings.fakeIp,
+              onChanged: (v) => _saveFakeIp(ref, settings, v),
               activeThumbColor: accent,
               title: Text(l10n.settingsMihomoFakeIp),
               subtitle: Text(

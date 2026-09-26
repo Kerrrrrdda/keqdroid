@@ -83,7 +83,7 @@ class SettingsBackupService {
     // ядро и DNS
     'xrayCore',
     'vpnCore',
-    'mihomoFakeIp',
+    'fakeIp',
     // поведение
     'autoConnectLastServer',
     'shareDeviceHwid',
@@ -237,6 +237,11 @@ class SettingsBackupService {
       final merged = (await storage.getSettings()).toJson();
       for (final key in portableSettingKeys) {
         if (raw.containsKey(key)) merged[key] = raw[key];
+      }
+      // Копии до 26.09.2026 хранят fake-ip под старым именем, когда он был
+      // настройкой одного mihomo.
+      if (!raw.containsKey('fakeIp') && raw.containsKey('mihomoFakeIp')) {
+        merged['fakeIp'] = raw['mihomoFakeIp'];
       }
       await storage.saveSettings(AppSettings.fromJson(merged));
     }

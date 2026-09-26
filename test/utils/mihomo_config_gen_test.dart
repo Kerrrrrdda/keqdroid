@@ -1197,7 +1197,7 @@ void main() {
 
   group('fake-ip', () {
     const link = 'vless://uuid@nl.example:443?type=tcp&security=none';
-    final on = settings.copyWith(mihomoFakeIp: true);
+    final on = settings.copyWith(fakeIp: true);
 
     Map<String, dynamic> dnsOf(AppSettings s, {MihomoTunOptions? tun}) =>
         MihomoConfigGen.build(

@@ -126,19 +126,19 @@ class AppSettings {
   /// Ядро, исполняющее сервер: `xray` (дефолт) или `mihomo`.
   final String vpnCore;
 
-  /// mihomo: отдавать системе подменные адреса вместо настоящих (`fake-ip`).
+  /// Отдавать системе подменные адреса вместо настоящих (fake-ip) — одна
+  /// настройка на оба ядра.
   ///
-  /// Значимо только там, где туннелем владеет само ядро и есть перехват DNS:
-  /// TUN-режим на десктопе и Android. В прокси-режиме десктопа запросы системы
-  /// до ядра не доходят вовсе, и подменять нечего.
+  /// Значимо только там, где есть перехват DNS устройства: TUN-режим на
+  /// десктопе и Android. В прокси-режиме приложения отдают прокси сам домен, и
+  /// подменять нечего.
   ///
-  /// Выключено по умолчанию не из осторожности вообще, а по конкретной причине:
-  /// с fake-ip назначение соединения перестаёт быть настоящим адресом, и
-  /// IP-правила пользователя приходится доразрешать (см.
-  /// [MihomoConfigGen.buildUserRules]) — то есть одни и те же списки ведут себя
-  /// не так, как на xray. Взамен резолв становится мгновенным, а доменные
-  /// правила перестают зависеть от снифера.
-  final bool mihomoFakeIp;
+  /// Выигрыш — первое соединение не ждёт DNS: без подмены домен сначала
+  /// резолвится через туннель, и на далёком сервере это секунды. Выключено по
+  /// умолчанию потому, что назначение перестаёт быть настоящим адресом: IP-правила
+  /// пользователя приходится доразрешать, а сразу после отключения приложения ещё
+  /// какое-то время держат подменные адреса.
+  final bool fakeIp;
   /// Desktop: хоткеи (HotkeyAction.id → токен сочетания, напр. `ctrl+shift+keyT`).
   /// Пустая карта = все хоткеи выключены (дефолт).
   final Map<String, String> hotkeys;
@@ -244,7 +244,7 @@ class AppSettings {
     this.serverIconThemeColors = true,
     this.coreEngine = coreEngineKeqrnel,
     this.vpnCore = vpnCoreAuto,
-    this.mihomoFakeIp = false,
+    this.fakeIp = false,
     this.hotkeys = const {},
     this.serversTwoColumns = false,
     this.amoledBlack = false,
@@ -301,7 +301,7 @@ class AppSettings {
     'serverIconThemeColors': serverIconThemeColors,
     'coreEngine': coreEngine,
     'vpnCore': vpnCore,
-    'mihomoFakeIp': mihomoFakeIp,
+    'fakeIp': fakeIp,
     'hotkeys': hotkeys,
     'serversTwoColumns': serversTwoColumns,
     'amoledBlack': amoledBlack,
@@ -388,7 +388,9 @@ class AppSettings {
       serverIconThemeColors: json['serverIconThemeColors'] as bool? ?? true,
       coreEngine: normalizeCoreEngine(json['coreEngine'] as String?),
       vpnCore: normalizeVpnCore(json['vpnCore'] as String?),
-      mihomoFakeIp: json['mihomoFakeIp'] as bool? ?? false,
+      // До 26.09.2026 настройка была только у mihomo и хранилась под старым
+      // именем — его и дочитываем, чтобы включённое не выключилось само.
+      fakeIp: json['fakeIp'] as bool? ?? json['mihomoFakeIp'] as bool? ?? false,
       hotkeys: _readHotkeys(json['hotkeys']),
       serversTwoColumns: json['serversTwoColumns'] as bool? ?? false,
       amoledBlack: json['amoledBlack'] as bool? ?? false,
@@ -562,7 +564,7 @@ class AppSettings {
     bool? serverIconThemeColors,
     String? coreEngine,
     String? vpnCore,
-    bool? mihomoFakeIp,
+    bool? fakeIp,
     Map<String, String>? hotkeys,
     bool? serversTwoColumns,
     bool? amoledBlack,
@@ -620,7 +622,7 @@ class AppSettings {
             serverIconThemeColors ?? this.serverIconThemeColors,
         coreEngine: coreEngine ?? this.coreEngine,
         vpnCore: vpnCore ?? this.vpnCore,
-        mihomoFakeIp: mihomoFakeIp ?? this.mihomoFakeIp,
+        fakeIp: fakeIp ?? this.fakeIp,
         hotkeys: hotkeys ?? this.hotkeys,
         serversTwoColumns: serversTwoColumns ?? this.serversTwoColumns,
         amoledBlack: amoledBlack ?? this.amoledBlack,
@@ -704,7 +706,7 @@ class AppSettings {
               serverIconThemeColors == other.serverIconThemeColors &&
               coreEngine == other.coreEngine &&
               vpnCore == other.vpnCore &&
-              mihomoFakeIp == other.mihomoFakeIp &&
+              fakeIp == other.fakeIp &&
               serversTwoColumns == other.serversTwoColumns &&
               amoledBlack == other.amoledBlack &&
               hapticFeedback == other.hapticFeedback &&
@@ -770,7 +772,7 @@ class AppSettings {
     serverIconThemeColors,
     coreEngine,
     vpnCore,
-    mihomoFakeIp,
+    fakeIp,
     serversTwoColumns,
     amoledBlack,
     hapticFeedback,
