@@ -23,7 +23,10 @@ import 'package:keqdroid/screens/settings_tab.dart';
 import 'package:keqdroid/services/linux_background_service.dart';
 import 'package:keqdroid/services/storage_service.dart';
 import 'package:keqdroid/services/update_service.dart';
+import 'package:keqdroid/tunnel/core_capabilities.dart';
+import 'package:keqdroid/tunnel/linux_core_paths.dart';
 import 'package:keqdroid/tunnel/linux_tunnel_backend.dart';
+import 'package:keqdroid/tunnel/windows_core_paths.dart';
 import 'package:keqdroid/shared/ui/app_theme.dart';
 import 'package:keqdroid/shared/ui/bottom_nav.dart';
 import 'package:keqdroid/shared/ui/nav_rail.dart';
@@ -108,6 +111,14 @@ Future<void> main() async {
         child: KeqdisApp(home: home),
       ),
     );
+
+    // После первого кадра и в фоне: иначе это чтение ложится на первое
+    // подключение (см. CoreCapabilities.warmUp).
+    if (Platform.isWindows) {
+      unawaited(CoreCapabilities.warmUp(WindowsCorePaths.keqrnelExecutable()));
+    } else if (Platform.isLinux) {
+      unawaited(CoreCapabilities.warmUp(LinuxCorePaths.keqrnelExecutable()));
+    }
   }, (error, stack) async {
     await AppLogger.instance.recordError(
       error,

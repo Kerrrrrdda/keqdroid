@@ -13,8 +13,10 @@ class CoreCapabilities {
   CoreCapabilities._();
 
   /// Кэш по пути к бинарю: разбор — это поиск метки в файле на десятки
-  /// мегабайт, а файл в пределах запуска не меняется.
-  static final _cache = <String, bool?>{};
+  /// мегабайт, а файл в пределах запуска не меняется. Хранится сам разбор, а
+  /// не его итог: подключение, начатое посреди прогрева, дожидается того же
+  /// чтения, а не запускает второе.
+  static final _cache = <String, Future<bool?>>{};
 
   /// Только для тестов.
   static void resetCacheForTests() => _cache.clear();
@@ -22,13 +24,22 @@ class CoreCapabilities {
   /// `true` — в ядре есть gVisor, `false` — точно нет, `null` — выяснить не
   /// удалось (не Go-бинарь, старый формат, файла нет). Null не означает «нет»:
   /// по нему ничего переписывать нельзя.
-  static Future<bool?> hasGvisor(String? binaryPath) async {
+  static Future<bool?> hasGvisor(String? binaryPath) {
     final path = binaryPath;
-    if (path == null || path.isEmpty) return null;
-    if (_cache.containsKey(path)) return _cache[path];
-    final result = await _probe(path);
-    _cache[path] = result;
-    return result;
+    if (path == null || path.isEmpty) return Future.value();
+    return _cache[path] ??= _probe(path);
+  }
+
+  /// Разбор заранее, при запуске приложения. Метка у keqrnel лежит на 43-м
+  /// мегабайте файла; на медленном диске или под антивирусом, который
+  /// проверяет файл при чтении, это секунды, и платить их на первом
+  /// подключении незачем.
+  static Future<void> warmUp(Future<String?> binaryPath) async {
+    try {
+      await hasGvisor(await binaryPath);
+    } catch (_) {
+      // Не вышло сейчас — выйдет на подключении, как и раньше.
+    }
   }
 
   static Future<bool?> _probe(String path) async {

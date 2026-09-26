@@ -48,6 +48,27 @@ void main() {
     expect(await CoreCapabilities.hasGvisor(''), isNull);
   });
 
+  // Прогрев при запуске и подключение, начатое посреди него, читают файл один
+  // раз: иначе первое подключение платило бы за разбор второй раз.
+  test('прогрев и подключение делят один разбор', () async {
+    const path = 'assets/bin/windows/keqrnel.exe';
+    if (!File(path).existsSync()) {
+      markTestSkipped('$path не поставляется в этой копии');
+      return;
+    }
+    final warm = CoreCapabilities.warmUp(Future.value(path));
+    final first = CoreCapabilities.hasGvisor(path);
+    final second = CoreCapabilities.hasGvisor(path);
+    expect(identical(first, second), isTrue);
+    await warm;
+    expect(await second, isTrue);
+  });
+
+  test('прогрев без бинаря ничего не роняет', () async {
+    await CoreCapabilities.warmUp(Future.value(null));
+    await CoreCapabilities.warmUp(Future<String?>.error(StateError('нет')));
+  });
+
   // Вердикт mihomo о собственном туннеле сервис читает из лога по двум
   // строкам — других признаков ядро не отдаёт: открытый SOCKS-порт ещё не
   // значит, что mihomo взял туннель. Переименуй апстрим любую
