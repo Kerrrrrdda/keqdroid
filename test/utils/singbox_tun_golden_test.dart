@@ -66,6 +66,12 @@ void main() {
   group('golden: SingBoxTunConfigGen.generate', () {
     _golden('baseline-all-proxy', (w) => _generate(windows: w));
 
+    // В общих настройках есть direct-CIDR, так что сюда попадает и `resolve`.
+    _golden(
+      'fake-ip-on',
+      (w) => _generate(windows: w, settings: _settings.copyWith(fakeIp: true)),
+    );
+
     _golden(
       'routing-only-selected',
       (w) => _generate(windows: w, 

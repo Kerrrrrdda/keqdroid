@@ -6,6 +6,7 @@ import '../models/xray_core_settings.dart';
 import '../tunnel/app_routing_mode.dart';
 import 'awg_profile.dart';
 import 'custom_clash_config.dart';
+import 'fake_ip.dart';
 import 'hysteria_uri.dart';
 import 'mieru_uri.dart';
 import 'routing_entry.dart';
@@ -2077,25 +2078,9 @@ class MihomoConfigGen {
   /// диапазон определяет адрес tun-интерфейса, и разъехаться им нельзя.
   static const fakeIpRange = '198.18.0.1/16';
 
-  /// Домены, которым подменный адрес не выдаётся никогда.
-  ///
-  /// Первые — локальные зоны: к ним ходят по настоящему адресу в своей сети.
-  /// Остальные — проверки связности Android, Windows и Apple: получив адрес, по
-  /// которому никто не отвечает, система решает, что сети нет, и рисует
-  /// «интернета нет» поверх работающего туннеля.
-  static const fakeIpFilter = <String>[
-    '*.lan',
-    '*.local',
-    '*.localdomain',
-    '*.home.arpa',
-    'localhost',
-    'connectivitycheck.gstatic.com',
-    '*.msftconnecttest.com',
-    '*.msftncsi.com',
-    'captive.apple.com',
-    'time.*.com',
-    '*.ntp.org',
-  ];
+  /// Домены, которым подменный адрес не выдаётся никогда. Список общий на все
+  /// ядра и живёт в fake_ip.dart, здесь он в родном синтаксисе mihomo.
+  static const fakeIpFilter = kFakeIpFilter;
 
   /// Правила по процессам — только для схемы, где туннель принадлежит ядру и
   /// оно способно узнать владельца соединения (десктоп).

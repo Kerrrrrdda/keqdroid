@@ -5,6 +5,7 @@ import '../models/app_settings.dart';
 import '../models/tun_settings.dart';
 import '../models/xray_core_settings.dart';
 import '../tunnel/app_routing_mode.dart';
+import 'fake_ip.dart';
 import 'process_name_utils.dart';
 import 'routing_entry.dart';
 
@@ -325,6 +326,9 @@ class SingBoxTunConfigGen {
     // машины.
     final captureIpv6 = settings.tun.blockIpv6Leak && hostHasIpv6;
 
+    // Этот конфиг — всегда TUN с перехватом DNS, так что подменять есть кому.
+    final fakeIp = settings.fakeIp;
+
     final rules = <Map<String, dynamic>>[
       {
         'inbound': [tunInboundTag],
@@ -429,6 +433,17 @@ class SingBoxTunConfigGen {
         sourceDomains: blockedDomains,
         outbound: 'block',
       );
+    }
+    // С fake-ip назначение приходит доменом, и правилам по IP сравнивать не с
+    // чем. Настоящий адрес достаём, только если такие правила у пользователя
+    // есть: иначе каждое соединение снова ждало бы DNS, ради отмены которого
+    // fake-ip и включают. Назначением домен при этом остаётся — серверу уходит
+    // имя, а не адрес.
+    if (fakeIp &&
+        (blockedIpsForSingBox.isNotEmpty ||
+            directIpsForSingBox.isNotEmpty ||
+            proxyIpsForSingBox.isNotEmpty)) {
+      rules.add({'action': 'resolve', 'server': 'proxy-dns'});
     }
     if (blockedIpsForSingBox.isNotEmpty) {
       rules.add({'ip_cidr': blockedIpsForSingBox, ...kSingboxBlockAction});
@@ -551,6 +566,7 @@ class SingBoxTunConfigGen {
     // на оба ядра, а раньше здесь сплит стоял всегда — выключить его в TUN не
     // получалось вовсе.
     final directDnsParts = classifyDomains(directDomains);
+    final fakeIpExclusions = classifyDomains(fakeIpFilterAsRules());
     final hosts = hostsServerEntries(settings);
     final dnsPolicies = policyDnsServers(settings);
     final dnsRules = <Map<String, dynamic>>[
@@ -585,6 +601,27 @@ class SingBoxTunConfigGen {
             'domain_regex': directDnsParts.domainRegex,
           'server': 'local-dns',
         },
+      // Fake-ip — последним: всё, что разложено выше, получает настоящий
+      // адрес. Исключения идут тем же резолвером, что и без подмены. TTL —
+      // секунда, как у mihomo: своё умолчание sing-box — 600, и после
+      // отключения система ещё десять минут ходила бы по подменным адресам в
+      // никуда.
+      if (fakeIp) ...[
+        {
+          if (fakeIpExclusions.domain.isNotEmpty)
+            'domain': fakeIpExclusions.domain,
+          if (fakeIpExclusions.domainSuffix.isNotEmpty)
+            'domain_suffix': fakeIpExclusions.domainSuffix,
+          if (fakeIpExclusions.domainRegex.isNotEmpty)
+            'domain_regex': fakeIpExclusions.domainRegex,
+          'server': 'proxy-dns',
+        },
+        {
+          'query_type': ['A'],
+          'server': fakeIpServerTag,
+          'rewrite_ttl': 1,
+        },
+      ],
     ];
 
     final tun = settings.tun;
@@ -646,6 +683,12 @@ class SingBoxTunConfigGen {
             },
           for (final policy in dnsPolicies) policy.server,
           buildProxyDnsServer(),
+          if (fakeIp)
+            {
+              'tag': fakeIpServerTag,
+              'type': 'fakeip',
+              'inet4_range': kFakeIpRange,
+            },
         ],
         if (dnsRules.isNotEmpty) 'rules': dnsRules,
         // Только A-записи, и «стратегия запросов» из настроек ядра сюда
@@ -681,6 +724,9 @@ class SingBoxTunConfigGen {
 
   /// Тег резолвера, который отдаёт свои адреса для доменов.
   static const hostsServerTag = 'keq-hosts';
+
+  /// Тег DNS-сервера подменных адресов (fake-ip).
+  static const fakeIpServerTag = 'keq-fakeip';
 
   /// Резолверы для отдельных доменов: свой сервер на каждую запись.
   ///
