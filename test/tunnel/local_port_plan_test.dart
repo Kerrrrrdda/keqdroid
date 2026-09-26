@@ -100,13 +100,13 @@ void main() {
       lanSocksPort: 3,
       lanHttpPort: 4,
     );
-    final applied = plan.applyTo(const AppSettings(killSwitch: true));
+    final applied = plan.applyTo(const AppSettings(darkTheme: true));
 
     expect(applied.localPort, 1);
     expect(applied.httpPort, 2);
     expect(applied.lanSocksPort, 3);
     expect(applied.lanHttpPort, 4);
-    expect(applied.killSwitch, isTrue);
+    expect(applied.darkTheme, isTrue);
   });
 
   test('сообщение об отказе называет причину, а не «занят»', () {

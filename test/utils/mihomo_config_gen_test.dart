@@ -1377,46 +1377,6 @@ void main() {
     });
   });
 
-  // Смысл тот же, что у kill switch в sing-box: весь IP-трафик в прокси, а
-  // финалом отказ — падение прокси не превращается в утечку мимо туннеля.
-  group('kill switch', () {
-    const link = 'vless://uuid@nl.example:443?type=tcp&security=none';
-
-    test('весь трафик в прокси, финал — отказ', () {
-      final rules = (MihomoConfigGen.build(
-        link,
-        settings.copyWith(killSwitch: true),
-        socksPort: 2080,
-        httpPort: 2081,
-        tun: const MihomoTunOptions(device: 'tun-keqdis', stack: 'gvisor'),
-        windows: true,
-      )['rules'] as List)
-          .cast<String>();
-
-      expect(rules, contains('IP-CIDR,0.0.0.0/1,proxy'));
-      expect(rules, contains('IP-CIDR,128.0.0.0/1,proxy'));
-      expect(rules.last, 'MATCH,REJECT');
-    });
-
-    // Финал у них и так не proxy: гнать всё в туннель ради отказа бессмысленно.
-    test('при обходе и блокировке не применяется', () {
-      for (final finalOutbound in const [
-        AppSettings.finalOutboundDirect,
-        AppSettings.finalOutboundBlock,
-      ]) {
-        final rules = (MihomoConfigGen.build(
-          link,
-          settings.copyWith(killSwitch: true, finalOutbound: finalOutbound),
-          socksPort: 2080,
-          tun: const MihomoTunOptions(device: 'tun-keqdis', stack: 'gvisor'),
-          windows: true,
-        )['rules'] as List)
-            .cast<String>();
-        expect(rules.any((r) => r.startsWith('IP-CIDR,0.0.0.0/1')), isFalse);
-      }
-    });
-  });
-
   test('generate отдаёт валидный JSON (он же YAML для ядра)', () {
     final raw = MihomoConfigGen.generate(
       'vless://uuid@nl.example:443?type=tcp&security=reality&pbk=k&sid=aa',

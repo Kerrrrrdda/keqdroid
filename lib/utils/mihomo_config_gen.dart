@@ -2060,23 +2060,11 @@ class MihomoConfigGen {
     // При пер-аппном сплите финал несёт смысл «остальные приложения идут
     // мимо/через туннель», и выбор пользователя в «финальном действии» его не
     // отменяет: он про трафик, а не про приложения.
-    var finalTarget = switch (routingMode) {
+    final finalTarget = switch (routingMode) {
       AppRoutingMode.onlySelected => 'DIRECT',
       AppRoutingMode.allExceptSelected => proxyTarget,
       AppRoutingMode.allProxy => _finalTarget(settings.finalOutbound, proxyTarget),
     };
-
-    // Kill switch осмыслен только при глобал-прокси: гоним весь IP-трафик в
-    // прокси, а финалом ставим отказ — тогда падение прокси не превращается в
-    // утечку мимо туннеля. Для «обхода» и «блокировки» финал и так не proxy.
-    if (settings.killSwitch &&
-        routingMode == AppRoutingMode.allProxy &&
-        finalTarget == proxyTarget) {
-      rules
-        ..add('IP-CIDR,0.0.0.0/1,$proxyTarget')
-        ..add('IP-CIDR,128.0.0.0/1,$proxyTarget');
-      finalTarget = 'REJECT';
-    }
 
     return [...rules, 'MATCH,$finalTarget'];
   }

@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:keqdroid/models/app_settings.dart';
 import 'package:keqdroid/tunnel/app_routing_mode.dart';
@@ -8,19 +6,6 @@ import 'package:keqdroid/utils/singbox_tun_config.dart';
 import '../helpers/singbox_route.dart';
 
 String _routeFinal(String json) => effectiveRouteFinal(json);
-
-List<Map<String, dynamic>> _rules(String json) =>
-    (((jsonDecode(json) as Map<String, dynamic>)['route'] as Map)['rules']
-            as List)
-        .cast<Map<String, dynamic>>();
-
-bool _hasKillSwitchCatch(List<Map<String, dynamic>> rules) => rules.any((r) {
-      final cidr = r['ip_cidr'];
-      return cidr is List &&
-          cidr.contains('0.0.0.0/1') &&
-          cidr.contains('128.0.0.0/1') &&
-          r['outbound'] == 'proxy';
-    });
 
 String _gen(AppSettings settings,
         {AppRoutingMode routingMode = AppRoutingMode.allProxy}) =>
@@ -53,30 +38,6 @@ void main() {
             const AppSettings(finalOutbound: AppSettings.finalOutboundBlock))),
         'block',
       );
-    });
-
-    test('kill switch on proxy final forces block + adds proxy catch rule', () {
-      final json = _gen(const AppSettings(killSwitch: true));
-      expect(_routeFinal(json), 'block');
-      expect(_hasKillSwitchCatch(_rules(json)), isTrue);
-    });
-
-    test('kill switch does not hijack a direct final (no forced block)', () {
-      final json = _gen(const AppSettings(
-        killSwitch: true,
-        finalOutbound: AppSettings.finalOutboundDirect,
-      ));
-      expect(_routeFinal(json), 'direct');
-      expect(_hasKillSwitchCatch(_rules(json)), isFalse);
-    });
-
-    test('kill switch leaves a block final as block, no proxy catch rule', () {
-      final json = _gen(const AppSettings(
-        killSwitch: true,
-        finalOutbound: AppSettings.finalOutboundBlock,
-      ));
-      expect(_routeFinal(json), 'block');
-      expect(_hasKillSwitchCatch(_rules(json)), isFalse);
     });
 
     test('onlySelected split keeps final direct regardless of finalOutbound',

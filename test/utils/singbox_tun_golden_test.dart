@@ -38,7 +38,6 @@ const _settings = AppSettings(
   proxyRules: 'proxy.example',
   blockedRules: 'ads.example',
   finalOutbound: AppSettings.finalOutboundProxy,
-  killSwitch: false,
   xrayCore: XrayCoreSettings(),
 );
 
@@ -81,11 +80,6 @@ void main() {
         routingMode: AppRoutingMode.allExceptSelected,
         managedProcessNames: const ['chrome.exe', 'telegram.exe'],
       ),
-    );
-
-    _golden(
-      'kill-switch-on',
-      (w) => _generate(windows: w, settings: _settings.copyWith(killSwitch: true)),
     );
 
     _golden(

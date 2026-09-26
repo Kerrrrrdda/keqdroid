@@ -344,24 +344,6 @@ void main() {
       expect(sniOnly.containsKey('headers'), isFalse);
     });
 
-    test('killSwitch does not add split rules to xray routing', () {
-      // Правило 0.0.0.0/1+128.0.0.0/1 → proxy было no-op (catch-all ниже и так
-      // шлёт всё в proxy); настоящий kill switch — final: block в sing-box
-      // TUN-конфиге (см. singbox_tun_config_test.dart).
-      Socks5Credentials().init('u', 'p');
-      for (final s in [settings, AppSettings(killSwitch: true)]) {
-        final config = ConfigGeneratorV2.generateConfig(
-          'vless://uuid@example.com:443',
-          s,
-        );
-        final map = jsonDecode(config) as Map<String, dynamic>;
-        final rules = (map['routing'] as Map)['rules'] as List;
-        final hasKillSwitch = rules.any((r) =>
-          (r['ip'] as List?)?.contains('0.0.0.0/1') == true);
-        expect(hasKillSwitch, false);
-      }
-    });
-
     test('custom direct CIDR bumps domainStrategy to IPIfNonMatch', () {
       Socks5Credentials().init('u', 'p');
       // корпоративный диапазон в Direct: должен ловиться и по имени хоста,

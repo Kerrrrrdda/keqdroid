@@ -518,19 +518,6 @@ class SingBoxTunConfigGen {
       AppRoutingMode.allProxy => finalOutbound,
     };
 
-    // Kill switch имеет смысл только когда финал — proxy (глобал-прокси): гоним
-    // весь IP-трафик в proxy, а финал делаем block, чтобы при падении прокси не
-    // было утечки. Для direct (обход) и block это не нужно.
-    if (settings.killSwitch &&
-        routingMode == AppRoutingMode.allProxy &&
-        routeFinal == 'proxy') {
-      rules.add({
-        'ip_cidr': ['0.0.0.0/1', '128.0.0.0/1'],
-        'outbound': 'proxy',
-      });
-      routeFinal = 'block';
-    }
-
     // Финал ≠ proxy + geo-правила: не совпавшее с правилами sing-box уходило
     // мимо xray, и `geosite:telegram → proxy` при финале «обход» не работал
     // вообще (жалоба «геосайты не учитываются / не грузит ниче»). Отдаём остаток

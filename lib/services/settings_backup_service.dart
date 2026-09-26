@@ -86,7 +86,6 @@ class SettingsBackupService {
     'mihomoFakeIp',
     // поведение
     'autoConnectLastServer',
-    'killSwitch',
     'shareDeviceHwid',
     'notifySubscriptionUpdates',
     // пинг

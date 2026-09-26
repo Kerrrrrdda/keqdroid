@@ -2141,10 +2141,6 @@ class ConfigGeneratorV2 {
     if (proxyIps.isNotEmpty) {
       rules.add(rule('proxy-ips', {'ip': proxyIps, 'outboundTag': 'proxy'}));
     }
-
-    // kill switch здесь не нужен: catch-all ниже и так шлёт всё в proxy,
-    // а реальный kill switch (final: block) живёт в sing-box TUN-конфиге
-    // (singbox_tun_config.dart).
     } // end full routing (non-ping)
 
     // Финальное действие (catch-all) для всего, что не попало в правила.

@@ -19,7 +19,6 @@ class TunnelSessionRequest {
   final List<String> includeProcesses;
   final String? serverName;
   final bool systemProxy;
-  final bool killSwitch;
 
   /// Ядро: `chain` (xray → sing-box) или `keqrnel` (единое ядро). Дефолт `chain`.
   final String coreEngine;
@@ -43,7 +42,6 @@ class TunnelSessionRequest {
     this.includeProcesses = const [],
     this.serverName,
     this.systemProxy = true,
-    this.killSwitch = false,
     this.coreEngine = 'chain',
     this.debugMode = false,
   });
@@ -68,7 +66,6 @@ class TunnelSessionRequest {
         'excludeProcesses': excludeProcesses,
         'includeProcesses': includeProcesses,
         'systemProxy': systemProxy,
-        'killSwitch': killSwitch,
         'coreEngine': coreEngine,
         if (serverName != null && serverName!.isNotEmpty) 'serverName': serverName,
       };

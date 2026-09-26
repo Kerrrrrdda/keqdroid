@@ -91,7 +91,6 @@ class TunnelSessionBuilder {
       includeProcesses: includeProcesses,
       serverName: serverName,
       systemProxy: settings.systemProxyEnabled,
-      killSwitch: settings.killSwitch,
       coreEngine: settings.coreEngine,
       debugMode: settings.debugMode,
     );
