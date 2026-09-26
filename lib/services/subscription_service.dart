@@ -769,14 +769,11 @@ class SubscriptionService {
         final looksLikeHtml = contentType.contains('text/html') ||
             body.trimLeft().startsWith('<!doctype html') ||
             body.trimLeft().startsWith('<html');
+        // Только форма ответа, без содержимого: тело подписки — это ссылки
+        // серверов с их uuid и ключами, а лог пересылают, когда жалуются.
         AppLogger.instance.debug(
           'HttpClient fallback candidate response: $candidate '
           '(status=${resp.statusCode}, type=$contentType, len=${body.length}, html=$looksLikeHtml)',
-        );
-        final preview = body.replaceAll(RegExp(r'\s+'), ' ').trim();
-        AppLogger.instance.debug(
-          'HttpClient fallback body preview: '
-          '${preview.substring(0, preview.length > 180 ? 180 : preview.length)}',
         );
 
         final hwidError = _detectHwidGateMessage(body);
