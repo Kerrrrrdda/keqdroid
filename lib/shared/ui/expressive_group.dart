@@ -477,7 +477,11 @@ class ExpressiveListSegment extends StatefulWidget {
   /// быть концентричен контейнеру, то есть равен его радиусу минус отступ.
   /// Иначе дуги расходятся: вдоль прямых краёв поле нормальное, а на углу
   /// схлопывается почти в ноль, и сегмент выпирает за дугу контейнера.
-  static BorderRadius segmentRadius({
+  ///
+  /// Углы — начало и конец, а не лево и право: на фарси сетка и ряд
+  /// зеркалятся, первая колонка встаёт справа, и крупный угол «слева» оказывался
+  /// у неё на стыке с соседом.
+  static BorderRadiusDirectional segmentRadius({
     required int index,
     required int count,
     int columns = 1,
@@ -502,11 +506,11 @@ class ExpressiveListSegment extends StatefulWidget {
     final end = isLastRow && endCorner != null
         ? Radius.circular(endCorner)
         : outer;
-    return BorderRadius.only(
-      topLeft: isTop && isStart ? outer : inner,
-      topRight: isTop && isEnd ? outer : inner,
-      bottomLeft: isBottom && isStart ? end : inner,
-      bottomRight: isBottom && isEnd ? end : inner,
+    return BorderRadiusDirectional.only(
+      topStart: isTop && isStart ? outer : inner,
+      topEnd: isTop && isEnd ? outer : inner,
+      bottomStart: isBottom && isStart ? end : inner,
+      bottomEnd: isBottom && isEnd ? end : inner,
     );
   }
 
@@ -518,17 +522,21 @@ class ExpressiveListSegment extends StatefulWidget {
   /// Иначе пришлось бы править обе формулы в трёх местах ради четырёх пикселей.
   ///
   /// [spacing] — сам зазор; у карточек сетки он свой (`ServerRow.cardGap`).
-  static EdgeInsets segmentMargin({
+  ///
+  /// По той же причине, что и углы, поля направленные: с полями «слева/справа»
+  /// на фарси широкие края обеих колонок сходились в середине — зазор между
+  /// колонками вдвое, а у краёв экрана половина.
+  static EdgeInsetsDirectional segmentMargin({
     required int index,
     int columns = 1,
     double spacing = gap,
   }) {
     final half = spacing / 2;
     if (columns == 1) {
-      return EdgeInsets.fromLTRB(spacing, half, spacing, half);
+      return EdgeInsetsDirectional.fromSTEB(spacing, half, spacing, half);
     }
     final col = index % columns;
-    return EdgeInsets.fromLTRB(
+    return EdgeInsetsDirectional.fromSTEB(
       col == 0 ? spacing : half,
       half,
       col == columns - 1 ? spacing : half,

@@ -676,7 +676,7 @@ class _ModeSelector extends StatelessWidget {
           index: index,
           count: modes.length,
           columns: modes.length,
-        ),
+        ).resolve(Directionality.of(context)),
         selected: selected,
         color: scheme.surfaceContainerHigh,
         selectedColor: scheme.secondaryContainer,
@@ -957,8 +957,9 @@ class _AppListBody extends ConsumerWidget {
           radius: ExpressiveListSegment.segmentRadius(
             index: i,
             count: apps.length,
-          ),
-          margin: ExpressiveListSegment.segmentMargin(index: i),
+          ).resolve(Directionality.of(context)),
+          margin: ExpressiveListSegment.segmentMargin(index: i)
+              .resolve(Directionality.of(context)),
           onTap:
               mode == TunnelMode.all ? null : () => onToggle(app.packageName),
         );

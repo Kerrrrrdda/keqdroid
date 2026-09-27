@@ -1091,6 +1091,7 @@ class _SubCardState extends ConsumerState<_SubCard> {
     // у одинокой нижней плитки справа не сосед, а фон группы.
     final layout = widget.layout;
     final columns = layout.columns;
+    final direction = Directionality.of(context);
     Widget tileAt(int index) {
       final server = servers[index];
       return _ServerTile(
@@ -1117,12 +1118,12 @@ class _SubCardState extends ConsumerState<_SubCard> {
                 // сервер выпирал за край списка.
                 endCorner:
                     ExpressiveShape.extraLarge - ExpressiveListSegment.gap,
-              ),
+              ).resolve(direction),
         margin: ExpressiveListSegment.segmentMargin(
           index: index,
           columns: columns,
           spacing: layout.gap,
-        ),
+        ).resolve(direction),
         onTap: () => widget.onSelectServer(server),
         onDelete: () => ref.read(serversProvider.notifier).delete(server.id),
         onPing: () => ref.read(serversProvider.notifier).pingSingle(server.id),
