@@ -296,6 +296,7 @@ class SubscriptionsTab extends ConsumerWidget {
                 urlCtrl,
                 l10n.subscriptionUrlLabel,
                 l10n.subscriptionUrlHint,
+                technical: true,
                 // у mobile_scanner нет имплементации под Windows/Linux
                 suffix: PlatformBootstrap.isDesktop
                     ? null
@@ -413,6 +414,7 @@ class SubscriptionsTab extends ConsumerWidget {
     String label,
     String hint, {
     Widget? suffix,
+    bool technical = false,
   }) {
     final textColor = AppTheme.text(context);
     final textLightColor = AppTheme.textLight(context);
@@ -421,10 +423,12 @@ class SubscriptionsTab extends ConsumerWidget {
 
     return TextField(
       controller: ctrl,
+      textDirection: technical ? technicalInputDirection : null,
       style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: textColor),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
+        hintTextDirection: technical ? technicalInputDirection : null,
         suffixIcon: suffix,
         labelStyle: TextStyle(color: textLightColor),
         hintStyle: TextStyle(color: textLightColor.withValues(alpha: 0.5)),
@@ -1275,10 +1279,12 @@ class _SubItemState extends ConsumerState<_SubItem> {
             String hint, {
             int maxLines = 1,
             Widget? suffix,
+            bool technical = false,
           }) {
             return TextField(
               controller: ctrl,
               maxLines: maxLines,
+              textDirection: technical ? technicalInputDirection : null,
               style: Theme.of(context)
                   .textTheme
                   .bodyMedium
@@ -1350,6 +1356,7 @@ class _SubItemState extends ConsumerState<_SubItem> {
                   l10n.subscriptionUrlLabel,
                   sub.url,
                   maxLines: 2,
+                  technical: true,
                   suffix: IconButton(
                     icon: const Icon(Icons.copy_rounded, size: 18),
                     tooltip: l10n.subscriptionsCopyUrl,

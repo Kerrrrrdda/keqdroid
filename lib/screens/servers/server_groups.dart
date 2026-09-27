@@ -591,6 +591,11 @@ class _ServerGroupHeader extends ConsumerWidget {
                                   .textTheme
                                   .titleSmall
                                   ?.copyWith(color: textLightColor),
+                              textDirection: contentDirection(
+                                title,
+                                fallback: Directionality.of(context),
+                              ),
+                              textAlign: uiStartAlign(context),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -630,7 +635,9 @@ class _ServerGroupHeader extends ConsumerWidget {
                                 vertical: ExpressiveSpacing.extraSmall,
                               ),
                               child: Text(
-                                '${sub.updateIntervalHours}h',
+                                context.l10n.subscriptionsIntervalShort(
+                                  sub.updateIntervalHours,
+                                ),
                                 style: Theme.of(context)
                                     .textTheme
                                     .labelSmall

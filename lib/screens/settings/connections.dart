@@ -177,6 +177,7 @@ class _ConnectionsScreenState extends ConsumerState<_ConnectionsScreen> {
                       const SizedBox(height: 10),
                       TextField(
                         controller: _filterCtrl,
+                        textDirection: technicalInputDirection,
                         style: Theme.of(context)
                             .textTheme
                             .bodyMedium

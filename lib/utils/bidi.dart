@@ -23,6 +23,34 @@ final _pdi = String.fromCharCode(0x2069); // POP DIRECTIONAL ISOLATE
 /// слева направо, в любой локали.
 String ltrIsolate(String value) => value.isEmpty ? value : '$_lri$value$_pdi';
 
+/// Направление поля ввода для технических значений: адресов, портов, ключей,
+/// правил. В персидском интерфейсе поле иначе пишет справа налево, и знак на
+/// краю латиницы уезжает на другую сторону: «/path» выглядит как «path/».
+const TextDirection technicalInputDirection = TextDirection.ltr;
+
+final _rtlLetter = RegExp('[֐-ࣿיִ-﷿ﹰ-﻿]');
+final _letter = RegExp(r'\p{L}', unicode: true);
+
+/// Направление строки, пришедшей извне (имя сервера или подписки), по первой
+/// букве — так Android решает для текста без явного направления. Иначе
+/// латинское имя в персидском интерфейсе обрезается многоточием не с того
+/// края: «…DE | Hyste» вместо «Germany | DE | Hyste…».
+TextDirection contentDirection(String text, {required TextDirection fallback}) {
+  for (final rune in text.runes) {
+    final ch = String.fromCharCode(rune);
+    if (_rtlLetter.hasMatch(ch)) return TextDirection.rtl;
+    if (_letter.hasMatch(ch)) return TextDirection.ltr;
+  }
+  return fallback;
+}
+
+/// Выравнивание к краю интерфейса, а не к началу самого текста: строка в
+/// своём направлении, но у того же края, что и её соседи.
+TextAlign uiStartAlign(BuildContext context) =>
+    Directionality.of(context) == TextDirection.rtl
+        ? TextAlign.right
+        : TextAlign.left;
+
 /// Составное техническое значение, разложенное по нескольким виджетам.
 ///
 /// [ltrIsolate] чинит порядок внутри одной строки, но бессилен, когда значение

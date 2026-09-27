@@ -142,6 +142,9 @@ class ServerRow extends StatelessWidget {
     final name = ServerNameUtils.formatForDisplay(
       ServerNameUtils.cleanDisplayName(server.displayName),
     );
+    final nameDirection =
+        contentDirection(name, fallback: Directionality.of(context));
+    final nameAlign = uiStartAlign(context);
     // Имя пункта списка — роль `bodyLarge`: это label text по токенам списка, а
     // не заголовок. Выбранный сервер отличается весом (усиленный вариант), а не
     // кеглем.
@@ -220,6 +223,8 @@ class ServerRow extends StatelessWidget {
                       ],
                     ),
                     style: nameStyle,
+                    textDirection: nameDirection,
+                    textAlign: nameAlign,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -248,6 +253,8 @@ class ServerRow extends StatelessWidget {
           child: Text(
             name,
             style: nameStyle,
+            textDirection: nameDirection,
+            textAlign: nameAlign,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

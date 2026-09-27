@@ -17,7 +17,9 @@ class _ThemeCustomizationCard extends ConsumerWidget {
         ? (isDesktop
             ? l10n.settingsSystemColorsSubtitle(modeLabel)
             : l10n.settingsAndroidColorsSubtitle(modeLabel))
-        : '${preset.name} · $modeLabel';
+        // Своя тема называется своим цветом, «#BE74CF»: без изоляции решётка
+        // в персидском уезжает в конец.
+        : '${ltrIsolate(preset.name)} · $modeLabel';
     return _SettingsCard(
       title: AppLocalizations.of(context)!.settingsThemeTitle,
       subtitle: subtitle,

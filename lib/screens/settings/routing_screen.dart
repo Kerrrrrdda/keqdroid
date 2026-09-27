@@ -842,6 +842,7 @@ class _RoutingScreenState extends ConsumerState<_RoutingScreen> {
           const SizedBox(height: 10),
           TextField(
             controller: controller,
+            textDirection: technicalInputDirection,
             minLines: 2,
             maxLines: 8,
             style: Theme.of(context)

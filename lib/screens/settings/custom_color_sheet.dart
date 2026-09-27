@@ -114,6 +114,7 @@ class _CustomColorSheetState extends State<_CustomColorSheet> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final rtl = Directionality.of(context) == TextDirection.rtl;
     final seed = _color.toColor();
     final preview = ColorScheme.fromSeed(
       seedColor: seed,
@@ -238,6 +239,7 @@ class _CustomColorSheetState extends State<_CustomColorSheet> {
                     const SizedBox(height: ExpressiveSpacing.small),
                     TextField(
                       controller: _hex,
+                      textDirection: technicalInputDirection,
                       onChanged: _onHexChanged,
                       textCapitalization: TextCapitalization.characters,
                       // Ровно шесть цифр и только шестнадцатеричные: иначе
@@ -251,7 +253,12 @@ class _CustomColorSheetState extends State<_CustomColorSheet> {
                       ],
                       decoration: InputDecoration(
                         labelText: l10n.appearanceCustomColorHex,
-                        prefixText: '#  ',
+                        // Префикс стоит у начала интерфейса, а код пишется
+                        // слева направо: в персидском выходило «BE74CF #».
+                        // Там решётка уходит в суффикс — он у левого края,
+                        // прямо перед кодом.
+                        prefixText: rtl ? null : '#  ',
+                        suffixText: rtl ? '  #' : null,
                         helperText: l10n.appearanceCustomColorInvalid,
                       ),
                     ),

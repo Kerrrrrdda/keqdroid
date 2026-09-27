@@ -1105,6 +1105,7 @@ class _ServersTabState extends ConsumerState<ServersTab>
               const SizedBox(height: 16),
               TextField(
                 controller: ctrl,
+                textDirection: technicalInputDirection,
                 autofocus: true,
                 maxLines: 4,
                 style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(color: AppTheme.text(ctx)),

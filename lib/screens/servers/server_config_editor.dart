@@ -18,6 +18,7 @@ import '../../models/server_name_utils.dart';
 import '../../providers/providers.dart';
 import '../../services/vpn_engine.dart';
 import '../../utils/custom_xray_config.dart';
+import '../../utils/bidi.dart';
 import '../../utils/error_messages.dart';
 import '../../utils/raw_share_uri.dart';
 import '../../utils/server_field_rules.dart';
@@ -907,6 +908,7 @@ class _ServerConfigEditorScreenState
       [
         TextField(
           controller: _rawCtrl,
+          textDirection: technicalInputDirection,
           // JSON редактируется во весь доступный экран, share-ссылка — нет:
           // ей хватает пары строк.
           maxLines: isJson ? 26 : 10,
@@ -1501,6 +1503,7 @@ class _ServerConfigEditorScreenState
       padding: const EdgeInsets.only(bottom: 10),
       child: TextField(
         controller: _ctrl(id),
+        textDirection: technicalInputDirection,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: AppTheme.text(context),
               fontFamily: obscurable ? 'monospace' : null,

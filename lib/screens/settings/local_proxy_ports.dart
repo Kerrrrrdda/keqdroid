@@ -132,6 +132,7 @@ class _LocalPortsSectionState extends ConsumerState<_LocalPortsSection> {
   ) {
     return TextField(
       controller: ctrl,
+      textDirection: technicalInputDirection,
       focusNode: focus,
       enabled: enabled,
       keyboardType: TextInputType.number,

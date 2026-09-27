@@ -155,10 +155,12 @@ class _PingSettingsScreenState extends ConsumerState<_PingSettingsScreen> {
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                     child: TextField(
                       controller: _customUrlCtrl,
+                      textDirection: technicalInputDirection,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.text(context)),
                       decoration: InputDecoration(
                         labelText: l10n.settingsPingCustomUrl,
                         hintText: 'https://example.com/generate_204',
+                        hintTextDirection: technicalInputDirection,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(ExpressiveShape.medium),
                         ),

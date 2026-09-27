@@ -177,7 +177,7 @@ class _AppInternalsScreen extends ConsumerWidget {
       if (session.mode != null)
         _InternalsRow(
           label: l10n.settingsInternalsMode,
-          value: session.mode == ConnectionMode.tun ? 'TUN' : 'Proxy',
+          value: session.mode == ConnectionMode.tun ? 'TUN' : l10n.trayModeProxy,
         ),
       _InternalsRow(
         label: l10n.settingsInternalsPorts,
@@ -216,7 +216,7 @@ class _AppInternalsScreen extends ConsumerWidget {
     return [
       _VersionRow(
         label: l10n.settingsInternalsAppVersion,
-        value: '${build.appVersion} (${build.buildNumber})',
+        value: ltrIsolate('${build.appVersion} (${build.buildNumber})'),
       ),
       _InternalsRow(
         label: l10n.settingsInternalsPackage,
@@ -397,7 +397,9 @@ class _CoreTile extends StatelessWidget {
       if (core.modified != null) formatFileDate(core.modified!),
       if (core.goVersion != null) core.goVersion!,
     ];
-    return parts.join(' · ');
+    // Размер, дата и версия Go — одна техническая строка: без изоляции в
+    // персидском число отрывалось от «MiB» и уезжало в конец.
+    return ltrIsolate(parts.join(' · '));
   }
 
   static String _roleLabel(AppLocalizations l10n, CoreRole role) =>
@@ -492,10 +494,10 @@ class _GeoTile extends StatelessWidget {
     return _InternalsRow(
       label: base.name,
       value: l10n.settingsInternalsGeoCodes(base.codeCount),
-      detail: [
+      detail: ltrIsolate([
         if (base.sizeBytes != null) formatBytes(base.sizeBytes!),
         if (base.modified != null) formatFileDate(base.modified!),
-      ].join(' · '),
+      ].join(' · ')),
     );
   }
 }
@@ -511,9 +513,12 @@ class _KeqtrisBestRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final best = ref.read(storageProvider).getKeqtrisBest();
     if (best <= 0) return const SizedBox.shrink();
-    final ru = Localizations.localeOf(context).languageCode == 'ru';
     return _InternalsRow(
-      label: ru ? 'Рекорд' : 'Best score',
+      label: switch (Localizations.localeOf(context).languageCode) {
+        'ru' => 'Рекорд',
+        'fa' => 'بهترین امتیاز',
+        _ => 'Best score',
+      },
       value: '$best',
     );
   }

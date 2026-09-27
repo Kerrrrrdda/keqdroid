@@ -92,6 +92,7 @@ class _GeoCodePickerSheetState extends State<_GeoCodePickerSheet> {
               const SizedBox(height: 10),
               TextField(
                 controller: _search,
+                textDirection: technicalInputDirection,
                 autofocus: true,
                 style: Theme.of(context)
                 .textTheme
@@ -263,6 +264,7 @@ class _RuleEditorDialogState extends State<_RuleEditorDialog> {
             const SizedBox(height: 14),
             TextField(
               controller: _values,
+              textDirection: technicalInputDirection,
               minLines: 2,
               maxLines: 5,
               style: Theme.of(context)

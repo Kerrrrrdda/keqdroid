@@ -21,6 +21,7 @@ import '../services/app_icon_cache.dart';
 import '../services/file_dialog_service.dart';
 import '../tunnel/connection_mode.dart';
 import '../tunnel/tunnel_state.dart';
+import '../utils/bidi.dart';
 import '../utils/error_messages.dart';
 import '../utils/process_name_utils.dart';
 import '../utils/russian_apps.dart';
@@ -185,6 +186,7 @@ class _SplitTunnelingScreenState extends ConsumerState<SplitTunnelingScreen>
           children: [
             TextField(
               controller: ctrl,
+              textDirection: technicalInputDirection,
               decoration: InputDecoration(
                 hintText: l10n.splitAddAppHint,
               ),

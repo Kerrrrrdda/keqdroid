@@ -1544,6 +1544,7 @@ class _DnsServersFieldState extends State<_DnsServersField> {
     return TextField(
       controller: _ctrl,
       focusNode: _focus,
+      textDirection: technicalInputDirection,
       maxLines: 4,
       style: Theme.of(context)
           .textTheme
@@ -1619,6 +1620,7 @@ class _XrayCoreTextFieldState extends State<_XrayCoreTextField> {
       child: TextField(
         controller: _ctrl,
         keyboardType: widget.keyboardType,
+        textDirection: technicalInputDirection,
         style: Theme.of(context)
           .textTheme
           .bodyMedium

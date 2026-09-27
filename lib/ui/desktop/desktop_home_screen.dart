@@ -711,7 +711,7 @@ class _ConnectionModeMenuButton extends ConsumerWidget {
         CheckedPopupMenuItem(
           value: ConnectionMode.proxy,
           checked: mode == ConnectionMode.proxy,
-          child: const Text('Proxy'),
+          child: Text(AppLocalizations.of(context)!.trayModeProxy),
         ),
         CheckedPopupMenuItem(
           value: ConnectionMode.tun,
@@ -746,13 +746,13 @@ class _ConnectionModeChip extends ConsumerWidget {
           ),
         ),
         ExpressiveConnectedButtons<ConnectionMode>(
-          segments: const [
+          segments: [
             ExpressiveSegment(
               value: ConnectionMode.proxy,
-              label: 'Proxy',
+              label: AppLocalizations.of(context)!.trayModeProxy,
               icon: Icons.lan_rounded,
             ),
-            ExpressiveSegment(
+            const ExpressiveSegment(
               value: ConnectionMode.tun,
               label: 'TUN',
               icon: Icons.vpn_lock_rounded,

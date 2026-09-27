@@ -281,6 +281,7 @@ class _LanSharingCardState extends ConsumerState<_LanSharingCard> {
   Widget _textField(BuildContext context, String label, TextEditingController ctrl, ValueChanged<String> onSubmit, {bool obscurable = false}) {
     return TextField(
       controller: ctrl,
+      textDirection: technicalInputDirection,
       obscureText: obscurable && !_lanPassVisible,
       style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.text(context)),
       decoration: InputDecoration(
@@ -317,6 +318,7 @@ class _LanSharingCardState extends ConsumerState<_LanSharingCard> {
   Widget _portField(BuildContext context, String label, TextEditingController ctrl, ValueChanged<String> onSubmit) {
     return TextField(
       controller: ctrl,
+      textDirection: technicalInputDirection,
       keyboardType: TextInputType.number,
       style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.text(context)),
       decoration: InputDecoration(
