@@ -2284,7 +2284,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settingsInternalsExits => 'Почему закрывалось приложение';
 
   @override
-  String get settingsInternalsExitsHint => 'Записи ведёт сама система. Если VPN отключился в фоне, скопируйте отчёт кнопкой сверху — этот раздел есть в нём.';
+  String get settingsInternalsExitsHint => 'Записи ведёт сама система. Если VPN отключился в фоне, скопируйте их кнопкой сверху и пришлите.';
 
   @override
   String get settingsInternalsExitSystem => 'Остановлено системой или прошивкой';
@@ -2309,6 +2309,56 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get settingsInternalsExitVpnOn => 'VPN был включён';
+
+  @override
+  String get appLogTitle => 'Журнал приложения';
+
+  @override
+  String get appLogSubtitle => 'Что происходило и что упало — по частям приложения';
+
+  @override
+  String get appLogSourceApp => 'Приложение';
+
+  @override
+  String get appLogSourceAppDesc => 'Интерфейс, подписки, подключение';
+
+  @override
+  String get appLogSourceNative => 'Нативная часть';
+
+  @override
+  String get appLogSourceNativeDesc => 'Служба VPN, плитка в шторке, окно подключения';
+
+  @override
+  String get appLogSourceCore => 'Ядро';
+
+  @override
+  String get appLogSourceCoreDesc => 'Вывод xray или mihomo текущей сессии';
+
+  @override
+  String get appLogSourceExitsDesc => 'Записи системы: когда и почему закрывалось приложение';
+
+  @override
+  String appLogProblems(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count проблемы',
+      many: '$count проблем',
+      few: '$count проблемы',
+      one: '$count проблема',
+      zero: 'Без проблем',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get appLogOnlyProblems => 'Только проблемы';
+
+  @override
+  String get appLogEmpty => 'Здесь пока пусто';
+
+  @override
+  String get appLogCopyAll => 'Скопировать весь журнал';
 
   @override
   String get settingsInternalsBuild => 'Приложение и устройство';

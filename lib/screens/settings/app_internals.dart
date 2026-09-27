@@ -156,26 +156,23 @@ class _AppInternalsScreen extends ConsumerWidget {
       ExpressiveSectionHeader(l10n.settingsInternalsSession),
       ExpressiveGroup(children: _sessionRows(context, l10n, data.session)),
 
-      // Пять последних хватает, чтобы увидеть, повторяется ли одно и то же;
-      // остальное — в отчёте. Пусто вне Android и до 11-й версии.
-      if (data.processExits.isNotEmpty) ...[
-        ExpressiveSectionHeader(l10n.settingsInternalsExits),
-        ExpressiveGroup(
-          children: [
-            for (final exit in data.processExits.take(5))
-              _ProcessExitRow(exit: exit),
-          ],
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
-          child: Text(
-            l10n.settingsInternalsExitsHint,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppTheme.textLight(context),
-                ),
+      // Журнал — последним: сюда приходят, когда что-то уже сломалось. Там же
+      // и записи системы о закрытиях процесса.
+      ExpressiveSectionHeader(l10n.settingsAdvancedGroupDiagnostics),
+      ExpressiveGroup(
+        children: [
+          _SettingsCard(
+            title: l10n.appLogTitle,
+            subtitle: l10n.appLogSubtitle,
+            icon: Icons.receipt_long_rounded,
+            accent: ExpressiveAccent.tertiary,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const _AppLogScreen()),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     ];
   }
 

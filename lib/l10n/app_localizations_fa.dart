@@ -2279,7 +2279,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsInternalsExits => 'چرا برنامه بسته شد';
 
   @override
-  String get settingsInternalsExitsHint => 'این سوابق را خود سیستم نگه می‌دارد. اگر VPN در پس‌زمینه قطع شد، گزارش را با دکمهٔ بالا کپی کنید — این بخش در آن هست.';
+  String get settingsInternalsExitsHint => 'این سوابق را خود سیستم نگه می‌دارد. اگر VPN در پس‌زمینه قطع شد، آن‌ها را با دکمهٔ بالا کپی و ارسال کنید.';
 
   @override
   String get settingsInternalsExitSystem => 'توسط سیستم یا رام سازنده متوقف شد';
@@ -2304,6 +2304,53 @@ class AppLocalizationsFa extends AppLocalizations {
 
   @override
   String get settingsInternalsExitVpnOn => 'VPN روشن بود';
+
+  @override
+  String get appLogTitle => 'گزارش برنامه';
+
+  @override
+  String get appLogSubtitle => 'چه اتفاقی افتاد و چه چیزی خطا داد — به تفکیک بخش‌های برنامه';
+
+  @override
+  String get appLogSourceApp => 'برنامه';
+
+  @override
+  String get appLogSourceAppDesc => 'رابط کاربری، اشتراک‌ها، اتصال';
+
+  @override
+  String get appLogSourceNative => 'بخش نیتیو';
+
+  @override
+  String get appLogSourceNativeDesc => 'سرویس VPN، کاشی تنظیمات سریع، پنجرهٔ اتصال';
+
+  @override
+  String get appLogSourceCore => 'هسته';
+
+  @override
+  String get appLogSourceCoreDesc => 'خروجی xray یا mihomo در نشست جاری';
+
+  @override
+  String get appLogSourceExitsDesc => 'سوابق سیستم: برنامه کی و چرا بسته شد';
+
+  @override
+  String appLogProblems(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count مشکل',
+      zero: 'بدون مشکل',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get appLogOnlyProblems => 'فقط مشکل‌ها';
+
+  @override
+  String get appLogEmpty => 'هنوز چیزی نیست';
+
+  @override
+  String get appLogCopyAll => 'کپی کل گزارش';
 
   @override
   String get settingsInternalsBuild => 'برنامه و دستگاه';

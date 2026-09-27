@@ -23,6 +23,7 @@ import 'package:keqdroid/models/xray_core_settings.dart';
 import 'package:keqdroid/core/exceptions.dart';
 import 'package:keqdroid/providers/providers.dart';
 import 'package:keqdroid/services/app_internals_service.dart';
+import 'package:keqdroid/services/app_log_service.dart';
 import 'package:keqdroid/services/file_dialog_service.dart';
 import 'package:keqdroid/services/geo_base_downloader.dart';
 import 'package:keqdroid/services/connections_service.dart';
@@ -64,6 +65,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 part 'settings/advanced_settings.dart';
 part 'settings/app_internals.dart';
+part 'settings/app_log.dart';
 part 'settings/backup_restore.dart';
 part 'settings/connections.dart';
 part 'settings/custom_color_sheet.dart';

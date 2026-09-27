@@ -46,6 +46,10 @@ class AppInternalsService {
     );
   }
 
+  /// Прошлые смерти процесса без остальной панели — их показывает и журнал.
+  static Future<List<ProcessExit>> processExits() async =>
+      _processExits(await VpnNativeBridge.getNativeInternals());
+
   static Future<List<ProcessExit>> _processExits(
     Map<String, Object?> android,
   ) async {
@@ -421,14 +425,21 @@ class AppInternalsService {
     if (data.processExits.isNotEmpty) {
       out
         ..writeln()
-        ..writeln('## process exits');
-      for (final exit in data.processExits) {
-        out.write('${_reportTime(exit.time)} ${exit.reasonName}'
-            ' status=${exit.status} importance=${exit.importance}');
-        if (exit.vpnStatus != null) out.write(' vpn=${exit.vpnStatus}');
-        if (exit.description != null) out.write(' "${exit.description}"');
-        out.writeln();
-      }
+        ..writeln('## process exits')
+        ..write(exitLines(data.processExits));
+    }
+    return out.toString();
+  }
+
+  /// Смерти процесса по строке на каждую — для отчёта и для журнала.
+  static String exitLines(List<ProcessExit> exits) {
+    final out = StringBuffer();
+    for (final exit in exits) {
+      out.write('${_reportTime(exit.time)} ${exit.reasonName}'
+          ' status=${exit.status} importance=${exit.importance}');
+      if (exit.vpnStatus != null) out.write(' vpn=${exit.vpnStatus}');
+      if (exit.description != null) out.write(' "${exit.description}"');
+      out.writeln();
     }
     return out.toString();
   }

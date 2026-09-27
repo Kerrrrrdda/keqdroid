@@ -986,7 +986,7 @@
   "settingsInternalsGeo": "Geo databases",
   "settingsInternalsSession": "Current session",
   "settingsInternalsExits": "Why the app was closed",
-  "settingsInternalsExitsHint": "The system keeps these records itself. If the VPN turned off in the background, copy the report with the button at the top — this section is in it.",
+  "settingsInternalsExitsHint": "The system keeps these records itself. If the VPN turned off in the background, copy them with the button at the top and send them.",
   "settingsInternalsExitSystem": "Stopped by the system or firmware",
   "settingsInternalsExitMemory": "The system ran out of memory",
   "settingsInternalsExitCrash": "The app crashed",
@@ -995,6 +995,26 @@
   "settingsInternalsExitUpdate": "App update or permission change",
   "settingsInternalsExitSelf": "The app exited on its own",
   "settingsInternalsExitVpnOn": "VPN was on",
+  "appLogTitle": "App log",
+  "appLogSubtitle": "What happened and what failed, by part of the app",
+  "appLogSourceApp": "App",
+  "appLogSourceAppDesc": "Interface, subscriptions, connecting",
+  "appLogSourceNative": "Native part",
+  "appLogSourceNativeDesc": "VPN service, Quick Settings tile, connect window",
+  "appLogSourceCore": "Core",
+  "appLogSourceCoreDesc": "xray or mihomo output of the current session",
+  "appLogSourceExitsDesc": "System records: when and why the app was closed",
+  "appLogProblems": "{count, plural, =0{No problems} =1{1 problem} other{{count} problems}}",
+  "@appLogProblems": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appLogOnlyProblems": "Problems only",
+  "appLogEmpty": "Nothing here yet",
+  "appLogCopyAll": "Copy the whole log",
   "settingsInternalsBuild": "App and device",
   "settingsInternalsCopyAll": "Copy report",
   "settingsInternalsCopied": "Report copied to clipboard",

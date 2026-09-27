@@ -2279,7 +2279,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsInternalsExits => 'Warum die App beendet wurde';
 
   @override
-  String get settingsInternalsExitsHint => 'Diese Einträge führt das System selbst. Wenn sich das VPN im Hintergrund abgeschaltet hat, kopiere den Bericht mit der Schaltfläche oben — dieser Abschnitt ist darin enthalten.';
+  String get settingsInternalsExitsHint => 'Diese Einträge führt das System selbst. Wenn sich das VPN im Hintergrund abgeschaltet hat, kopiere sie mit der Schaltfläche oben und schick sie weiter.';
 
   @override
   String get settingsInternalsExitSystem => 'Vom System oder der Firmware beendet';
@@ -2304,6 +2304,54 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get settingsInternalsExitVpnOn => 'VPN war an';
+
+  @override
+  String get appLogTitle => 'App-Protokoll';
+
+  @override
+  String get appLogSubtitle => 'Was passiert ist und was fehlschlug – nach App-Teilen';
+
+  @override
+  String get appLogSourceApp => 'App';
+
+  @override
+  String get appLogSourceAppDesc => 'Oberfläche, Abos, Verbindungsaufbau';
+
+  @override
+  String get appLogSourceNative => 'Nativer Teil';
+
+  @override
+  String get appLogSourceNativeDesc => 'VPN-Dienst, Schnelleinstellungs-Kachel, Verbindungsfenster';
+
+  @override
+  String get appLogSourceCore => 'Kern';
+
+  @override
+  String get appLogSourceCoreDesc => 'Ausgabe von xray oder mihomo in der aktuellen Sitzung';
+
+  @override
+  String get appLogSourceExitsDesc => 'Systemeinträge: wann und warum die App beendet wurde';
+
+  @override
+  String appLogProblems(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Probleme',
+      one: '1 Problem',
+      zero: 'Keine Probleme',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get appLogOnlyProblems => 'Nur Probleme';
+
+  @override
+  String get appLogEmpty => 'Noch leer';
+
+  @override
+  String get appLogCopyAll => 'Gesamtes Protokoll kopieren';
 
   @override
   String get settingsInternalsBuild => 'App und Gerät';

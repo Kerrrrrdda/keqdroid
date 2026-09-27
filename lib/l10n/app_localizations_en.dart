@@ -2279,7 +2279,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsInternalsExits => 'Why the app was closed';
 
   @override
-  String get settingsInternalsExitsHint => 'The system keeps these records itself. If the VPN turned off in the background, copy the report with the button at the top — this section is in it.';
+  String get settingsInternalsExitsHint => 'The system keeps these records itself. If the VPN turned off in the background, copy them with the button at the top and send them.';
 
   @override
   String get settingsInternalsExitSystem => 'Stopped by the system or firmware';
@@ -2304,6 +2304,54 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsInternalsExitVpnOn => 'VPN was on';
+
+  @override
+  String get appLogTitle => 'App log';
+
+  @override
+  String get appLogSubtitle => 'What happened and what failed, by part of the app';
+
+  @override
+  String get appLogSourceApp => 'App';
+
+  @override
+  String get appLogSourceAppDesc => 'Interface, subscriptions, connecting';
+
+  @override
+  String get appLogSourceNative => 'Native part';
+
+  @override
+  String get appLogSourceNativeDesc => 'VPN service, Quick Settings tile, connect window';
+
+  @override
+  String get appLogSourceCore => 'Core';
+
+  @override
+  String get appLogSourceCoreDesc => 'xray or mihomo output of the current session';
+
+  @override
+  String get appLogSourceExitsDesc => 'System records: when and why the app was closed';
+
+  @override
+  String appLogProblems(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count problems',
+      one: '1 problem',
+      zero: 'No problems',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get appLogOnlyProblems => 'Problems only';
+
+  @override
+  String get appLogEmpty => 'Nothing here yet';
+
+  @override
+  String get appLogCopyAll => 'Copy the whole log';
 
   @override
   String get settingsInternalsBuild => 'App and device';

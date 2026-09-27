@@ -4430,7 +4430,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsInternalsExitsHint.
   ///
   /// In en, this message translates to:
-  /// **'The system keeps these records itself. If the VPN turned off in the background, copy the report with the button at the top — this section is in it.'**
+  /// **'The system keeps these records itself. If the VPN turned off in the background, copy them with the button at the top and send them.'**
   String get settingsInternalsExitsHint;
 
   /// No description provided for @settingsInternalsExitSystem.
@@ -4480,6 +4480,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'VPN was on'**
   String get settingsInternalsExitVpnOn;
+
+  /// No description provided for @appLogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'App log'**
+  String get appLogTitle;
+
+  /// No description provided for @appLogSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What happened and what failed, by part of the app'**
+  String get appLogSubtitle;
+
+  /// No description provided for @appLogSourceApp.
+  ///
+  /// In en, this message translates to:
+  /// **'App'**
+  String get appLogSourceApp;
+
+  /// No description provided for @appLogSourceAppDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Interface, subscriptions, connecting'**
+  String get appLogSourceAppDesc;
+
+  /// No description provided for @appLogSourceNative.
+  ///
+  /// In en, this message translates to:
+  /// **'Native part'**
+  String get appLogSourceNative;
+
+  /// No description provided for @appLogSourceNativeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'VPN service, Quick Settings tile, connect window'**
+  String get appLogSourceNativeDesc;
+
+  /// No description provided for @appLogSourceCore.
+  ///
+  /// In en, this message translates to:
+  /// **'Core'**
+  String get appLogSourceCore;
+
+  /// No description provided for @appLogSourceCoreDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'xray or mihomo output of the current session'**
+  String get appLogSourceCoreDesc;
+
+  /// No description provided for @appLogSourceExitsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'System records: when and why the app was closed'**
+  String get appLogSourceExitsDesc;
+
+  /// No description provided for @appLogProblems.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No problems} =1{1 problem} other{{count} problems}}'**
+  String appLogProblems(int count);
+
+  /// No description provided for @appLogOnlyProblems.
+  ///
+  /// In en, this message translates to:
+  /// **'Problems only'**
+  String get appLogOnlyProblems;
+
+  /// No description provided for @appLogEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing here yet'**
+  String get appLogEmpty;
+
+  /// No description provided for @appLogCopyAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy the whole log'**
+  String get appLogCopyAll;
 
   /// No description provided for @settingsInternalsBuild.
   ///

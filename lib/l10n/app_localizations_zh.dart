@@ -2277,7 +2277,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsInternalsExits => '应用为何被关闭';
 
   @override
-  String get settingsInternalsExitsHint => '这些记录由系统自行保存。如果 VPN 在后台断开，请用顶部按钮复制报告——其中包含此部分。';
+  String get settingsInternalsExitsHint => '这些记录由系统自行保存。如果 VPN 在后台断开，请用顶部按钮复制并发送。';
 
   @override
   String get settingsInternalsExitSystem => '被系统或厂商固件结束';
@@ -2302,6 +2302,53 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get settingsInternalsExitVpnOn => '当时 VPN 已开启';
+
+  @override
+  String get appLogTitle => '应用日志';
+
+  @override
+  String get appLogSubtitle => '按应用各部分查看发生了什么、哪里出错';
+
+  @override
+  String get appLogSourceApp => '应用';
+
+  @override
+  String get appLogSourceAppDesc => '界面、订阅、连接';
+
+  @override
+  String get appLogSourceNative => '原生部分';
+
+  @override
+  String get appLogSourceNativeDesc => 'VPN 服务、快捷设置磁贴、连接窗口';
+
+  @override
+  String get appLogSourceCore => '内核';
+
+  @override
+  String get appLogSourceCoreDesc => '当前会话中 xray 或 mihomo 的输出';
+
+  @override
+  String get appLogSourceExitsDesc => '系统记录：应用何时、为何被关闭';
+
+  @override
+  String appLogProblems(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 个问题',
+      zero: '没有问题',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get appLogOnlyProblems => '仅显示问题';
+
+  @override
+  String get appLogEmpty => '暂无内容';
+
+  @override
+  String get appLogCopyAll => '复制完整日志';
 
   @override
   String get settingsInternalsBuild => '应用与设备';
