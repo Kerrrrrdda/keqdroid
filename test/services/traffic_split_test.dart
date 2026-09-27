@@ -1,8 +1,11 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:keqdroid/core/connections_poll_stats.dart';
 import 'package:keqdroid/models/traffic_split.dart';
 import 'package:keqdroid/services/traffic_split_service.dart';
+
+import '../helpers/fake_clash_api.dart';
 
 ConnectionTraffic _c(
   String id, {
@@ -389,5 +392,42 @@ void main() {
         isNull,
       );
     });
+  });
+
+  group('ядро, оборвавшее ответ', () {
+    late StallingClashApi core;
+
+    setUp(() async => core = await StallingClashApi.start());
+    tearDown(() => core.close());
+
+    test('одна неудача снимает сотни висящих запросов без переполнения стека',
+        () async {
+      final base = ConnectionsPollStats.instance.inFlight;
+      const hung = 300;
+      final requests = [
+        for (var i = 0; i < hung; i++)
+          TrafficSplitSource.fetch(port: core.port, secret: ''),
+      ];
+      final deadline = DateTime.now().add(const Duration(seconds: 20));
+      while (ConnectionsPollStats.instance.inFlight - base < hung) {
+        if (DateTime.now().isAfter(deadline)) fail('requests did not hang');
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      }
+
+      expect(
+        await TrafficSplitSource.fetch(port: await closedLoopbackPort(), secret: ''),
+        isNull,
+      );
+      final results =
+          await Future.wait(requests).timeout(const Duration(seconds: 5));
+      expect(results, everyElement(isNull));
+      expect(ConnectionsPollStats.instance.inFlight, base);
+    }, timeout: const Timeout(Duration(seconds: 60)));
+
+    test('недосланное тело — отказ по сроку, а не вечное ожидание', () async {
+      final snapshot = await TrafficSplitSource.fetch(port: core.port, secret: '')
+          .timeout(connectionsBodyTimeout + const Duration(seconds: 5));
+      expect(snapshot, isNull);
+    }, timeout: const Timeout(Duration(seconds: 60)));
   });
 }

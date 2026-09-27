@@ -64,6 +64,10 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
   final _autoSelectSwitches = <DateTime>[];
   DateTime? _autoSelectQuietUntil;
   bool _autoSelectBusy = false;
+
+  /// Прошлая секунда прослушки ещё не вернулась: на десктопе это запрос к
+  /// ядру, и медленное ядро получало бы их внахлёст, по одному в секунду.
+  bool _autoSelectListening = false;
   AppLifecycleListener? _androidLifecycle;
 
   void _applyNativeState(VpnState s) {
@@ -243,7 +247,7 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
     _autoSelectListenTimer?.cancel();
     _autoSelectListenTimer = Timer.periodic(
       AutoSelectWatchdog.listenEvery,
-      (_) => unawaited(_autoSelectListen()),
+      (_) => unawaited(_autoSelectListenOnce()),
     );
     ref.onDispose(() {
       _autoSelectTimer?.cancel();
@@ -924,6 +928,16 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
   /// первой тихой секунде, он сам ломал счёт: трафик сервис считает по всему
   /// приложению, ответы живых соседей выглядели ответом сервера, и тишина не
   /// набиралась — на Vless живой тест так и не дождался переезда.
+  Future<void> _autoSelectListenOnce() async {
+    if (_autoSelectListening) return;
+    _autoSelectListening = true;
+    try {
+      await _autoSelectListen();
+    } finally {
+      _autoSelectListening = false;
+    }
+  }
+
   Future<void> _autoSelectListen() async {
     if (_autoSelectBusy) return;
     final target = _autoSelectTarget();

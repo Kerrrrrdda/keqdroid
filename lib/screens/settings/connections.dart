@@ -20,6 +20,10 @@ class _ConnectionsScreenState extends ConsumerState<_ConnectionsScreen> {
   bool _paused = false;
   String _filter = '';
   Timer? _pollTimer;
+
+  /// Прошлый снимок ещё читается — новый не просим: на медленном ядре
+  /// запросы иначе наслаивались бы каждые две секунды.
+  bool _refreshing = false;
   final _filterCtrl = TextEditingController();
 
   @override
@@ -40,7 +44,8 @@ class _ConnectionsScreenState extends ConsumerState<_ConnectionsScreen> {
   }
 
   Future<void> _refresh() async {
-    if (_paused) return;
+    if (_paused || _refreshing) return;
+    _refreshing = true;
     try {
       final snapshot = await ConnectionsService.snapshot();
       if (!mounted) return;
@@ -58,6 +63,8 @@ class _ConnectionsScreenState extends ConsumerState<_ConnectionsScreen> {
         );
         _loading = false;
       });
+    } finally {
+      _refreshing = false;
     }
   }
 

@@ -78,9 +78,12 @@ class TrafficSplitSource {
   static HttpClient get _http =>
       _client ??= HttpClient()..connectionTimeout = const Duration(seconds: 2);
 
+  /// Поле обнуляем до закрытия — иначе рекурсия через catch рвущихся запросов
+  /// (см. DesktopTrafficStats.resetStatsHttp).
   static void _reset() {
-    _client?.close(force: true);
+    final client = _client;
     _client = null;
+    client?.close(force: true);
   }
 
   /// Снимок счётчиков всех живых соединений. `null` — API не ответил.
@@ -105,7 +108,10 @@ class TrafficSplitSource {
         await resp.drain<void>();
         return null;
       }
-      final body = await resp.transform(utf8.decoder).join();
+      final body = await resp
+          .transform(utf8.decoder)
+          .join()
+          .timeout(connectionsBodyTimeout);
       chars = body.length;
       return snapshot = parseSnapshot(body);
     } catch (_) {

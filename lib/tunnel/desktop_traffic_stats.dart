@@ -112,9 +112,25 @@ mixin DesktopTrafficStats {
 
   void startStatsTimer(ConnectionMode mode) {
     statsTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      unawaited(pollTrafficStats(mode));
+      unawaited(_pollStatsOnce(mode));
     });
-    unawaited(pollTrafficStats(mode));
+    unawaited(_pollStatsOnce(mode));
+  }
+
+  /// Прошлый опрос ещё не вернулся.
+  bool _statsPollInFlight = false;
+
+  /// Такт, на котором прошлый опрос ещё в пути, пропускаем. Раньше он слал
+  /// второй запрос вдогонку, и ядро, отвечающее дольше секунды, получало
+  /// очередь, которая росла быстрее, чем разбиралась.
+  Future<void> _pollStatsOnce(ConnectionMode mode) async {
+    if (_statsPollInFlight) return;
+    _statsPollInFlight = true;
+    try {
+      await pollTrafficStats(mode);
+    } finally {
+      _statsPollInFlight = false;
+    }
   }
 
   void setTrafficStatsPollingEnabled(bool enabled) {
@@ -130,8 +146,7 @@ mixin DesktopTrafficStats {
       // при возобновлении кумулятивные счётчики ядра дадут корректные тоталы.
       statsTimer?.cancel();
       statsTimer = null;
-      _statsHttpClient?.close(force: true);
-      _statsHttpClient = null;
+      resetStatsHttp();
       return;
     }
     final mode = activeMode;
@@ -151,13 +166,18 @@ mixin DesktopTrafficStats {
     totalUpload = 0;
     resumeBaselinePending = false;
     statsBaselineTaken = false;
-    _statsHttpClient?.close(force: true);
-    _statsHttpClient = null;
+    resetStatsHttp();
   }
 
+  /// Клиент сначала отцепляем, потом закрываем. Закрытие рвёт все запросы в
+  /// полёте, каждый попадает в свой catch и зовёт сброс снова; пока поле ещё
+  /// указывает на закрываемый клиент, это рекурсия. Уже при двух сотнях
+  /// висящих запросов стек переполнялся, и больше половины их так и оставались
+  /// висеть.
   void resetStatsHttp() {
-    _statsHttpClient?.close(force: true);
+    final client = _statsHttpClient;
     _statsHttpClient = null;
+    client?.close(force: true);
   }
 
   /// [secret] — токен RESTful API. У keqrnel его нет (API слушает петлю), у
@@ -183,7 +203,10 @@ mixin DesktopTrafficStats {
         await resp.drain<void>();
         return null;
       }
-      final body = await resp.transform(utf8.decoder).join();
+      final body = await resp
+          .transform(utf8.decoder)
+          .join()
+          .timeout(connectionsBodyTimeout);
       chars = body.length;
       final json = jsonDecode(body) as Map<String, dynamic>;
       connections = (json['connections'] as List?)?.length;

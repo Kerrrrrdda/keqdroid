@@ -136,7 +136,10 @@ class ConnectionsService {
           note: 'Core API answered HTTP ${resp.statusCode}.',
         );
       }
-      final body = await resp.transform(utf8.decoder).join();
+      final body = await resp
+          .transform(utf8.decoder)
+          .join()
+          .timeout(connectionsBodyTimeout);
       chars = body.length;
       // Дальше — сверка с логом ядра, а не ожидание ответа: в «медленные» она
       // попадать не должна.
@@ -284,9 +287,12 @@ class ConnectionsService {
     ..idleTimeout = const Duration(seconds: 15);
 
   /// Порт clash_api живёт одну сессию ядра — на ошибке клиента не переиспользуем.
+  /// Поле обнуляем до закрытия — иначе рекурсия через catch рвущихся запросов
+  /// (см. DesktopTrafficStats.resetStatsHttp).
   static void _resetHttp() {
-    _httpClient?.close(force: true);
+    final client = _httpClient;
     _httpClient = null;
+    client?.close(force: true);
   }
 
   /// Одна запись из ответа `GET /connections`. Формат общий для sing-box и
