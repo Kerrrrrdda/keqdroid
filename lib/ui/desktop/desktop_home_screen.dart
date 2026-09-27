@@ -536,7 +536,7 @@ class _DesktopHomeScreenState extends ConsumerState<DesktopHomeScreen>
     }
     switch (_index) {
       case 0:
-        pasteServersFromClipboard(context, ref);
+        pasteLinksFromClipboard(context, ref);
         return true;
       case 1:
         pasteSubscriptionFromClipboard(context, ref);

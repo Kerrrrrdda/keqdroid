@@ -2,6 +2,7 @@ import 'awg_profile.dart';
 import 'custom_clash_config.dart';
 import 'custom_xray_config.dart';
 import 'singbox_outbounds.dart';
+import 'subscription_deep_link.dart';
 
 /// Делит текст, который пользователь вставил (буфер, файл, QR, deep link), на
 /// конфиги серверов.
@@ -50,4 +51,19 @@ List<String> splitServerImportPayload(String raw) {
       .map((line) => line.trim())
       .where((line) => line.isNotEmpty)
       .toList();
+}
+
+/// Адрес подписки, если строка вставки — она, иначе null.
+///
+/// Серверных ссылок на http(s) не бывает, так что такая строка всегда подписка.
+/// Без этой проверки кнопка «Вставить ссылку(и)» на пустом экране, где рядом
+/// написано про подписки, отвечала на ссылку подписки «неподдерживаемым
+/// форматом».
+String? subscriptionUrlFromPastedLine(String line) {
+  final text = line.trim();
+  final fromPanelButton = subscriptionUrlFromDeepLink(text);
+  if (fromPanelButton != null) return fromPanelButton;
+  final uri = Uri.tryParse(text);
+  if (uri == null || uri.host.isEmpty) return null;
+  return uri.isScheme('http') || uri.isScheme('https') ? text : null;
 }

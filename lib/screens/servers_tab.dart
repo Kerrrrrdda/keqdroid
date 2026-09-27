@@ -943,8 +943,9 @@ class _ServersTabState extends ConsumerState<ServersTab>
     if (result.firstError != null) {
       _showImportSummary(
         ctx,
-        added: result.added,
-        total: configs.length,
+        summary: AppLocalizations.of(ctx)!
+            .serversImportedSummary(result.added, configs.length),
+        anyAdded: result.added > 0,
         error: result.firstError!,
       );
     } else {
@@ -1004,8 +1005,9 @@ class _ServersTabState extends ConsumerState<ServersTab>
     if (result.firstError != null) {
       _showImportSummary(
         ctx,
-        added: result.added,
-        total: configs.length,
+        summary: AppLocalizations.of(ctx)!
+            .serversImportedSummary(result.added, configs.length),
+        anyAdded: result.added > 0,
         error: result.firstError!,
       );
     }
@@ -1053,15 +1055,14 @@ class _ServersTabState extends ConsumerState<ServersTab>
 
   void _showImportSummary(
     BuildContext ctx, {
-    required int added,
-    required int total,
+    required String summary,
+    required bool anyAdded,
     required Object error,
   }) {
-    final summary = AppLocalizations.of(ctx)!.serversImportedSummary(added, total);
     ScaffoldMessenger.of(ctx).showSnackBar(
       SnackBar(
         content: Text('$summary\n${_shortError(error, ctx)}'),
-        backgroundColor: added > 0 ? AppTheme.orange(ctx) : AppTheme.red(ctx),
+        backgroundColor: anyAdded ? AppTheme.orange(ctx) : AppTheme.red(ctx),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(ExpressiveShape.medium)),
         duration: const Duration(seconds: 5),
@@ -1155,11 +1156,10 @@ class _ServersTabState extends ConsumerState<ServersTab>
                             loading = true;
                             sheetError = null;
                           });
-                          final configs = splitServerImportPayload(raw);
-                          // Строки добавляются независимо, чтобы первый же
-                          // дубликат не обрывал импорт (шторка закрылась бы,
-                          // потеряв вставленный текст).
-                          final result = await _addConfigsResilient(configs);
+                          // Та же вставка, что у кнопки на пустом экране:
+                          // пункт называется так же, и ссылка подписки здесь
+                          // тоже становится подпиской.
+                          final result = await importPastedLinksInto(ref, raw);
                           if (!ctx2.mounted) return;
                           if (result.firstError == null) {
                             Navigator.pop(ctx2);
@@ -1171,8 +1171,8 @@ class _ServersTabState extends ConsumerState<ServersTab>
                             if (ctx.mounted) {
                               _showImportSummary(
                                 ctx,
-                                added: result.added,
-                                total: configs.length,
+                                summary: pastedLinksSummary(l10n, result)!,
+                                anyAdded: true,
                                 error: result.firstError!,
                               );
                             }
@@ -1274,7 +1274,7 @@ class _ServersTabState extends ConsumerState<ServersTab>
           ),
           const SizedBox(height: 8),
           TextButton.icon(
-            onPressed: () => pasteServersFromClipboard(context, ref),
+            onPressed: () => pasteLinksFromClipboard(context, ref),
             icon: Icon(
               Icons.content_paste_rounded,
               size: 16,

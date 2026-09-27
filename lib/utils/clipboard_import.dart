@@ -42,7 +42,9 @@ Future<void> pasteSubscriptionFromClipboard(
   }
 }
 
-Future<void> pasteServersFromClipboard(
+/// Ctrl+V во вкладке серверов и кнопка «Вставить ссылку(и)» на её пустом
+/// экране: подписки и серверы из буфера расходятся каждый на своё место.
+Future<void> pasteLinksFromClipboard(
   BuildContext context,
   WidgetRef ref,
 ) async {
@@ -50,30 +52,90 @@ Future<void> pasteServersFromClipboard(
   final raw = data?.text?.trim() ?? '';
   if (raw.isEmpty || !context.mounted) return;
   final l10n = AppLocalizations.of(context)!;
-  // AmneziaWG .conf и готовый json-конфиг ядра — единые многострочные блоки
-  // (addManual принимает их целиком); иначе список ссылок построчно.
-  final configs = splitServerImportPayload(raw);
-  if (configs.isEmpty) return;
-  // Каждую строку добавляем независимо (как _addConfigsResilient в
-  // servers_tab): первый же дубликат не должен обрывать импорт и молча
-  // терять остальные валидные строки.
-  var added = 0;
+  final result = await importPastedLinksInto(ref, raw);
+  if (!context.mounted) return;
+  final error = result.firstError;
+  final lines = [
+    ?pastedLinksSummary(l10n, result),
+    if (error != null) friendlyError(error, context),
+  ];
+  if (lines.isNotEmpty) _toast(context, lines.join('\n'));
+}
+
+/// Что добавила вставка. Подписки и серверы считаются порознь: общий счётчик
+/// сказал бы про подписку «Добавлено серверов: 1 из 1».
+class PastedLinksResult {
+  final List<String> subscriptionHosts;
+  final int serversAdded;
+  final int serversTotal;
+  final Object? firstError;
+
+  const PastedLinksResult({
+    required this.subscriptionHosts,
+    required this.serversAdded,
+    required this.serversTotal,
+    required this.firstError,
+  });
+
+  int get added => subscriptionHosts.length + serversAdded;
+}
+
+/// Разбирает вставленный текст и добавляет каждую часть независимо: первый же
+/// дубликат не должен обрывать импорт и молча терять остальные строки.
+Future<PastedLinksResult> importPastedLinks(
+  String raw, {
+  required Future<void> Function(String url) addSubscription,
+  required Future<void> Function(String config) addServer,
+}) async {
+  final hosts = <String>[];
+  var serversAdded = 0;
+  var serversTotal = 0;
   Object? firstError;
-  for (final c in configs) {
+  for (final part in splitServerImportPayload(raw)) {
+    final url = subscriptionUrlFromPastedLine(part);
     try {
-      await ref.read(serversProvider.notifier).addManual(c);
-      added++;
+      if (url != null) {
+        await addSubscription(url);
+        hosts.add(Uri.parse(url).host);
+      } else {
+        serversTotal++;
+        await addServer(part);
+        serversAdded++;
+      }
     } catch (e) {
       firstError ??= e;
     }
   }
-  if (!context.mounted) return;
-  final summary = l10n.serversImportedSummary(added, configs.length);
-  if (firstError == null) {
-    _toast(context, summary);
-  } else {
-    _toast(context, '$summary\n${friendlyError(firstError, context)}');
-  }
+  return PastedLinksResult(
+    subscriptionHosts: hosts,
+    serversAdded: serversAdded,
+    serversTotal: serversTotal,
+    firstError: firstError,
+  );
+}
+
+Future<PastedLinksResult> importPastedLinksInto(WidgetRef ref, String raw) {
+  return importPastedLinks(
+    raw,
+    // Имя выведено из адреса, а не задано: пусть его заменит название от
+    // провайдера, когда оно придёт заголовком.
+    addSubscription: (url) => ref.read(subscriptionsProvider.notifier).add(
+      Subscription.create(name: Uri.parse(url).host, url: url, nameIsAuto: true),
+    ),
+    addServer: (config) => ref.read(serversProvider.notifier).addManual(config),
+  );
+}
+
+/// Итог без ошибки: её каждый экран показывает по-своему. Null — если ничего
+/// не добавилось и сказать, кроме ошибки, нечего.
+String? pastedLinksSummary(AppLocalizations l10n, PastedLinksResult result) {
+  final lines = [
+    if (result.subscriptionHosts.isNotEmpty)
+      l10n.qrSubscriptionAdded(result.subscriptionHosts.join(', ')),
+    if (result.serversTotal > 0)
+      l10n.serversImportedSummary(result.serversAdded, result.serversTotal),
+  ];
+  return lines.isEmpty ? null : lines.join('\n');
 }
 
 void _toast(BuildContext context, String msg) {
