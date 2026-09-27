@@ -138,6 +138,64 @@ class KeqdisVpnService : VpnService() {
         const val KEY_QS_LAST_EXCLUDE_PACKAGES = "qs_last_exclude_packages"
         const val KEY_QS_LAST_INCLUDE_PACKAGES = "qs_last_include_packages"
 
+        /// Должна ли сессия жить — по нему сервис, поднятый системой после
+        /// смерти процесса, решает, переподключаться ли (см. restoreSession).
+        ///
+        /// Статус для этого не годится: новый процесс чинит его в onCreate до
+        /// того, как придёт onStartCommand, и к этому моменту там уже
+        /// «disconnected» при любой прошлой жизни.
+        const val KEY_QS_SESSION_WANTED = "qs_session_wanted"
+
+        /**
+         * START-команда на прошлый сервер — тем же ядром, режимом и файлом.
+         *
+         * Снапшот пишет только сам сервис при старте, поэтому до первого
+         * подключения из приложения его нет. Null и тогда, когда файл конфига
+         * пропал (путь в prefs переживает очистку данных, и ядро бы не
+         * поднялось), и когда прошлым был AmneziaWG: он жил в своём ядре, и
+         * такую запись поднимает только приложение, через mihomo.
+         */
+        fun snapshotStartIntent(context: Context): Intent? {
+            val prefs = context.getSharedPreferences(PREFS_QS, Context.MODE_PRIVATE)
+            val backend = prefs.getString(KEY_QS_LAST_BACKEND, VPN_BACKEND_XRAY) ?: VPN_BACKEND_XRAY
+            if (backend != VPN_BACKEND_XRAY && backend != VPN_BACKEND_MIHOMO) return null
+            val config = prefs.getString(KEY_QS_LAST_XRAY_CONFIG, null)
+            val user = prefs.getString(KEY_QS_LAST_SOCKS_USERNAME, null)
+            val pass = prefs.getString(KEY_QS_LAST_SOCKS_PASSWORD, null)
+            if (config.isNullOrBlank() || user.isNullOrBlank() || pass.isNullOrBlank() ||
+                !File(config).exists()
+            ) return null
+            val exclude = prefs.getStringSet(KEY_QS_LAST_EXCLUDE_PACKAGES, emptySet()) ?: emptySet()
+            val include = prefs.getStringSet(KEY_QS_LAST_INCLUDE_PACKAGES, emptySet()) ?: emptySet()
+            val serverName = prefs.getString(KEY_QS_LAST_SERVER_NAME, null)
+
+            return Intent(context, KeqdisVpnService::class.java).apply {
+                action = ACTION_START
+                putExtra(EXTRA_VPN_BACKEND, backend)
+                // На Android движок всегда chain (libxray) — keqrnel вырезан.
+                // Явно, чтобы сохранённый старыми версиями keqrnel не всплыл.
+                putExtra(EXTRA_CORE_ENGINE, CORE_ENGINE_CHAIN)
+                // Режим — по той же причине, что и ядро: иначе из «только
+                // прокси» поднимался бы полноценный VPN, на который может не
+                // оказаться и разрешения.
+                putExtra(
+                    EXTRA_TUNNEL_MODE,
+                    prefs.getString(KEY_QS_LAST_TUNNEL_MODE, TUNNEL_MODE_VPN) ?: TUNNEL_MODE_VPN,
+                )
+                putExtra(EXTRA_XRAY_CONFIG, config)
+                putExtra("socks_port", prefs.getInt(KEY_QS_LAST_SOCKS_PORT, 2080))
+                putStringArrayListExtra("exclude_packages", ArrayList(exclude))
+                putStringArrayListExtra("include_packages", ArrayList(include))
+                putExtra(EXTRA_SOCKS_USERNAME, user)
+                putExtra(EXTRA_SOCKS_PASSWORD, pass)
+                if (!serverName.isNullOrBlank()) putExtra(EXTRA_SERVER_NAME, serverName)
+            }
+        }
+
+        /// Поднимает ли команда системный VPN — только ему нужно согласие.
+        fun startsTunnel(intent: Intent): Boolean =
+            intent.getStringExtra(EXTRA_TUNNEL_MODE) != TUNNEL_MODE_PROXY
+
         /// Сколько ждать после смены сети, прежде чем рвать соединения ядра.
         ///
         /// Подъём Wi-Fi приходит не одним событием: сначала onAvailable, потом
@@ -264,7 +322,22 @@ class KeqdisVpnService : VpnService() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         latestStartId = startId
-        when (intent?.action) {
+        // Без команды сервис приходит, когда система подняла его заново после
+        // смерти процесса (START_STICKY, см. startSession), а с action
+        // VpnService — когда его включает системный «Постоянный VPN»
+        // (Vpn.startAlwaysOnVpn). Dart в обоих случаях не запущен, и собрать
+        // конфиг некому, поэтому подключаемся по снапшоту, как плитка.
+        if (intent == null || intent.action == VpnService.SERVICE_INTERFACE) {
+            return runCatching { restoreSession(startId, alwaysOn = intent != null) }
+                .getOrElse {
+                    // Упавший здесь процесс система подняла бы снова, и тем же
+                    // путём, — круг перезапусков вместо одной неудачи.
+                    android.util.Log.e("KEQDIS", "restore failed: ${it.message}", it)
+                    stopSelf(startId)
+                    START_NOT_STICKY
+                }
+        }
+        when (intent.action) {
             ACTION_TOGGLE -> {
                 if (status == VpnRunStatus.RUNNING || status == VpnRunStatus.STARTING) {
                     serviceScope.launch { stopVpn(startId) }
@@ -278,110 +351,191 @@ class KeqdisVpnService : VpnService() {
                 }
                 return START_NOT_STICKY
             }
-            ACTION_START -> {
-                val backend = intent.getStringExtra(EXTRA_VPN_BACKEND) ?: VPN_BACKEND_XRAY
-                val socksPort   = intent.getIntExtra("socks_port", 2080)
-                val excludePkgs = intent.getStringArrayListExtra("exclude_packages") ?: arrayListOf()
-                val includePkgs = intent.getStringArrayListExtra("include_packages") ?: arrayListOf()
-                currentServerName = intent.getStringExtra(EXTRA_SERVER_NAME)
-                lastSocksPort = socksPort
-                lastExcludePackages = excludePkgs
-                lastIncludePackages = includePkgs
-
-                val configPath = intent.getStringExtra(EXTRA_XRAY_CONFIG) ?: run {
-                    android.util.Log.e("KEQDIS", "onStartCommand: missing EXTRA_XRAY_CONFIG")
-                    return START_NOT_STICKY
-                }
-                val user = intent.getStringExtra(EXTRA_SOCKS_USERNAME)
-                val pass = intent.getStringExtra(EXTRA_SOCKS_PASSWORD)
-                if (user.isNullOrEmpty() || pass.isNullOrEmpty()) {
-                    android.util.Log.e("KEQDIS", "onStartCommand: SOCKS5 credentials missing in Intent — aborting start")
-                    return START_NOT_STICKY
-                }
-                socksUsername = user
-                socksPassword = pass
-
-                // Движок ядра. Сохраняем его в QS-prefs вместе с configPath: файл
-                // конфига привязан к движку (keqrnel пишет sing-box-формат, chain —
-                // сырой xray). Плитка переподключается по этому же файлу, поэтому
-                // обязана использовать ТОТ ЖЕ движок — иначе libxray не распарсит
-                // sing-box-конфиг ("Listen on specific ip without port") и порт не поднимется.
-                val coreEngine = intent.getStringExtra(EXTRA_CORE_ENGINE) ?: CORE_ENGINE_CHAIN
-                lastCoreEngine = coreEngine
-
-                // Ядро выводим из backend'а и запоминаем ТАМ ЖЕ, где configPath:
-                // файл конфига привязан к ядру (mihomo пишем в YAML, xray — в
-                // json), и плитка обязана переподключаться тем же ядром. Иначе
-                // повторим старый баг «плитка → ERROR»: libxray не разберёт
-                // конфиг mihomo и SOCKS-порт не поднимется.
-                val coreKind =
-                    if (backend == VPN_BACKEND_MIHOMO) CORE_KIND_MIHOMO else CORE_KIND_XRAY
-                lastCoreKind = coreKind
-
-                // Режим — по той же причине, что движок и ядро: плитка стартует
-                // по сохранённому, и «только прокси» не должен превращаться в
-                // полноценный VPN от одного нажатия по плитке.
-                val tunnelMode =
-                    if (intent.getStringExtra(EXTRA_TUNNEL_MODE) == TUNNEL_MODE_PROXY) {
-                        TUNNEL_MODE_PROXY
-                    } else {
-                        TUNNEL_MODE_VPN
-                    }
-                lastTunnelMode = tunnelMode
-
-                android.util.Log.d(
-                    "KEQDIS",
-                    "onStartCommand: backend=$backend core=$coreKind engine=$coreEngine config=$configPath"
-                )
-                lastXrayConfigPath = configPath
-
-                runCatching {
-                    getSharedPreferences(PREFS_QS, Context.MODE_PRIVATE)
-                        .edit()
-                        .putString(KEY_QS_LAST_BACKEND, backend)
-                        .putString(KEY_QS_LAST_CORE_ENGINE, coreEngine)
-                        .putString(KEY_QS_LAST_CORE_KIND, coreKind)
-                        .putString(KEY_QS_LAST_TUNNEL_MODE, tunnelMode)
-                        .putString(KEY_QS_LAST_XRAY_CONFIG, configPath)
-                        .putInt(KEY_QS_LAST_SOCKS_PORT, socksPort)
-                        .putString(KEY_QS_LAST_SOCKS_USERNAME, socksUsername)
-                        .putString(KEY_QS_LAST_SOCKS_PASSWORD, socksPassword)
-                        .putString(KEY_QS_LAST_SERVER_NAME, currentServerName)
-                        .putStringSet(KEY_QS_LAST_EXCLUDE_PACKAGES, excludePkgs.toSet())
-                        .putStringSet(KEY_QS_LAST_INCLUDE_PACKAGES, includePkgs.toSet())
-                        .apply()
-                }
-
-                registerNotificationReceiver()
-                startForeground(
-                    NOTIFICATION_ID,
-                    buildControlNotification("Connecting…", isConnected = false, isTransitioning = true)
-                )
-
-                // «Сервис жив и взялся за старт» — этого ждёт плитка
-                // (VpnQuickTileService.verifyStarted), чтобы отличить запрет
-                // системы от обычной задержки. Полный setStatus() здесь звать
-                // нельзя: STARTING в status принимается за дубль-старт, и
-                // startVpnWithXray молча вышел бы, не подключившись.
-                // Только с холодного: повторный ACTION_START поверх живой сессии
-                // откатил бы плитку с «подключено» на «подключается».
-                if (status == VpnRunStatus.STOPPED || status == VpnRunStatus.ERROR) {
-                    liveStatus = "connecting"
-                }
-
-                serviceScope.launch {
-                    startGuarded(startId) {
-                        startVpnWithXray(
-                            startId, configPath, socksPort, excludePkgs, includePkgs,
-                            socksNoAuth = false, coreEngine = coreEngine, coreKind = coreKind,
-                            tunnelMode = tunnelMode,
-                        )
-                    }
-                }
-            }
+            ACTION_START -> return startSession(intent, startId)
             ACTION_STOP -> serviceScope.launch { stopVpn(startId) }
         }
         return START_NOT_STICKY
+    }
+
+    /**
+     * Поднять сессию без команды — после перезапуска системой или по
+     * «Постоянному VPN».
+     *
+     * После перезапуска переподключаемся, только если прошлая сессия должна
+     * была жить ([KEY_QS_SESSION_WANTED]): иначе поднялось бы то, что человек
+     * выключил сам. «Постоянный VPN» включают в настройках системы, и его
+     * просьбу выполняем всегда.
+     */
+    private fun restoreSession(startId: Int, alwaysOn: Boolean): Int {
+        // Пока туннель поднимается, система шлёт запуск ещё раз (см.
+        // комментарий в Vpn.startAlwaysOnVpn) — живую сессию не трогаем.
+        if (status == VpnRunStatus.RUNNING || status == VpnRunStatus.STARTING) return START_STICKY
+
+        val wanted = getSharedPreferences(PREFS_QS, Context.MODE_PRIVATE)
+            .getBoolean(KEY_QS_SESSION_WANTED, false)
+        if (!alwaysOn && !wanted) {
+            android.util.Log.i("KEQDIS", "restore: no session was supposed to be up, staying down")
+            stopSelf(startId)
+            return START_NOT_STICKY
+        }
+
+        val start = snapshotStartIntent(this)
+        val refusal = when {
+            start == null -> "there is no server to reconnect to, connect from the app once"
+            // Режим прокси интерфейса не поднимает, а «Постоянный VPN» ждёт
+            // именно его: система так и висела бы в «подключается».
+            alwaysOn && !startsTunnel(start) ->
+                "the last session was a local proxy, and always-on VPN needs a tunnel"
+            startsTunnel(start) && VpnService.prepare(this) != null ->
+                "the VPN permission was taken away"
+            else -> null
+        }
+        if (start == null || refusal != null) {
+            android.util.Log.w("KEQDIS", "restore (alwaysOn=$alwaysOn): $refusal")
+            appendCoreLog("could not bring the VPN back: $refusal")
+            rememberSessionWanted(false)
+            stopSelf(startId)
+            return START_NOT_STICKY
+        }
+
+        // Сессия, поднятая без человека, говорит в логе, откуда взялась, — а
+        // после убийства ещё и кем оно было: это и есть ответ на «почему
+        // отключилось».
+        val note = if (alwaysOn) {
+            "started by the system always-on VPN setting"
+        } else {
+            "the system restarted the VPN after the app process died " +
+                "(${ProcessExits.describeLast(this) ?: "no exit record"}), reconnecting"
+        }
+        return startSession(start, startId, logNote = note)
+    }
+
+    private fun startSession(intent: Intent, startId: Int, logNote: String? = null): Int {
+        val backend = intent.getStringExtra(EXTRA_VPN_BACKEND) ?: VPN_BACKEND_XRAY
+        val socksPort   = intent.getIntExtra("socks_port", 2080)
+        val excludePkgs = intent.getStringArrayListExtra("exclude_packages") ?: arrayListOf()
+        val includePkgs = intent.getStringArrayListExtra("include_packages") ?: arrayListOf()
+        currentServerName = intent.getStringExtra(EXTRA_SERVER_NAME)
+        lastSocksPort = socksPort
+        lastExcludePackages = excludePkgs
+        lastIncludePackages = includePkgs
+
+        val configPath = intent.getStringExtra(EXTRA_XRAY_CONFIG) ?: run {
+            android.util.Log.e("KEQDIS", "onStartCommand: missing EXTRA_XRAY_CONFIG")
+            return START_NOT_STICKY
+        }
+        val user = intent.getStringExtra(EXTRA_SOCKS_USERNAME)
+        val pass = intent.getStringExtra(EXTRA_SOCKS_PASSWORD)
+        if (user.isNullOrEmpty() || pass.isNullOrEmpty()) {
+            android.util.Log.e("KEQDIS", "onStartCommand: SOCKS5 credentials missing in Intent — aborting start")
+            return START_NOT_STICKY
+        }
+        socksUsername = user
+        socksPassword = pass
+
+        // Движок ядра. Сохраняем его в QS-prefs вместе с configPath: файл
+        // конфига привязан к движку (keqrnel пишет sing-box-формат, chain —
+        // сырой xray). Плитка переподключается по этому же файлу, поэтому
+        // обязана использовать ТОТ ЖЕ движок — иначе libxray не распарсит
+        // sing-box-конфиг ("Listen on specific ip without port") и порт не поднимется.
+        val coreEngine = intent.getStringExtra(EXTRA_CORE_ENGINE) ?: CORE_ENGINE_CHAIN
+        lastCoreEngine = coreEngine
+
+        // Ядро выводим из backend'а и запоминаем ТАМ ЖЕ, где configPath:
+        // файл конфига привязан к ядру (mihomo пишем в YAML, xray — в
+        // json), и плитка обязана переподключаться тем же ядром. Иначе
+        // повторим старый баг «плитка → ERROR»: libxray не разберёт
+        // конфиг mihomo и SOCKS-порт не поднимется.
+        val coreKind =
+            if (backend == VPN_BACKEND_MIHOMO) CORE_KIND_MIHOMO else CORE_KIND_XRAY
+        lastCoreKind = coreKind
+
+        // Режим — по той же причине, что движок и ядро: плитка стартует
+        // по сохранённому, и «только прокси» не должен превращаться в
+        // полноценный VPN от одного нажатия по плитке.
+        val tunnelMode =
+            if (intent.getStringExtra(EXTRA_TUNNEL_MODE) == TUNNEL_MODE_PROXY) {
+                TUNNEL_MODE_PROXY
+            } else {
+                TUNNEL_MODE_VPN
+            }
+        lastTunnelMode = tunnelMode
+
+        android.util.Log.d(
+            "KEQDIS",
+            "onStartCommand: backend=$backend core=$coreKind engine=$coreEngine config=$configPath"
+        )
+        lastXrayConfigPath = configPath
+
+        runCatching {
+            getSharedPreferences(PREFS_QS, Context.MODE_PRIVATE)
+                .edit()
+                .putString(KEY_QS_LAST_BACKEND, backend)
+                .putString(KEY_QS_LAST_CORE_ENGINE, coreEngine)
+                .putString(KEY_QS_LAST_CORE_KIND, coreKind)
+                .putString(KEY_QS_LAST_TUNNEL_MODE, tunnelMode)
+                .putString(KEY_QS_LAST_XRAY_CONFIG, configPath)
+                .putInt(KEY_QS_LAST_SOCKS_PORT, socksPort)
+                .putString(KEY_QS_LAST_SOCKS_USERNAME, socksUsername)
+                .putString(KEY_QS_LAST_SOCKS_PASSWORD, socksPassword)
+                .putString(KEY_QS_LAST_SERVER_NAME, currentServerName)
+                .putStringSet(KEY_QS_LAST_EXCLUDE_PACKAGES, excludePkgs.toSet())
+                .putStringSet(KEY_QS_LAST_INCLUDE_PACKAGES, includePkgs.toSet())
+                .apply()
+        }
+
+        registerNotificationReceiver()
+        try {
+            startForeground(
+                NOTIFICATION_ID,
+                buildControlNotification("Connecting…", isConnected = false, isTransitioning = true)
+            )
+        } catch (e: Exception) {
+            // После перезапуска системой право на foreground даёт исключение
+            // для VPN-приложений (REASON_OP_ACTIVATE_VPN в ActiveServices), и
+            // прошивка вправе его не признать. Необработанный отказ уронил бы
+            // процесс, а система взялась бы поднимать его снова.
+            android.util.Log.e("KEQDIS", "startForeground refused: $e")
+            appendCoreLog("the system did not let the VPN run in the foreground: ${e.message}")
+            unregisterNotificationReceiver()
+            stopSelf(startId)
+            return START_NOT_STICKY
+        }
+
+        // «Сервис жив и взялся за старт» — этого ждёт плитка
+        // (VpnQuickTileService.verifyStarted), чтобы отличить запрет
+        // системы от обычной задержки. Полный setStatus() здесь звать
+        // нельзя: STARTING в status принимается за дубль-старт, и
+        // startVpnWithXray молча вышел бы, не подключившись.
+        // Только с холодного: повторный ACTION_START поверх живой сессии
+        // откатил бы плитку с «подключено» на «подключается».
+        if (status == VpnRunStatus.STOPPED || status == VpnRunStatus.ERROR) {
+            liveStatus = "connecting"
+        }
+
+        serviceScope.launch {
+            startGuarded(startId) {
+                startVpnWithXray(
+                    startId, configPath, socksPort, excludePkgs, includePkgs,
+                    socksNoAuth = false, coreEngine = coreEngine, coreKind = coreKind,
+                    tunnelMode = tunnelMode, logNote = logNote,
+                )
+            }
+        }
+        // Процесс, убитый системой или прошивкой, Android поднимает заново и
+        // зовёт onStartCommand без команды — сессия восстанавливается сама
+        // (restoreSession). С NOT_STICKY туннель после такого убийства
+        // пропадал до ручного подключения.
+        return START_STICKY
+    }
+
+    private fun rememberSessionWanted(wanted: Boolean) {
+        runCatching {
+            getSharedPreferences(PREFS_QS, Context.MODE_PRIVATE)
+                .edit()
+                .putBoolean(KEY_QS_SESSION_WANTED, wanted)
+                .apply()
+        }
     }
 
     override fun onRevoke() { serviceScope.launch { stopVpn() }; super.onRevoke() }
@@ -440,6 +594,7 @@ class KeqdisVpnService : VpnService() {
         coreEngine: String = CORE_ENGINE_CHAIN,
         coreKind: String = CORE_KIND_XRAY,
         tunnelMode: String = TUNNEL_MODE_VPN,
+        logNote: String? = null,
     ) = opMutex.withLock {
         // Под opMutex: предыдущий стоп уже завершил cleanup(), порт/процессы свободны.
         if (status == VpnRunStatus.RUNNING || status == VpnRunStatus.STARTING) {
@@ -451,6 +606,9 @@ class KeqdisVpnService : VpnService() {
             return@withLock
         }
         setStatus(VpnRunStatus.STARTING)
+        // Под opMutex, как и сброс в stopVpn: при смене сервера стоп и старт
+        // идут подряд, и записанным должно остаться то, что было последним.
+        rememberSessionWanted(true)
         quickCoreDeaths = 0
         try {
             if (!socksNoAuth && (socksUsername.isEmpty() || socksPassword.isEmpty())) {
@@ -545,6 +703,8 @@ class KeqdisVpnService : VpnService() {
                     coreKind,
                 )
             }
+            // После startXray: он начинает лог сессии с чистого листа.
+            logNote?.let { appendCoreLog(it) }
 
             // ждём пока ядро поднимет SOCKS5 порт
             //
@@ -619,6 +779,8 @@ class KeqdisVpnService : VpnService() {
     }
 
     private suspend fun stopVpn(startId: Int? = null) = opMutex.withLock {
+        // Выключили — и после смерти процесса поднимать нечего.
+        rememberSessionWanted(false)
         if (status == VpnRunStatus.STOPPED) {
             // Уже остановлен — но prefs могли пережить убийство процесса со
             // старым connected/connecting: пересинхронизируем статус (prefs +
@@ -1575,6 +1737,9 @@ class KeqdisVpnService : VpnService() {
         liveStatus = statusStr
         // И в запись системы о смерти процесса, если он умрёт с этим статусом.
         ProcessExits.noteVpnStatus(this, statusStr)
+        // Сессию, оборвавшуюся ошибкой, после смерти процесса не поднимаем:
+        // ошибка вернулась бы вместе с ней, и перезапуски пошли бы по кругу.
+        if (s == VpnRunStatus.ERROR) rememberSessionWanted(false)
 
         // Log transitions to final states for QS tile debugging
         if (s == VpnRunStatus.STOPPED || s == VpnRunStatus.RUNNING || s == VpnRunStatus.ERROR) {
