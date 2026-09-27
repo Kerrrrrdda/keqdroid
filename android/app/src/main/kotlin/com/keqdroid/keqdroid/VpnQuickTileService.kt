@@ -179,97 +179,49 @@ class VpnQuickTileService : TileService() {
             return
         }
 
-        // Согласие на VPN спрашивает только Activity (VpnService.prepare отдаёт
-        // интент, который обязан идти через startActivityForResult) — из шторки
-        // подключиться физически нельзя, открываем приложение.
-        if (VpnService.prepare(this) != null) {
-            android.util.Log.i("KEQDIS_QS", "onClick: no VPN consent → opening app")
-            openAppForConnect()
-            return
-        }
-
-        val backend = prefs.getString(KeqdisVpnService.KEY_QS_LAST_BACKEND, KeqdisVpnService.VPN_BACKEND_XRAY)
-            ?: KeqdisVpnService.VPN_BACKEND_XRAY
-        // На Android движок всегда chain (libxray) — keqrnel вырезан. Передаём
-        // его явно, чтобы и сохранённый из старых версий engine=keqrnel не всплыл.
-        val coreEngine = KeqdisVpnService.CORE_ENGINE_CHAIN
-
-        // Прошлые версии писали сюда `awg`: AmneziaWG жил в своём ядре, и снапшота
-        // под реконнект у него не было. Такую запись плитке поднять нечем —
-        // открываем приложение, оно подключит тот же сервер через mihomo.
-        if (backend != KeqdisVpnService.VPN_BACKEND_XRAY &&
-            backend != KeqdisVpnService.VPN_BACKEND_MIHOMO
-        ) {
-            android.util.Log.i("KEQDIS_QS", "onClick: backend=$backend has no snapshot → opening app")
-            openAppForConnect()
-            return
-        }
-        val xrayPath = prefs.getString(KeqdisVpnService.KEY_QS_LAST_XRAY_CONFIG, null)
-        val user = prefs.getString(KeqdisVpnService.KEY_QS_LAST_SOCKS_USERNAME, null)
-        val pass = prefs.getString(KeqdisVpnService.KEY_QS_LAST_SOCKS_PASSWORD, null)
-        val port = prefs.getInt(KeqdisVpnService.KEY_QS_LAST_SOCKS_PORT, 2080)
-        val serverName = prefs.getString(KeqdisVpnService.KEY_QS_LAST_SERVER_NAME, null)
-        val exc = prefs.getStringSet(KeqdisVpnService.KEY_QS_LAST_EXCLUDE_PACKAGES, emptySet())?.toList() ?: emptyList()
-        val inc = prefs.getStringSet(KeqdisVpnService.KEY_QS_LAST_INCLUDE_PACKAGES, emptySet())?.toList() ?: emptyList()
-
-        // Снапшот пишет только сам сервис при старте: пока человек ни разу не
-        // подключился из приложения, плитке нечем подключаться. Сам файл конфига
-        // тоже проверяем — после очистки данных путь в prefs переживает файл, и
-        // старт был бы обречён (ядро не поднимется, «Connecting…» → ошибка).
-        if (xrayPath.isNullOrBlank() || user.isNullOrBlank() || pass.isNullOrBlank() ||
-            !java.io.File(xrayPath).exists()
-        ) {
+        val start = KeqdisVpnService.snapshotStartIntent(this)
+        if (start == null) {
             android.util.Log.i("KEQDIS_QS", "onClick: no usable server snapshot → opening app")
             openAppForConnect()
             return
         }
 
-        val intent = Intent(this, KeqdisVpnService::class.java).apply {
-            action = KeqdisVpnService.ACTION_START
-            putExtra(KeqdisVpnService.EXTRA_VPN_BACKEND, backend)
-            putExtra(KeqdisVpnService.EXTRA_CORE_ENGINE, coreEngine)
-            // Режим прошлого старта — по той же причине, что движок и ядро: без
-            // него плитка поднимала бы полноценный VPN поверх настройки «только
-            // прокси», то есть тихо делала бы не то, что человек выбрал. И
-            // разрешения на VPN у неё для этого может не оказаться вовсе.
-            putExtra(
-                KeqdisVpnService.EXTRA_TUNNEL_MODE,
-                prefs.getString(
-                    KeqdisVpnService.KEY_QS_LAST_TUNNEL_MODE,
-                    KeqdisVpnService.TUNNEL_MODE_VPN,
-                ) ?: KeqdisVpnService.TUNNEL_MODE_VPN,
-            )
-            putExtra(KeqdisVpnService.EXTRA_XRAY_CONFIG, xrayPath)
-            putExtra("socks_port", port)
-            putStringArrayListExtra("exclude_packages", ArrayList(exc))
-            putStringArrayListExtra("include_packages", ArrayList(inc))
-            putExtra(KeqdisVpnService.EXTRA_SOCKS_USERNAME, user)
-            putExtra(KeqdisVpnService.EXTRA_SOCKS_PASSWORD, pass)
-            if (!serverName.isNullOrBlank()) putExtra(KeqdisVpnService.EXTRA_SERVER_NAME, serverName)
+        // Согласие на VPN спрашивает только окно: VpnService.prepare отдаёт
+        // интент под startActivityForResult. Невидимое окно спросит его и
+        // само же подключит — открывать ради диалога всё приложение незачем.
+        if (KeqdisVpnService.startsTunnel(start) && VpnService.prepare(this) != null) {
+            android.util.Log.i("KEQDIS_QS", "onClick: no VPN consent → quick connect window")
+            openQuickConnect()
+            return
+        }
+        if (directStartBlocked()) {
+            android.util.Log.i("KEQDIS_QS", "onClick: this firmware blocks the tile → quick connect window")
+            openQuickConnect()
+            return
         }
 
         try {
-            if (Build.VERSION.SDK_INT >= 26) startForegroundService(intent) else startService(intent)
+            if (Build.VERSION.SDK_INT >= 26) startForegroundService(start) else startService(start)
         } catch (e: Exception) {
-            // Android 12+ бросает ForegroundServiceStartNotAllowedException, если
-            // приложению запрещён фоновый старт сервиса («Ограничить фоновую
-            // активность», выключенный автозапуск на OEM-прошивках). Молча
-            // проглотить нельзя — уводим человека в приложение, оттуда старт
-            // разрешён всегда.
+            // ForegroundServiceStartNotAllowedException на Android 12+: право
+            // на фоновый старт отняли («Ограничить фоновую активность»,
+            // выключенный автозапуск прошивки). Из окна старт разрешён всегда.
             android.util.Log.e("KEQDIS_QS", "onClick: service start refused by system: $e")
-            toast(R.string.tile_error_autostart)
-            openAppForConnect()
+            rememberDirectStartBlocked()
+            openQuickConnect()
             return
         }
         verifyStarted()
     }
 
-    /// Проверяет, что сервис действительно поднялся, и уводит в приложение, если нет.
+    /// Проверяет, что сервис действительно поднялся, и подключает через окно, если нет.
     ///
     /// Нужно потому, что отказ бывает БЕЗ исключения. `startForegroundService`
     /// возвращает управление нормально, а прошивка (ColorOS/MIUI и родня с
     /// «Автозапуском») старт молча глотает — снаружи это ровно «плитка
-    /// дёрнулась и тишина», без единого следа.
+    /// дёрнулась и тишина», без единого следа. Стоковый Android такой старт
+    /// пропускает: согласие на VPN — само по себе право на фоновый старт
+    /// (REASON_OP_ACTIVATE_VPN в ActiveServices, с Android 12).
     ///
     /// Сверяемся с [KeqdisVpnService.liveStatus]: сервис выставляет его прямо в
     /// onStartCommand, поэтому «disconnected» через паузу означает, что до
@@ -279,8 +231,8 @@ class VpnQuickTileService : TileService() {
     /// прошивке на ровном месте.
     ///
     /// Задержка — компромисс. Меньше секунды не хватает даже здоровому старту
-    /// (сервис успевает только создаться), больше трёх — человек уже закрыл
-    /// шторку и тоста не увидит.
+    /// (сервис успевает только создаться), а чем она больше, тем вероятнее,
+    /// что шторку уже закрыли и окно из неё не откроется (см. openQuickConnect).
     private fun verifyStarted() {
         android.os.Handler(mainLooper).postDelayed({
             val live = KeqdisVpnService.liveStatus.lowercase()
@@ -289,13 +241,53 @@ class VpnQuickTileService : TileService() {
                     "KEQDIS_QS",
                     "onClick: service did not come up (live='$live') — likely blocked by the OEM",
                 )
-                toast(R.string.tile_error_autostart)
-                // Сервис система стартовать не дала, но запуск активити из
-                // шторки ей не запрещён, а из приложения старт разрешён всегда.
-                // Без этого нажатие заканчивается одним тостом и ничем больше.
-                openAppForConnect()
+                rememberDirectStartBlocked()
+                openQuickConnect(retryHelps = true)
             }
         }, 2500)
+    }
+
+    /**
+     * Не отказала ли уже эта прошивка плитке в прямом старте сервиса.
+     *
+     * Запомненный отказ ведёт нажатие сразу в окно — без 2,5 с ожидания на
+     * каждое. Помним до обновления системы: с ней меняется и прошивка с её
+     * запретами. Разрешённый потом автозапуск это не снимет, но окно работает
+     * и так; теряется лишь то, что шторка после нажатия сворачивается.
+     */
+    private fun directStartBlocked(): Boolean =
+        getSharedPreferences(KeqdisVpnService.PREFS_QS, MODE_PRIVATE)
+            .getString(KeqdisVpnService.KEY_QS_DIRECT_START_BLOCKED_ON, null) == Build.FINGERPRINT
+
+    private fun rememberDirectStartBlocked() {
+        getSharedPreferences(KeqdisVpnService.PREFS_QS, MODE_PRIVATE)
+            .edit()
+            .putString(KeqdisVpnService.KEY_QS_DIRECT_START_BLOCKED_ON, Build.FINGERPRINT)
+            .apply()
+    }
+
+    /**
+     * Подключиться через невидимое окно [QuickConnectActivity].
+     *
+     * Окно из шторки открывается, только пока она открыта: на Android 14+
+     * SystemUI без «жетона» нажатия молча пропускает запуск (CustomTile,
+     * «Launching activity before click»), ниже его режет запрет фоновых окон.
+     * Если окно так и не открылось, говорим об этом вслух — иначе нажатие
+     * кончается ничем. [retryHelps] — отказ только что выяснился по
+     * истечении паузы: следующее нажатие пойдёт в окно сразу, пока шторка
+     * открыта, и сработает.
+     */
+    private fun openQuickConnect(retryHelps: Boolean = false) {
+        val intent = Intent(this, QuickConnectActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION)
+        launchActivity(intent) { launchedAt ->
+            android.os.Handler(mainLooper).postDelayed({
+                if (QuickConnectActivity.openedAt >= launchedAt) return@postDelayed
+                if (KeqdisVpnService.liveStatus.lowercase() in ACTIVE_STATUSES) return@postDelayed
+                android.util.Log.w("KEQDIS_QS", "quick connect window did not open")
+                toast(if (retryHelps) R.string.tile_error_blocked else R.string.tile_error_open_app)
+            }, 2000)
+        }
     }
 
     private fun openAppForConnect() {
@@ -306,8 +298,14 @@ class VpnQuickTileService : TileService() {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 putExtra("action", "connect_from_notification")
             }
+        launchActivity(launchIntent)
+    }
 
+    /// Открыть окно и свернуть шторку. [onLaunched] получает момент запуска
+    /// (elapsedRealtime) — уже после снятия блокировки экрана, если она была.
+    private fun launchActivity(launchIntent: Intent, onLaunched: ((Long) -> Unit)? = null) {
         val open = Runnable {
+            val launchedAt = android.os.SystemClock.elapsedRealtime()
             try {
                 // Collapse QS panel and open the app.
                 if (Build.VERSION.SDK_INT >= 34) {
@@ -333,8 +331,10 @@ class VpnQuickTileService : TileService() {
                 runCatching { startActivity(launchIntent) }.onFailure {
                     android.util.Log.e("KEQDIS_QS", "startActivity fallback failed: $it")
                     toast(R.string.tile_error_open_app)
+                    return@Runnable
                 }
             }
+            onLaunched?.invoke(launchedAt)
         }
 
         // На заблокированном экране активность просто не покажется: система

@@ -88,6 +88,18 @@
             </intent-filter>
         </activity>
 
+        <!-- Невидимое окно, через которое плитка подключает, когда прошивка
+             не даёт поднять сервис из шторки. Своя пустая taskAffinity: с
+             общей окно встало бы в задачу приложения и вытащило бы его
+             целиком на экран. -->
+        <activity
+            android:name=".QuickConnectActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@style/QuickConnectTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode" />
+
         <service
             android:name=".KeqdisVpnService"
             android:exported="false"

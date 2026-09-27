@@ -146,6 +146,10 @@ class KeqdisVpnService : VpnService() {
         /// «disconnected» при любой прошлой жизни.
         const val KEY_QS_SESSION_WANTED = "qs_session_wanted"
 
+        /// Прошивка, на которой плитке не дали поднять сервис напрямую (см.
+        /// VpnQuickTileService.directStartBlocked).
+        const val KEY_QS_DIRECT_START_BLOCKED_ON = "qs_direct_start_blocked_on"
+
         /**
          * START-команда на прошлый сервер — тем же ядром, режимом и файлом.
          *
