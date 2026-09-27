@@ -216,6 +216,10 @@ class KeqdisVpnService : VpnService() {
         /// это за «подключено».
         private const val CORE_QUICK_DEATH_MS = 30_000L
         private const val CORE_MAX_QUICK_DEATHS = 3
+
+        /// Раз во сколько секунд сессии снимать слепок памяти (см. logMemory).
+        private const val MEMORY_SNAPSHOT_TICKS = 600
+        private const val MEMORY_GROWTH_ALARM = 256L * 1024 * 1024
     }
 
     // Credentials приходят через Intent от MainActivity — так они гарантированно совпадают с теми что были записаны в Xray конфиг
@@ -1613,6 +1617,8 @@ class KeqdisVpnService : VpnService() {
 
             while (status == VpnRunStatus.RUNNING || status == VpnRunStatus.STARTING) {
                 delay(1000)
+                // Пятая секунда — отправная точка сессии, дальше раз в десять минут.
+                if (tick % MEMORY_SNAPSHOT_TICKS == 5) logMemory()
                 val rx = android.net.TrafficStats.getUidRxBytes(uid).coerceAtLeast(0)
                 val tx = android.net.TrafficStats.getUidTxBytes(uid).coerceAtLeast(0)
 
@@ -1658,6 +1664,58 @@ class KeqdisVpnService : VpnService() {
             }
         }
     }
+
+    // Прошлый слепок и следующий порог размера — см. logMemory.
+    private var lastMemoryPss = 0L
+    private var nextMemoryThreshold = 1024L * 1024 * 1024
+
+    /**
+     * Слепок памяти процесса в native.log.
+     *
+     * Процесс уже разрастался до 2,3 ГБ при работающем VPN (запись системы:
+     * LOW_MEMORY, importance 125), и чем — не понять без чисел по времени:
+     * Java, нативная куча, графика Flutter, потоки, открытые файлы и отдельно
+     * ядро, которое живёт своим процессом и в PSS приложения не входит.
+     * Скачок больше MEMORY_GROWTH_ALARM и пройденный порог (1, 2, 4 ГБ) идут
+     * предупреждением — их видно фильтром «Только проблемы».
+     */
+    private fun logMemory() {
+        runCatching {
+            val info = android.os.Debug.MemoryInfo().also { android.os.Debug.getMemoryInfo(it) }
+            val total = info.totalPss * 1024L
+            val graphics = info.getMemoryStat("summary.graphics")?.toLongOrNull()?.times(1024)
+            val threads = procStatusValue("self", "Threads")
+            val files = File("/proc/self/fd").list()?.size
+            val core = xrayPid.takeIf { it > 0 }?.let { procStatusValue("$it", "VmRSS") }
+            val line = "memory: pss ${mb(total)} (java ${mb(info.dalvikPss * 1024L)}, " +
+                "native ${mb(info.nativePss * 1024L)}" +
+                (graphics?.let { ", graphics ${mb(it)}" } ?: "") +
+                "), threads ${threads ?: "?"}, open files ${files ?: "?"}, " +
+                "core ${core?.let { mb(it * 1024) } ?: "not running"}"
+
+            val alarms = ArrayList<String>(2)
+            if (total >= nextMemoryThreshold) {
+                while (total >= nextMemoryThreshold) nextMemoryThreshold *= 2
+                alarms.add("now above ${mb(nextMemoryThreshold / 2)}")
+            }
+            if (lastMemoryPss > 0 && total - lastMemoryPss >= MEMORY_GROWTH_ALARM) {
+                alarms.add("grew by ${mb(total - lastMemoryPss)} since last time")
+            }
+            lastMemoryPss = total
+            if (alarms.isEmpty()) NativeLog.i("KEQDIS", line)
+            else NativeLog.w("KEQDIS", "$line; ${alarms.joinToString(", ")}")
+        }.onFailure { NativeLog.d("KEQDIS", "memory snapshot failed: ${it.message}") }
+    }
+
+    /// Число из `/proc/<pid>/status`: у VmRSS — килобайты, у Threads — штуки.
+    private fun procStatusValue(pid: String, key: String): Long? = runCatching {
+        File("/proc/$pid/status").useLines { lines ->
+            lines.firstOrNull { it.startsWith("$key:") }
+                ?.substringAfter(':')?.trim()?.substringBefore(' ')?.toLongOrNull()
+        }
+    }.getOrNull()
+
+    private fun mb(bytes: Long): String = "${bytes / (1024 * 1024)} MB"
 
     private fun formatSpeed(bytesPerSec: Long): String = when {
         bytesPerSec >= 1024 * 1024 ->
