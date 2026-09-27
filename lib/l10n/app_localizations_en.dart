@@ -2324,12 +2324,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appLogSourceNativeDesc => 'VPN service, Quick Settings tile, connect window';
 
   @override
-  String get appLogSourceCore => 'Core';
-
-  @override
-  String get appLogSourceCoreDesc => 'xray or mihomo output of the current session';
-
-  @override
   String get appLogSourceExitsDesc => 'System records: when and why the app was closed';
 
   @override

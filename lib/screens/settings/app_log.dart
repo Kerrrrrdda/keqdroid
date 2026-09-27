@@ -10,8 +10,8 @@ Widget appLogScreenForTest() => const _AppLogScreen();
 /// ней проблем.
 ///
 /// Порознь потому, что вопрос почти всегда «какая часть сломалась», и в общей
-/// ленте строк службы, Dart и ядра на него не ответить. Счётчик на входе
-/// отвечает на него раньше, чем журнал открыт.
+/// ленте строк службы и Dart на него не ответить. Счётчик на входе отвечает
+/// на него раньше, чем журнал открыт.
 class _AppLogScreen extends StatefulWidget {
   const _AppLogScreen();
 
@@ -94,7 +94,6 @@ class _AppLogScreenState extends State<_AppLogScreen> {
   static IconData _sourceIcon(AppLogSource source) => switch (source) {
         AppLogSource.app => Icons.widgets_rounded,
         AppLogSource.native => Icons.android_rounded,
-        AppLogSource.core => Icons.terminal_rounded,
       };
 }
 
@@ -102,14 +101,12 @@ String _sourceTitle(AppLocalizations l10n, AppLogSource source) =>
     switch (source) {
       AppLogSource.app => l10n.appLogSourceApp,
       AppLogSource.native => l10n.appLogSourceNative,
-      AppLogSource.core => l10n.appLogSourceCore,
     };
 
 String _sourceDescription(AppLocalizations l10n, AppLogSource source) =>
     switch (source) {
       AppLogSource.app => l10n.appLogSourceAppDesc,
       AppLogSource.native => l10n.appLogSourceNativeDesc,
-      AppLogSource.core => l10n.appLogSourceCoreDesc,
     };
 
 /// Часть приложения на входе в журнал. [problems] — null, пока журнал

@@ -2324,12 +2324,6 @@ class AppLocalizationsFa extends AppLocalizations {
   String get appLogSourceNativeDesc => 'سرویس VPN، کاشی تنظیمات سریع، پنجرهٔ اتصال';
 
   @override
-  String get appLogSourceCore => 'هسته';
-
-  @override
-  String get appLogSourceCoreDesc => 'خروجی xray یا mihomo در نشست جاری';
-
-  @override
   String get appLogSourceExitsDesc => 'سوابق سیستم: برنامه کی و چرا بسته شد';
 
   @override

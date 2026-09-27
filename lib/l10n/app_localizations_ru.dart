@@ -2329,12 +2329,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get appLogSourceNativeDesc => 'Служба VPN, плитка в шторке, окно подключения';
 
   @override
-  String get appLogSourceCore => 'Ядро';
-
-  @override
-  String get appLogSourceCoreDesc => 'Вывод xray или mihomo текущей сессии';
-
-  @override
   String get appLogSourceExitsDesc => 'Записи системы: когда и почему закрывалось приложение';
 
   @override

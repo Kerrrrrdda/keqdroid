@@ -4517,18 +4517,6 @@ abstract class AppLocalizations {
   /// **'VPN service, Quick Settings tile, connect window'**
   String get appLogSourceNativeDesc;
 
-  /// No description provided for @appLogSourceCore.
-  ///
-  /// In en, this message translates to:
-  /// **'Core'**
-  String get appLogSourceCore;
-
-  /// No description provided for @appLogSourceCoreDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'xray or mihomo output of the current session'**
-  String get appLogSourceCoreDesc;
-
   /// No description provided for @appLogSourceExitsDesc.
   ///
   /// In en, this message translates to:

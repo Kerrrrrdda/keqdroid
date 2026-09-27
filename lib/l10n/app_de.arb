@@ -1000,8 +1000,6 @@
   "appLogSourceAppDesc": "Oberfläche, Abos, Verbindungsaufbau",
   "appLogSourceNative": "Nativer Teil",
   "appLogSourceNativeDesc": "VPN-Dienst, Schnelleinstellungs-Kachel, Verbindungsfenster",
-  "appLogSourceCore": "Kern",
-  "appLogSourceCoreDesc": "Ausgabe von xray oder mihomo in der aktuellen Sitzung",
   "appLogSourceExitsDesc": "Systemeinträge: wann und warum die App beendet wurde",
   "appLogProblems": "{count, plural, =0{Keine Probleme} =1{1 Problem} other{{count} Probleme}}",
   "appLogOnlyProblems": "Nur Probleme",

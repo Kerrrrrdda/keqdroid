@@ -2322,12 +2322,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appLogSourceNativeDesc => 'VPN 服务、快捷设置磁贴、连接窗口';
 
   @override
-  String get appLogSourceCore => '内核';
-
-  @override
-  String get appLogSourceCoreDesc => '当前会话中 xray 或 mihomo 的输出';
-
-  @override
   String get appLogSourceExitsDesc => '系统记录：应用何时、为何被关闭';
 
   @override

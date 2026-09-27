@@ -1000,8 +1000,6 @@
   "appLogSourceAppDesc": "Интерфейс, подписки, подключение",
   "appLogSourceNative": "Нативная часть",
   "appLogSourceNativeDesc": "Служба VPN, плитка в шторке, окно подключения",
-  "appLogSourceCore": "Ядро",
-  "appLogSourceCoreDesc": "Вывод xray или mihomo текущей сессии",
   "appLogSourceExitsDesc": "Записи системы: когда и почему закрывалось приложение",
   "appLogProblems": "{count, plural, =0{Без проблем} one{{count} проблема} few{{count} проблемы} many{{count} проблем} other{{count} проблемы}}",
   "appLogOnlyProblems": "Только проблемы",

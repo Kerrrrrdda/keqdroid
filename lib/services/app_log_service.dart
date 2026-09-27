@@ -15,9 +15,6 @@ enum AppLogSource {
 
   /// Android: служба VPN, плитка, окно подключения — `native.log`.
   native,
-
-  /// Вывод ядра текущей сессии.
-  core,
 }
 
 enum LogLevel { debug, info, warn, error }
@@ -36,20 +33,21 @@ class LogEntry {
 /// Журналы разных частей приложения — прочитать, разобрать, собрать в один
 /// текст для отправки.
 ///
-/// Части разнесены намеренно: на телефоне в общей куче строк нативной службы,
-/// Dart и ядра не найти, какая из них сломалась, а вопрос почти всегда именно
-/// такой.
+/// Части разнесены намеренно: на телефоне в общей куче строк нативной службы
+/// и Dart не найти, какая из них сломалась, а вопрос почти всегда именно такой.
+///
+/// Вывода ядра среди частей нет: он живёт на экране отладочного режима, и
+/// показывать его каждому, минуя этот режим, незачем.
 class AppLogService {
   AppLogService._();
 
   static const _channel = MethodChannel('keqdis_vpn_channel');
 
   /// Журналы этой платформы. Нативная часть со своим журналом есть только на
-  /// Android: на десктопе служба и ядро живут в том же `app.log`.
+  /// Android.
   static List<AppLogSource> get sources => [
         AppLogSource.app,
         if (Platform.isAndroid) AppLogSource.native,
-        AppLogSource.core,
       ];
 
   static Future<List<LogEntry>> read(AppLogSource source) async =>
@@ -61,7 +59,6 @@ class AppLogService {
         AppLogSource.app => await AppLogger.instance.readFileLog(),
         AppLogSource.native =>
           await _channel.invokeMethod<String>('getNativeLog') ?? '',
-        AppLogSource.core => await DebugLogService.getXrayLogs(maxLines: 2000),
       };
     } catch (_) {
       // Натив старый или канал не ответил — журнала этой части просто нет.
@@ -75,12 +72,6 @@ class AppLogService {
 
   static List<LogEntry> parse(AppLogSource source, String text) {
     final lines = const LineSplitter().convert(text);
-    if (source == AppLogSource.core) {
-      return [
-        for (final line in lines)
-          if (line.trim().isNotEmpty) LogEntry(coreLevel(line), line),
-      ];
-    }
     final entries = <LogEntry>[];
     for (final line in lines) {
       final head = _head.firstMatch(line);
@@ -105,36 +96,6 @@ class AppLogService {
     'ERROR': LogLevel.error,
   };
 
-  static final _coreErrorTag =
-      RegExp(r'\[error\]|level=(error|fatal)', caseSensitive: false);
-  static final _coreWarnTag =
-      RegExp(r'\[warning\]|level=warn(ing)?', caseSensitive: false);
-  static final _coreDebugTag =
-      RegExp(r'\[debug\]|level=debug', caseSensitive: false);
-  // Слово уровня — только капсом: «error» строчными бывает в тексте любой
-  // строки уровня Info, и фильтр пропускал бы половину лога.
-  static final _coreErrorWord = RegExp(r'\b(ERROR|FATAL)\b|\bpanic:');
-  static final _coreWarnWord = RegExp(r'\bWARN(ING)?\b');
-
-  /// Уровень строки ядра. У xray он в скобках (`[Warning]`), у mihomo —
-  /// `level=warning`, у sing-box на десктопе — словом капсом.
-  ///
-  /// Строки `[keqdis]` дописывает сама служба, и каждая — событие вокруг
-  /// ядра: убито, поднято заново, не поднялось. Их считаем проблемой, иначе
-  /// фильтр прятал бы ровно то, что объясняет обрыв.
-  static LogLevel coreLevel(String line) {
-    if (_coreErrorTag.hasMatch(line) || _coreErrorWord.hasMatch(line)) {
-      return LogLevel.error;
-    }
-    if (_coreWarnTag.hasMatch(line) ||
-        _coreWarnWord.hasMatch(line) ||
-        line.contains('[keqdis]')) {
-      return LogLevel.warn;
-    }
-    if (_coreDebugTag.hasMatch(line)) return LogLevel.debug;
-    return LogLevel.info;
-  }
-
   /// Весь журнал одним текстом — для чата поддержки.
   ///
   /// Из каждой части только хвост: полмегабайта app.log в сообщение не
@@ -154,6 +115,15 @@ class AppLogService {
         out.writeln(entry.text);
       }
     }
+    // Ядра в самом журнале нет, а в текст для поддержки его хвост идёт: при
+    // «не подключается» причину пишет именно оно.
+    final core = await _coreTail(tailEntries);
+    if (core.isNotEmpty) {
+      out
+        ..writeln()
+        ..writeln('## core')
+        ..writeln(core);
+    }
     final exits = await processExits();
     if (exits.isNotEmpty) {
       out
@@ -166,4 +136,12 @@ class AppLogService {
 
   static Future<List<ProcessExit>> processExits() =>
       AppInternalsService.processExits();
+
+  static Future<String> _coreTail(int lines) async {
+    try {
+      return (await DebugLogService.getXrayLogs(maxLines: lines)).trim();
+    } catch (_) {
+      return '';
+    }
+  }
 }

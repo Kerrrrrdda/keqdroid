@@ -43,46 +43,7 @@ void main() {
 
     test('пустой журнал — пустой список', () {
       expect(AppLogService.parse(AppLogSource.app, ''), isEmpty);
-      expect(AppLogService.parse(AppLogSource.core, '\n\n'), isEmpty);
-    });
-  });
-
-  group('уровень строки ядра', () {
-    LogLevel level(String line) => AppLogService.coreLevel(line);
-
-    test('xray — в скобках', () {
-      expect(level('09-27 22:51:42 2026/09/27 18:51:42 [Error] app: failed'),
-          LogLevel.error);
-      expect(level('09-27 22:51:42 2026/09/27 18:51:42 [Warning] proxy: dial'),
-          LogLevel.warn);
-      expect(level('09-27 22:51:42 2026/09/27 18:51:42 [Debug] geodata: hit'),
-          LogLevel.debug);
-      expect(level('09-27 22:51:42 2026/09/27 18:51:42 [Info] started'),
-          LogLevel.info);
-    });
-
-    test('mihomo — полем level', () {
-      expect(level('time="2026" level=error msg="dial failed"'), LogLevel.error);
-      expect(level('time="2026" level=warning msg="slow"'), LogLevel.warn);
-      expect(level('time="2026" level=info msg="ok"'), LogLevel.info);
-    });
-
-    test('sing-box на десктопе — словом капсом', () {
-      expect(level('+0300 2026-09-27 22:51:42 ERROR [123] inbound failed'),
-          LogLevel.error);
-      expect(level('+0300 2026-09-27 22:51:42 WARN dns: timeout'), LogLevel.warn);
-    });
-
-    test('«error» строчными в тексте строки Info уровень не меняет', () {
-      expect(
-        level('[Info] transport/internet: connection error, retrying'),
-        LogLevel.info,
-      );
-    });
-
-    test('заметки службы о ядре — всегда проблема', () {
-      expect(level('09-27 22:51:42 [keqdis] core process 5542 is gone'),
-          LogLevel.warn);
+      expect(AppLogService.parse(AppLogSource.native, '\n\n'), isEmpty);
     });
   });
 }

@@ -736,8 +736,6 @@
   "appLogSourceAppDesc": "رابط کاربری، اشتراک‌ها، اتصال",
   "appLogSourceNative": "بخش نیتیو",
   "appLogSourceNativeDesc": "سرویس VPN، کاشی تنظیمات سریع، پنجرهٔ اتصال",
-  "appLogSourceCore": "هسته",
-  "appLogSourceCoreDesc": "خروجی xray یا mihomo در نشست جاری",
   "appLogSourceExitsDesc": "سوابق سیستم: برنامه کی و چرا بسته شد",
   "appLogProblems": "{count, plural, =0{بدون مشکل} other{{count} مشکل}}",
   "appLogOnlyProblems": "فقط مشکل‌ها",
