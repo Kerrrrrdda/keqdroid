@@ -28,17 +28,35 @@ class AppLogger {
     _crashlyticsEnabled = enabled;
   }
 
-  /// Дублировать лог в файл рядом с настройками (только десктоп).
+  /// Дублировать лог в файл рядом с настройками.
   ///
-  /// Crashlytics живёт лишь под Android, а developer.log в релизной сборке не
-  /// видно нигде: упавший до runApp старт не оставлял ни строчки ни на экране,
-  /// ни на диске, и разбирать поломку у человека было нечем.
+  /// developer.log в релизной сборке не видно нигде: упавший до runApp старт
+  /// не оставлял ни строчки ни на экране, ни на диске. На Android есть ещё
+  /// Crashlytics, но он берёт только ошибки и только с согласия, а файл
+  /// человек видит сам — в «Журнале приложения».
   Future<void> enableFileLog() async {
-    if (!Platform.isWindows && !Platform.isLinux) return;
+    if (!Platform.isWindows && !Platform.isLinux && !Platform.isAndroid) return;
     try {
       enableFileLogIn(await getApplicationSupportDirectory());
     } catch (_) {
       // Каталог недоступен — логгер молчит, но старт не трогает.
+    }
+  }
+
+  /// Журнал с прошлой половиной (`app.log.1`), не больше [maxChars] с конца.
+  /// Пусто — файл не заведён или не читается.
+  Future<String> readFileLog({int maxChars = 512 * 1024}) async {
+    final file = _logFile;
+    if (file == null) return '';
+    try {
+      final previous = File('${file.path}.1');
+      final text = [
+        if (await previous.exists()) await previous.readAsString(),
+        if (await file.exists()) await file.readAsString(),
+      ].join();
+      return text.length > maxChars ? text.substring(text.length - maxChars) : text;
+    } catch (_) {
+      return '';
     }
   }
 

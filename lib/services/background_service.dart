@@ -30,6 +30,9 @@ void callbackDispatcher() {
       // иначе StorageService.init() падает с MissingPluginException
       WidgetsFlutterBinding.ensureInitialized();
       DartPluginRegistrant.ensureInitialized();
+      // Логгер у изолята свой: без этого сбой фонового обновления подписок
+      // в «Журнал приложения» не попадал бы вовсе.
+      await AppLogger.instance.enableFileLog();
 
       final storage = await StorageService.init();
 

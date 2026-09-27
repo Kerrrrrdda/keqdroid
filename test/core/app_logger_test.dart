@@ -41,6 +41,24 @@ void main() {
     expect(log().readAsStringSync(), contains('after rotation'));
   });
 
+  test('журнал читается вместе с прошлой половиной, старое первым', () async {
+    rotated().writeAsStringSync('older line\n');
+    AppLogger.instance.info('newer line');
+
+    final text = await AppLogger.instance.readFileLog();
+    expect(text.indexOf('older line'), lessThan(text.indexOf('newer line')));
+  });
+
+  test('из длинного журнала читается хвост', () async {
+    AppLogger.instance.info('head ${'x' * 100}');
+    AppLogger.instance.info('tail');
+
+    final text = await AppLogger.instance.readFileLog(maxChars: 50);
+    expect(text.length, 50);
+    expect(text, contains('tail'));
+    expect(text, isNot(contains('head')));
+  });
+
   test('недоступный файл логгер переживает молча', () {
     dir.deleteSync(recursive: true);
 
