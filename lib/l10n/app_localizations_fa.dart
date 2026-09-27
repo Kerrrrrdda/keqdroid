@@ -67,13 +67,13 @@ class AppLocalizationsFa extends AppLocalizations {
   String get errorConnectionGeneric => 'خطای اتصال';
 
   @override
-  String get errorProviderConfigTitle => 'تنظیمات پنل لازم است';
+  String get errorProviderConfigTitle => 'تنظیم در پنل سرویس‌دهنده لازم است';
 
   @override
-  String get errorProviderNoHostsMessage => 'فروشنده هیچ هاستی به این اشتراک اختصاص نداده است.';
+  String get errorProviderNoHostsMessage => 'سرویس‌دهنده هیچ هاستی به این اشتراک اختصاص نداده است.';
 
   @override
-  String get errorProviderNoHostsAction => 'وارد پنل فروشنده شوید، هاست اضافه یا اختصاص دهید و بعد اشتراک را به‌روزرسانی کنید.';
+  String get errorProviderNoHostsAction => 'وارد پنل سرویس‌دهنده شوید، هاست اضافه یا اختصاص دهید و بعد اشتراک را به‌روزرسانی کنید.';
 
   @override
   String errorActionLabel(Object action) {
@@ -81,7 +81,7 @@ class AppLocalizationsFa extends AppLocalizations {
   }
 
   @override
-  String get splitTunnelingTitle => 'پروکسی هر برنامه';
+  String get splitTunnelingTitle => 'پروکسی به تفکیک برنامه';
 
   @override
   String get splitModeAllApps => 'همهٔ برنامه‌ها';
@@ -93,7 +93,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get splitModeAllExceptSelected => 'همه به‌جز انتخاب‌شده‌ها';
 
   @override
-  String get splitSearchHint => 'جستجوی برنامه...';
+  String get splitSearchHint => 'جست‌وجوی برنامه...';
 
   @override
   String get splitNoAppsFound => 'برنامه‌ای پیدا نشد';
@@ -105,7 +105,7 @@ class AppLocalizationsFa extends AppLocalizations {
 
   @override
   String splitSelectedAppsCount(int count) {
-    return '$count برنامه انتخاب شد';
+    return '$count برنامهٔ انتخاب‌شده';
   }
 
   @override
@@ -115,7 +115,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get splitShowSystemApps => 'نمایش برنامه‌های سیستمی';
 
   @override
-  String get splitAddRussianAppsBypass => 'افزودن برنامه‌های روسی به فهرست دور زدن';
+  String get splitAddRussianAppsBypass => 'افزودن برنامه‌های روسی به فهرست بدون VPN';
 
   @override
   String get splitClear => 'پاک‌سازی';
@@ -124,11 +124,11 @@ class AppLocalizationsFa extends AppLocalizations {
   String get splitNoRussianAppsFound => 'در فهرست برنامه‌های نصب‌شده، برنامهٔ روسی پیدا نشد';
 
   @override
-  String get splitRussianAppsAlreadyAdded => 'همهٔ برنامه‌های روسی از قبل در فهرست دور زدن هستند';
+  String get splitRussianAppsAlreadyAdded => 'همهٔ برنامه‌های روسی از قبل در فهرست بدون VPN هستند';
 
   @override
   String splitAddedRussianApps(int count) {
-    return '$count برنامهٔ روسی به فهرست دور زدن اضافه شد';
+    return '$count برنامهٔ روسی به فهرست بدون VPN اضافه شد';
   }
 
   @override
@@ -165,7 +165,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsThemeTitle => 'ظاهر';
 
   @override
-  String get settingsSplitTitle => 'پروکسی هر برنامه';
+  String get settingsSplitTitle => 'پروکسی به تفکیک برنامه';
 
   @override
   String get settingsRoutingTitle => 'قوانین مسیریابی';
@@ -203,7 +203,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsRoutingPresetRuTitle => 'سایت‌های روسی — مستقیم';
 
   @override
-  String get settingsRoutingPresetRuDesc => 'همهٔ دامنه‌های ru. و رф. و سرویس‌های بزرگ روسیه بدون VPN باز می‌شوند (به فهرست مستقیم اضافه می‌شود)';
+  String get settingsRoutingPresetRuDesc => 'همهٔ دامنه‌های ‎.ru‎ و ‎.рф‎ و سرویس‌های بزرگ روسیه بدون VPN باز می‌شوند (به فهرست «مستقیم» اضافه می‌شوند)';
 
   @override
   String get settingsRoutingPresetRuGeoipTitle => 'آی‌پی‌های روسیه (GeoIP) — مستقیم';
@@ -262,7 +262,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsRoutingDirectTitle => 'مستقیم (بدون VPN)';
 
   @override
-  String get settingsRoutingProxyTitle => 'پروکسی (اجبار به VPN)';
+  String get settingsRoutingProxyTitle => 'پروکسی (از طریق VPN)';
 
   @override
   String get settingsRoutingBlockTitle => 'مسدود';
@@ -277,7 +277,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsRoutingFinalProxy => 'پروکسی';
 
   @override
-  String get settingsRoutingFinalDirect => 'دور زدن';
+  String get settingsRoutingFinalDirect => 'مستقیم';
 
   @override
   String get settingsRoutingFinalBlock => 'مسدود';
@@ -340,7 +340,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get routingCheatSheetTitle => 'نحوهٔ نوشتن قوانین';
 
   @override
-  String get routingCheatSheetBody => 'قانون‌ها فقط یک فهرست‌اند: چه چیزی از کجا برود. هر خط یک دامنه، یک آی‌پی یا یک برچسب جغرافیایی است و کنارش عملکرد — مستقیم (دور زدن)، از داخل VPN (پروکسی)، یا مسدود.\n\n## دامنه‌ها\nvk.com — خود دامنه و همهٔ زیردامنه‌هایش\nru — هر چیزی که به ru. ختم شود (کلمهٔ خالی، بدون نقطه)\nexample.com. — فقط زیردامنه‌ها، نه خود دامنه\nfull:example.com — دقیقاً همین هاست، بدون زیردامنه\nregexp:… — عبارت منظم، اگر واقعاً لازم شد\n\n## آدرس‌های آی‌پی\n1.2.3.4 — یک آدرس\n10.0.0.0/8 — یک بازهٔ کامل (CIDR)\n\n## GeoIP — بر اساس کشور\ngeoip:ru — همهٔ آی‌پی‌های روسیه. به‌جای ru هر کشوری بگذارید: us، de، cn، ua، kz…\nبستهٔ آمادهٔ دیگری هم هست: geoip:private (شبکهٔ داخلی)، geoip:telegram، geoip:google.\nکشوری لازم دارید؟ همین است — geoip همهٔ کشورها را می‌شناسد.\n\n## GeoSite — فهرست‌های آماده\ngeosite:google، geosite:netflix، geosite:telegram، geosite:category-ads-all…\nاین‌ها کشور نیستند، دسته‌بندی سرویس‌اند که از قبل برایتان جمع شده.\nکشور اینجا تقریباً نیست (فقط geolocation-cn و geolocation-!cn)، پس کار کشوری با geoip است.\n\n## روی کامپیوتر (هستهٔ keqrnel)\nبخش جغرافیایی مثل موبایل کار می‌کند: xray داخل keqrnel تطابق را انجام می‌دهد. فقط باید geoip.dat و geosite.dat کنار keqdroid.exe باشند — در نسخهٔ رسمی از قبل آنجا هستند. اگر قوانین جغرافیایی نادیده گرفته می‌شوند، اول همین دو فایل را ببینید.\n\n## ترتیب\nاز بالا به پایین: اول مسدود، بعد سرور خودتان (همیشه مستقیم، وگرنه حلقه می‌شود)، بعد دور زدن، بعد پروکسی. هرچه ماند، از کلید «ترافیک بدون قانون» در بالا پیروی می‌کند.';
+  String get routingCheatSheetBody => 'قانون‌ها فقط یک فهرست‌اند: چه چیزی از کجا برود. هر خط یک دامنه، یک آی‌پی یا یک برچسب جغرافیایی است و کنارش عملکرد آن: مستقیم (بدون VPN)، از طریق VPN (پروکسی) یا مسدود.\n\n## دامنه‌ها\nvk.com — خود دامنه و همهٔ زیردامنه‌هایش\nru — هر چیزی که به ‎.ru‎ ختم شود (یک کلمه، بدون نقطه)\n‎.example.com‎ — فقط زیردامنه‌ها، نه خود دامنه\nfull:example.com — دقیقاً همین هاست، بدون زیردامنه\n‎regexp:…‎ — عبارت منظم، اگر واقعاً لازم شد\n\n## آدرس‌های آی‌پی\n1.2.3.4 — یک آدرس\n10.0.0.0/8 — یک بازهٔ کامل (CIDR)\n\n## GeoIP: بر اساس کشور\ngeoip:ru — همهٔ آی‌پی‌های روسیه. به‌جای ru هر کشوری را بگذارید: ‎us، de، cn، ua، kz…‎\nبه‌علاوه بسته‌های آماده: geoip:private (شبکهٔ محلی)، geoip:telegram، geoip:google.\nتفکیک بر اساس کشور لازم دارید؟ همین است؛ geoip همهٔ کشورها را می‌شناسد.\n\n## GeoSite: فهرست‌های آماده\n‎geosite:google, geosite:netflix, geosite:telegram, geosite:category-ads-all…‎\nاین‌ها کشور نیستند، بلکه دسته‌بندی سرویس‌هایی‌اند که از قبل برایتان جمع شده.\nکشور اینجا تقریباً نیست (فقط geolocation-⁠cn و geolocation-⁠!⁠cn)، پس برای کشورها از geoip استفاده کنید.\n\n## روی کامپیوتر (هستهٔ keqrnel)\nقانون‌های جغرافیایی مثل موبایل کار می‌کنند: xray داخل keqrnel آن‌ها را اجرا می‌کند. فقط باید geoip.dat و geosite.dat کنار keqdroid.exe باشند؛ در نسخهٔ رسمی از قبل آنجا هستند. اگر قانون‌های جغرافیایی نادیده گرفته می‌شوند، اول همین دو فایل را بررسی کنید.\n\n## ترتیب\nاز بالا به پایین: اول مسدود، بعد سرور خودتان (همیشه مستقیم، وگرنه حلقه ایجاد می‌شود)، بعد مستقیم، بعد پروکسی. هرچه باقی بماند، از کلید «ترافیک بدون قانون» در بالا پیروی می‌کند.';
 
   @override
   String settingsRoutingItemCount(int count) {
@@ -389,7 +389,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get serversTwoColumnsTitle => 'دو ستونه';
 
   @override
-  String get appearanceServerIconThemeColors => 'نشان سرورهای بدون پرچم با رنگ پوسته';
+  String get appearanceServerIconThemeColors => 'آیکون سرورهای بدون پرچم به رنگ پوسته';
 
   @override
   String get settingsLanProxyTitle => 'پروکسی شبکهٔ محلی';
@@ -450,7 +450,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsXrayCoreTitle => 'تنظیمات هسته';
 
   @override
-  String get settingsXrayCoreSubtitle => 'DNS، Mux، تکه‌تکه‌سازی، TUN و لاگ‌ها';
+  String get settingsXrayCoreSubtitle => 'DNS، Mux، فرگمنت، TUN و گزارش‌ها';
 
   @override
   String get settingsXrayDnsSection => 'DNS';
@@ -471,10 +471,10 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsXrayDnsSplitDirectHint => 'برای دامنه‌های فهرست مستقیم از سرور اول استفاده می‌کند';
 
   @override
-  String get settingsXrayDnsHosts => 'Own addresses for domains';
+  String get settingsXrayDnsHosts => 'آدرس دلخواه برای دامنه‌ها';
 
   @override
-  String get settingsXrayDnsPolicy => 'Resolver for specific domains';
+  String get settingsXrayDnsPolicy => 'DNS جداگانه برای دامنه‌های خاص';
 
   @override
   String get settingsXrayDnsQueryStrategy => 'استراتژی پرس‌وجو';
@@ -504,7 +504,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsXrayMuxParamsTitle => 'تعداد جریان در هر اتصال';
 
   @override
-  String get settingsXrayMuxParamsHint => '-1 یعنی بدون مالتی‌پلکس. TCP تا ۱۲۸، UDP تا ۱۰۲۴.';
+  String get settingsXrayMuxParamsHint => '‎-1‎ یعنی بدون مالتی‌پلکس. TCP تا 128، UDP تا 1024.';
 
   @override
   String get settingsXrayMuxConcurrency => 'جریان‌های TCP';
@@ -534,16 +534,16 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsXrayDomainStrategy => 'استراتژی دامنه در مسیریابی';
 
   @override
-  String get settingsXrayConcurrentDial => 'Dial every address at once';
+  String get settingsXrayConcurrentDial => 'اتصال هم‌زمان به همهٔ آدرس‌ها';
 
   @override
-  String get settingsXrayConcurrentDialHint => 'وقتی بخشی از نشانی‌های سرور مسدود است کمک می‌کند';
+  String get settingsXrayConcurrentDialHint => 'وقتی بخشی از آدرس‌های سرور مسدود است کمک می‌کند';
 
   @override
   String get settingsXraySniffing => 'شناسایی دامنه در ترافیک (sniffing)';
 
   @override
-  String get settingsXraySniffingRouteOnly => 'شناسایی فقط برای مسیریابی';
+  String get settingsXraySniffingRouteOnly => 'دامنهٔ شناسایی‌شده فقط برای مسیریابی';
 
   @override
   String get settingsXrayDnsDefaultNote => 'پیش‌فرض: DoH کلادفلر و گوگل';
@@ -558,7 +558,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsXraySniffingHint => 'تشخیص پروتکل و دامنهٔ مقصد از روی ترافیک ورودی';
 
   @override
-  String get settingsXraySniffingRouteOnlyHint => 'دامنهٔ شناسایی‌شده فقط قانون را انتخاب می‌کند؛ اتصال به نشانی برنامه می‌رود.';
+  String get settingsXraySniffingRouteOnlyHint => 'دامنهٔ شناسایی‌شده فقط قانون را انتخاب می‌کند؛ اتصال به آدرس برنامه می‌رود.';
 
   @override
   String get settingsXrayResetDefaults => 'بازگشت به پیش‌فرض';
@@ -585,7 +585,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsXrayXmuxHKeepAlivePeriod => 'دورهٔ keep-alive (ثانیه)';
 
   @override
-  String get settingsXrayFragmentSection => 'تکه‌تکه‌سازی';
+  String get settingsXrayFragmentSection => 'فرگمنت';
 
   @override
   String get settingsXrayFragmentEnable => 'تکه‌تکه کردن TLS ClientHello';
@@ -624,7 +624,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsXrayNoiseRandLength => 'طول، بایت';
 
   @override
-  String get settingsXrayNoiseRandBytes => 'مقدار بایت‌ها (۰-۲۵۵)';
+  String get settingsXrayNoiseRandBytes => 'مقدار بایت‌ها (0-255)';
 
   @override
   String get settingsXrayNoiseDelay => 'تأخیر، میلی‌ثانیه';
@@ -666,13 +666,13 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsTunStackTitle => 'پشتهٔ شبکه';
 
   @override
-  String get settingsTunStackSystemHint => 'پشتهٔ سیستم‌عامل: سریع‌ترین، در ویندوز به قاعدهٔ فایروال نیاز دارد.';
+  String get settingsTunStackSystemHint => 'پشتهٔ سیستم‌عامل: سریع‌ترین، در ویندوز به قانون فایروال نیاز دارد.';
 
   @override
-  String get settingsTunStackGvisorHint => 'پشتهٔ فضای کاربر: نه شنونده، نه قاعدهٔ فایروال، کمی کندتر. به هستهٔ ساخته‌شده با gVisor نیاز دارد.';
+  String get settingsTunStackGvisorHint => 'پشتهٔ فضای کاربر: بدون listener و قانون فایروال، کمی کندتر. به هسته‌ای نیاز دارد که با gVisor ساخته شده باشد.';
 
   @override
-  String get settingsTunStackMixedHint => 'gVisor برای TCP، system برای UDP. به هستهٔ ساخته‌شده با gVisor نیاز دارد.';
+  String get settingsTunStackMixedHint => 'gVisor برای TCP، system برای UDP. به هسته‌ای نیاز دارد که با gVisor ساخته شده باشد.';
 
   @override
   String get settingsTunStackMipsHint => 'پشتهٔ فضای کاربر خود mihomo به‌جای gVisor: سبک‌تر، با کنترل ازدحام TCP قابل انتخاب. فقط روی هستهٔ mihomo.';
@@ -690,7 +690,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsTunUdpTimeoutHint => 'طول عمر NAT برای نشست‌های بیکار UDP، پیش‌فرض 300';
 
   @override
-  String get settingsTunStrictRouteTitle => 'مسیر سخت‌گیرانه';
+  String get settingsTunStrictRouteTitle => 'مسیریابی سخت‌گیرانه (strict route)';
 
   @override
   String get settingsTunStrictRouteHint => 'جلوی نشت ترافیک از کنار TUN را می‌گیرد. در ویندوز اگر VPN دیگری (مثلاً Tailscale) فعال باشد می‌تواند مسیریابی را خراب کند';
@@ -714,22 +714,22 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsTunEinHint => 'NAT از نوع full-cone برای UDP — به بازی و P2P کمک می‌کند. فقط با پشتهٔ gVisor یا mixed';
 
   @override
-  String get settingsTunAutoRoute => 'مسیر خودکار';
+  String get settingsTunAutoRoute => 'مسیریابی خودکار (auto route)';
 
   @override
   String get settingsTunAutoRouteHint => 'مسیرهای سیستم را به تونل می‌افزاید. بدون آن چیزی به TUN نمی‌رسد.';
 
   @override
-  String get settingsTunIpv6 => 'IPv6 را داخل تونل نگه دار';
+  String get settingsTunIpv6 => 'نگه‌داشتن IPv6 داخل تونل';
 
   @override
-  String get settingsTunIpv6Hint => 'به رابط TUN نشانی IPv6 می‌دهد؛ بدون آن همهٔ IPv6 از تونل بیرون می‌ماند.';
+  String get settingsTunIpv6Hint => 'به رابط TUN آدرس IPv6 می‌دهد؛ بدون آن همهٔ IPv6 از تونل بیرون می‌ماند.';
 
   @override
   String get settingsFakeIp => 'Fake IP';
 
   @override
-  String get settingsFakeIpHint => 'تفکیک آنی با نشانی‌های ساختگی. در حالت پراکسی کار نمی‌کند.';
+  String get settingsFakeIpHint => 'پاسخ فوری DNS با آدرس‌های ساختگی. در حالت پروکسی کار نمی‌کند.';
 
   @override
   String get settingsPingTitle => 'پینگ سرور';
@@ -750,10 +750,10 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsPingMethodIcmpHint => 'اکو به آی‌پی سرور (بعضی سرورها مسدودش می‌کنند)';
 
   @override
-  String get settingsPingMethodUrl => 'HTTP از داخل پروکسی';
+  String get settingsPingMethodUrl => 'HTTP از طریق پروکسی';
 
   @override
-  String get settingsPingMethodUrlHint => 'تأخیر درخواست GET را از داخل سرور اندازه می‌گیرد';
+  String get settingsPingMethodUrlHint => 'تأخیر درخواست GET را از طریق سرور اندازه می‌گیرد';
 
   @override
   String get settingsPingKeepAliveTitle => 'روش اندازه‌گیری';
@@ -768,7 +768,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsPingMethodSpeed => 'تست سرعت';
 
   @override
-  String get settingsPingMethodSpeedHint => 'حجم مشخصی را از داخل سرور دانلود می‌کند و سرعت را برحسب Mbps نشان می‌دهد (بدون VPN هم کار می‌کند)';
+  String get settingsPingMethodSpeedHint => 'حجم مشخصی را از طریق سرور دانلود می‌کند و سرعت را برحسب Mbps نشان می‌دهد (بدون VPN هم کار می‌کند)';
 
   @override
   String get settingsPingTargetTitle => 'آدرس تست HTTP';
@@ -789,7 +789,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsPingCustomUrl => 'آدرس';
 
   @override
-  String get settingsPingCustomUrlHint => 'آدرس https:// یا http:// برای درخواست GET';
+  String get settingsPingCustomUrlHint => 'آدرس ‎https://‎ یا ‎http://‎ برای درخواست GET';
 
   @override
   String get settingsPingCustomUrlInvalid => 'آدرس نامعتبر یا ناامن (localhost و شبکه‌های داخلی مجاز نیستند)';
@@ -833,13 +833,13 @@ class AppLocalizationsFa extends AppLocalizations {
   }
 
   @override
-  String get subscriptionIdentityTitle => 'شناسه دستگاه';
+  String get subscriptionIdentityTitle => 'مشخصات دستگاه';
 
   @override
   String get subscriptionIdentityHint => 'آنچه پنل می‌بیند: HWID، User-Agent و هدرهای دستگاه. فقط برای همین اشتراک اعمال می‌شود.';
 
   @override
-  String get subscriptionIdentityEnable => 'استفاده از شناسه دلخواه';
+  String get subscriptionIdentityEnable => 'استفاده از مشخصات دلخواه';
 
   @override
   String get subscriptionIdentityAppDefault => 'پیش‌فرض برنامه';
@@ -851,7 +851,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get subscriptionIdentityHwid => 'HWID';
 
   @override
-  String get subscriptionIdentityHwidOff => 'در تنظیمات پیشرفته «اشتراک‌گذاری HWID دستگاه» خاموش است، بنابراین هیچ HWID‌ای ارسال نمی‌شود؛ حتی دلخواه.';
+  String get subscriptionIdentityHwidOff => 'در تنظیمات پیشرفته «ارسال HWID دستگاه» خاموش است، بنابراین هیچ HWID‌ای ارسال نمی‌شود؛ حتی مقدار دلخواه.';
 
   @override
   String get subscriptionIdentityUserAgent => 'User-Agent';
@@ -863,7 +863,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get subscriptionIdentityDeviceModel => 'مدل دستگاه';
 
   @override
-  String get subscriptionIdentityOsVersion => 'نسخه سیستم‌عامل';
+  String get subscriptionIdentityOsVersion => 'نسخهٔ سیستم‌عامل';
 
   @override
   String get subscriptionIdentitySectionUsed => 'در حال استفاده';
@@ -1018,7 +1018,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get serversPasteVlessHint => 'در هر خط یک لینک، یا یک کانفیگ کامل: Xray، Clash، sing-box، AmneziaWG';
 
   @override
-  String get serversPasteHint => '…//:vless یا …?hy2://host:port=auth';
+  String get serversPasteHint => '‎vless://…‎ یا ‎hy2://host:port?auth=…‎';
 
   @override
   String get serversAdd => 'افزودن';
@@ -1039,7 +1039,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsAdvancedSubtitle => 'تنظیمات هسته، پینگ، مسیریابی، HWID و اشکال‌زدایی';
 
   @override
-  String get serverEditorJsonValid => 'پیکربندی معتبر Xray';
+  String get serverEditorJsonValid => 'کانفیگ معتبر Xray';
 
   @override
   String get serverEditorJsonFormat => 'قالب‌بندی';
@@ -1051,13 +1051,13 @@ class AppLocalizationsFa extends AppLocalizations {
   String get subscriptionsAutoUpdateOff => 'به‌روزرسانی خودکار نشود';
 
   @override
-  String get subscriptionsProviderPage => 'صفحه اشتراک';
+  String get subscriptionsProviderPage => 'صفحهٔ اشتراک';
 
   @override
   String get subscriptionsSupport => 'پشتیبانی';
 
   @override
-  String get subscriptionsLinkOpenFailed => 'باز کردن پیوند ممکن نشد';
+  String get subscriptionsLinkOpenFailed => 'باز کردن لینک ممکن نشد';
 
   @override
   String get settingsAdvancedGroupTraffic => 'ترافیک و هسته';
@@ -1066,13 +1066,13 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsAdvancedGroupSystem => 'سیستم';
 
   @override
-  String get settingsAdvancedGroupDiagnostics => 'تشخیص';
+  String get settingsAdvancedGroupDiagnostics => 'عیب‌یابی';
 
   @override
   String get settingsBackupRestore => 'پشتیبان‌گیری و بازیابی';
 
   @override
-  String get settingsBackupRestoreSubtitle => 'خروجی و ورودی گرفتن از پروکسی هر برنامه، اشتراک‌ها، سرورها و تنظیمات';
+  String get settingsBackupRestoreSubtitle => 'خروجی گرفتن و وارد کردن اشتراک‌ها، سرورها، تنظیمات و پروکسی به تفکیک برنامه';
 
   @override
   String get settingsSelectAtLeastOne => 'برای خروجی گرفتن دست‌کم یک بخش را انتخاب کنید';
@@ -1084,7 +1084,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsSelectLocation => 'محل ذخیرهٔ پشتیبان را انتخاب کنید';
 
   @override
-  String get settingsExportFile => 'گرفتن خروجی';
+  String get settingsExportFile => 'خروجی گرفتن در فایل';
 
   @override
   String get settingsImportFile => 'وارد کردن از فایل';
@@ -1096,7 +1096,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsChooseWhatToImport => 'بخش‌های انتخاب‌شده جای داده‌های فعلی را می‌گیرند';
 
   @override
-  String get settingsSplitTunnelingApps => 'برنامه‌های پروکسی هر برنامه';
+  String get settingsSplitTunnelingApps => 'پروکسی به تفکیک برنامه';
 
   @override
   String get settingsSubscriptions => 'اشتراک‌ها';
@@ -1111,7 +1111,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsImport => 'وارد کردن';
 
   @override
-  String get settingsExport => 'خروجی';
+  String get settingsExport => 'خروجی گرفتن';
 
   @override
   String get settingsCreateFileToSave => 'فایل را می‌توان به دستگاه دیگری برد';
@@ -1128,7 +1128,7 @@ class AppLocalizationsFa extends AppLocalizations {
   }
 
   @override
-  String get settingsShareHwidTitle => 'اشتراک HWID دستگاه';
+  String get settingsShareHwidTitle => 'ارسال HWID دستگاه';
 
   @override
   String get settingsShareHwidOn => 'همراه درخواست‌های اشتراک ارسال می‌شود';
@@ -1146,7 +1146,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsDebugModeOff => 'خاموش';
 
   @override
-  String get settingsOpenXrayLogs => 'گزارش‌های هسته';
+  String get settingsOpenXrayLogs => 'باز کردن گزارش‌های هسته';
 
   @override
   String get settingsXrayCoreLogs => 'گزارش‌های هسته';
@@ -1237,13 +1237,13 @@ class AppLocalizationsFa extends AppLocalizations {
   String get splitAddAppTitle => 'افزودن برنامه';
 
   @override
-  String get splitAddAppHint => 'مسیر فایل exe. یا نام آن (مثلاً chrome.exe)';
+  String get splitAddAppHint => 'مسیر فایل ‎.exe‎ یا نام آن (مثلاً chrome.exe)';
 
   @override
   String get splitAddAppPickFile => 'انتخاب فایل…';
 
   @override
-  String get splitAddAppInvalid => 'نام یا مسیر معتبر exe. وارد کنید';
+  String get splitAddAppInvalid => 'نام یا مسیر معتبر فایل ‎.exe‎ را وارد کنید';
 
   @override
   String splitAddAppAdded(Object name) {
@@ -1251,7 +1251,7 @@ class AppLocalizationsFa extends AppLocalizations {
   }
 
   @override
-  String get splitProxyModeWarning => 'در حالت پروکسی، پروکسی هر برنامه اعمال نمی‌شود — همهٔ ترافیک از پروکسی سیستم رد می‌شود. برای اینکه قوانین هر برنامه کار کنند، حالت اتصال را از پنل کناری روی TUN بگذارید.';
+  String get splitProxyModeWarning => 'در حالت پروکسی، پروکسی به تفکیک برنامه اعمال نمی‌شود: همهٔ ترافیک از پروکسی سیستم عبور می‌کند. برای اینکه قوانین برنامه‌ها کار کنند، حالت اتصال را در پنل کناری روی TUN بگذارید.';
 
   @override
   String get settingsLatestVersionInstalled => 'آخرین نسخه را دارید';
@@ -1350,7 +1350,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get trayStatusConnected => 'متصل';
 
   @override
-  String get trayStatusDisconnected => 'قطع';
+  String get trayStatusDisconnected => 'قطع شده';
 
   @override
   String get trayStatusError => 'خطا';
@@ -1368,7 +1368,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get serversSortSpeed => 'سرعت (زیاد → کم)';
 
   @override
-  String get serversSortName => 'نام (الفبا)';
+  String get serversSortName => 'نام (الف تا ی)';
 
   @override
   String get updateActionSkip => 'رد کردن این نسخه';
@@ -1402,10 +1402,10 @@ class AppLocalizationsFa extends AppLocalizations {
   String get serversJumpToActive => 'نمایش در فهرست';
 
   @override
-  String get serversAutoSelect => 'Auto';
+  String get serversAutoSelect => 'خودکار';
 
   @override
-  String get serversAutoSelectTooltip => 'The app picks the server in this subscription and switches when it stops working';
+  String get serversAutoSelectTooltip => 'برنامه سرور این اشتراک را خودش انتخاب می‌کند و وقتی از کار بیفتد، سرور دیگری را جایگزین می‌کند';
 
   @override
   String get serversManualGroup => 'سرورهای دستی';
@@ -1432,10 +1432,10 @@ class AppLocalizationsFa extends AppLocalizations {
   String get statsSplitDirectTag => 'مستقیم';
 
   @override
-  String get statsSplitVpnLabel => 'از طریق وی‌پی‌ان';
+  String get statsSplitVpnLabel => 'از طریق VPN';
 
   @override
-  String get statsSplitDirectLabel => 'بدون وی‌پی‌ان';
+  String get statsSplitDirectLabel => 'بدون VPN';
 
   @override
   String get statsSplitTotalLabel => 'منتقل‌شده';
@@ -1476,7 +1476,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get hotkeyActionToggleConnection => 'اتصال / قطع اتصال';
 
   @override
-  String get hotkeyActionToggleTun => 'تغییر بین TUN و Proxy';
+  String get hotkeyActionToggleTun => 'تغییر بین TUN و پروکسی';
 
   @override
   String get hotkeyActionBestPing => 'رفتن به سرور با بهترین پینگ';
@@ -1494,7 +1494,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get hotkeyRecordingHint => 'Esc — لغو، Backspace — پاک کردن';
 
   @override
-  String get hotkeyNeedsModifier => 'از یک کلید ترکیبی (Ctrl/Alt/Shift/Win) یا کلیدهای F استفاده کنید';
+  String get hotkeyNeedsModifier => 'از یک کلید کمکی (Ctrl/Alt/Shift/Win) یا کلیدهای F استفاده کنید';
 
   @override
   String hotkeyConflictTaken(Object combo) {
@@ -1531,7 +1531,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get errorPolkitMissingMessage => 'حالت TUN هسته را با pkexec به‌صورت root اجرا می‌کند و polkit نصب نیست.';
 
   @override
-  String get errorPolkitMissingAction => 'polkit را همراه با یک عامل احراز هویت نصب کنید، برنامه را با root اجرا کنید (sudo -E keqdroid) یا در تنظیمات به حالت پراکسی سوئیچ کنید.';
+  String get errorPolkitMissingAction => 'polkit را همراه با یک عامل احراز هویت نصب کنید، برنامه را با root اجرا کنید (sudo -E keqdroid) یا در تنظیمات به حالت پروکسی بروید.';
 
   @override
   String get errorPolkitNoAgentTitle => 'polkit لازم است';
@@ -1540,7 +1540,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get errorPolkitNoAgentMessage => 'درخواست دسترسی root بی‌پاسخ ماند: هیچ عامل احراز هویت polkit در حال اجرا نیست.';
 
   @override
-  String get errorPolkitNoAgentAction => 'یک عامل polkit برای میزکار خود اجرا کنید (polkit-gnome، lxqt-policykit و مانند آن) یا در تنظیمات به حالت پراکسی سوئیچ کنید.';
+  String get errorPolkitNoAgentAction => 'یک عامل polkit برای میزکار خود اجرا کنید (polkit-gnome، lxqt-policykit و مانند آن) یا در تنظیمات به حالت پروکسی بروید.';
 
   @override
   String get errorVpnPermissionMessage => 'دسترسی VPN داده نشد.';
@@ -1549,16 +1549,16 @@ class AppLocalizationsFa extends AppLocalizations {
   String get errorVpnPermissionAction => 'در پنجرهٔ سیستم دسترسی VPN را بدهید و دوباره تلاش کنید.';
 
   @override
-  String get errorHwidBindMessage => 'فروشنده برای این دستگاه اتصال HWID را لازم می‌داند.';
+  String get errorHwidBindMessage => 'سرویس‌دهنده برای این دستگاه ثبت HWID را الزامی کرده است.';
 
   @override
-  String get errorHwidBindAction => 'این دستگاه را در پنل فروشنده ثبت کنید و بعد اشتراک را به‌روزرسانی کنید.';
+  String get errorHwidBindAction => 'این دستگاه را در پنل سرویس‌دهنده ثبت کنید و بعد اشتراک را به‌روزرسانی کنید.';
 
   @override
-  String get errorDeviceLimitMessage => 'فروشنده به دلیل محدودیت تعداد دستگاه، اشتراک را رد کرد.';
+  String get errorDeviceLimitMessage => 'سرویس‌دهنده به دلیل محدودیت تعداد دستگاه، اشتراک را رد کرد.';
 
   @override
-  String get errorDeviceLimitAction => 'در پنل فروشنده دستگاه‌های قدیمی را حذف کنید یا سقف دستگاه‌ها را بالا ببرید.';
+  String get errorDeviceLimitAction => 'در پنل سرویس‌دهنده دستگاه‌های قدیمی را حذف کنید یا سقف دستگاه‌ها را بالا ببرید.';
 
   @override
   String get errorConfigInvalidMessage => 'کانفیگ اشتراک یا سرور نامعتبر است.';
@@ -1567,7 +1567,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get errorConfigInvalidAction => 'قالب آدرس یا کانفیگ را بررسی کنید و یک لینک اشتراک درست وارد کنید.';
 
   @override
-  String get errorAuthDeniedMessage => 'فروشنده دسترسی به اشتراک را رد کرد.';
+  String get errorAuthDeniedMessage => 'سرویس‌دهنده دسترسی به اشتراک را رد کرد.';
 
   @override
   String get errorAuthDeniedAction => 'توکن و مشخصات ورود را بررسی کنید و مطمئن شوید اشتراک منقضی نشده باشد.';
@@ -1576,13 +1576,13 @@ class AppLocalizationsFa extends AppLocalizations {
   String get errorSubUrlInvalidMessage => 'لینک اشتراک وجود ندارد یا منقضی شده است.';
 
   @override
-  String get errorSubUrlInvalidAction => 'از فروشنده لینک تازه بگیرید و در برنامه به‌روزش کنید.';
+  String get errorSubUrlInvalidAction => 'از سرویس‌دهنده لینک تازه بگیرید و در برنامه به‌روزش کنید.';
 
   @override
   String get errorSubInsecureHttpMessage => 'لینک اشتراک از http ساده استفاده می‌کند، به‌روزرسانی مسدود است.';
 
   @override
-  String get errorSubInsecureHttpAction => 'لینک را با نسخهٔ //:https آن جایگزین کنید.';
+  String get errorSubInsecureHttpAction => 'لینک را با نسخهٔ ‎https://‎ آن جایگزین کنید.';
 
   @override
   String get subInsecureHttpWarning => 'لینک http — به‌روزرسانی مسدود است';
@@ -1591,7 +1591,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get subSwitchToHttps => 'تغییر به https';
 
   @override
-  String get errorNetworkMessage => 'الان نمی‌توان به سرور رسید.';
+  String get errorNetworkMessage => 'در حال حاضر سرور در دسترس نیست.';
 
   @override
   String get errorNetworkAction => 'اینترنت، DNS و در دسترس بودن سرور را بررسی کنید و دوباره تلاش کنید.';
@@ -1603,43 +1603,43 @@ class AppLocalizationsFa extends AppLocalizations {
   String get errorFileDialogMessage => 'این نشست دسکتاپ هیچ انتخابگر فایلی ندارد: نه backend پرتال XDG و نه zenity/kdialog.';
 
   @override
-  String get errorFileDialogAction => 'بستهٔ xdg-desktop-portal-gtk (یا zenity) را نصب کنید، یا به‌جای انتخاب فایل متن پیکربندی را بچسبانید.';
+  String get errorFileDialogAction => 'بستهٔ xdg-desktop-portal-gtk (یا zenity) را نصب کنید، یا به‌جای انتخاب فایل متن کانفیگ را بچسبانید.';
 
   @override
-  String get errorTunAdminTitle => 'نیاز به مجوز';
+  String get errorTunAdminTitle => 'مجوز لازم است';
 
   @override
-  String get errorVpnPermissionTitle => 'نیاز به مجوز';
+  String get errorVpnPermissionTitle => 'مجوز لازم است';
 
   @override
-  String get errorHwidBindTitle => 'نیاز به اتصال دستگاه';
+  String get errorHwidBindTitle => 'ثبت دستگاه لازم است';
 
   @override
-  String get errorDeviceLimitTitle => 'محدودیت دستگاه‌ها';
+  String get errorDeviceLimitTitle => 'سقف تعداد دستگاه‌ها پر شده است';
 
   @override
-  String get errorProviderNoHostsTitle => 'نیاز به پیکربندی ارائه‌دهنده';
+  String get errorProviderNoHostsTitle => 'تنظیم در پنل سرویس‌دهنده لازم است';
 
   @override
-  String get errorConfigInvalidTitle => 'خطای پیکربندی';
+  String get errorConfigInvalidTitle => 'خطای کانفیگ';
 
   @override
-  String get errorAuthDeniedTitle => 'احراز هویت ناموفق';
+  String get errorAuthDeniedTitle => 'احراز هویت ناموفق بود';
 
   @override
-  String get errorSubUrlInvalidTitle => 'نشانی اشتراک نامعتبر';
+  String get errorSubUrlInvalidTitle => 'لینک اشتراک نامعتبر است';
 
   @override
-  String get errorSubInsecureHttpTitle => 'نشانی اشتراک ناامن';
+  String get errorSubInsecureHttpTitle => 'لینک اشتراک ناامن است';
 
   @override
   String get errorNetworkTitle => 'خطای شبکه';
 
   @override
-  String get errorUnknownTitle => 'عملیات ناموفق';
+  String get errorUnknownTitle => 'عملیات ناموفق بود';
 
   @override
-  String get errorFileDialogTitle => 'بدون پنجرهٔ انتخاب فایل';
+  String get errorFileDialogTitle => 'پنجرهٔ انتخاب فایل در دسترس نیست';
 
   @override
   String get serversPin => 'سنجاق کردن سرور';
@@ -1731,7 +1731,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get serverEditorEarlyData => 'داده زودهنگام، بایت';
 
   @override
-  String get serverEditorPadding => 'لایی، بایت';
+  String get serverEditorPadding => 'پدینگ، بایت';
 
   @override
   String get serverEditorExtra => 'Extra (JSON)';
@@ -1749,10 +1749,10 @@ class AppLocalizationsFa extends AppLocalizations {
   String get serverEditorIssueVision => 'Vision فقط روی TCP با TLS یا REALITY کار می‌کند.';
 
   @override
-  String get serverEditorIssueFlow => 'هسته این flow را نمی‌شناسد و کل پیکربندی را رد می‌کند.';
+  String get serverEditorIssueFlow => 'هسته این flow را نمی‌شناسد و کل کانفیگ را رد می‌کند.';
 
   @override
-  String get serverEditorIssueRealityTransport => 'REALITY روی این ترابری اجرا نمی‌شود.';
+  String get serverEditorIssueRealityTransport => 'REALITY روی این انتقال کار نمی‌کند.';
 
   @override
   String get serverEditorIssueRealityKey => 'REALITY به کلید عمومی سرور نیاز دارد.';
@@ -1761,7 +1761,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get serverEditorIssueEncryption => 'Encryption باید none یا کلید mlkem768x25519plus باشد.';
 
   @override
-  String get serverEditorIssueNoSecurity => 'بدون TLS، REALITY یا Encryption هسته تنها نشانی‌های خصوصی را می‌پذیرد.';
+  String get serverEditorIssueNoSecurity => 'بدون TLS، REALITY یا Encryption، هسته فقط به آدرس‌های شبکهٔ خصوصی وصل می‌شود.';
 
   @override
   String get serverEditorTransportType => 'نوع';
@@ -1857,13 +1857,13 @@ class AppLocalizationsFa extends AppLocalizations {
   String get appearanceShowTime => 'زمان اتصال';
 
   @override
-  String get appearanceShowTrafficSplit => 'ترافیک وی‌پی‌ان و مستقیم جداگانه';
+  String get appearanceShowTrafficSplit => 'ترافیک VPN و مستقیم جداگانه';
 
   @override
   String get appearanceWaveLatencyColor => 'رنگ موج بر پایهٔ پینگ';
 
   @override
-  String get appearanceFontTitle => 'قلم';
+  String get appearanceFontTitle => 'فونت';
 
   @override
   String get appearanceFontSystem => 'سیستم';
@@ -1896,7 +1896,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsPermBatteryTitle => 'اجرای بدون محدودیت در پس‌زمینه';
 
   @override
-  String get settingsPermBatteryDesc => 'بدون آن، سیستم ممکن است اجازه روشن‌کردن VPN از کاشی را ندهد';
+  String get settingsPermBatteryDesc => 'بدون آن، سیستم ممکن است اجازهٔ روشن کردن VPN از کاشی تنظیمات سریع را ندهد';
 
   @override
   String get settingsPermStatusGranted => 'داده شده';
@@ -1953,10 +1953,10 @@ class AppLocalizationsFa extends AppLocalizations {
   String get tunRememberWarning => 'بعد از این، هر برنامه‌ای که با کاربر شما اجرا شود می‌تواند هستهٔ VPN را بدون رمز با دسترسی root اجرا کند. هر وقت خواستید می‌توانید از «پیشرفته ← دسترسی‌ها» برش گردانید.';
 
   @override
-  String get tunRememberEnable => 'فعال کن';
+  String get tunRememberEnable => 'فعال‌سازی';
 
   @override
-  String get tunRememberNotNow => 'الان نه';
+  String get tunRememberNotNow => 'فعلاً نه';
 
   @override
   String get tunRememberInstalled => 'TUN بدون رمز فعال شد';
@@ -1989,7 +1989,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsRoutingGeoPickerTitle => 'کدهای جغرافیایی موجود در پایگاه دادهٔ همراه';
 
   @override
-  String get settingsRoutingGeoPickerSearchHint => 'جستجو، مثلاً telegram';
+  String get settingsRoutingGeoPickerSearchHint => 'جست‌وجو، مثلاً telegram';
 
   @override
   String get settingsRoutingGeoPickerEmpty => 'کدی پیدا نشد';
@@ -2049,10 +2049,10 @@ class AppLocalizationsFa extends AppLocalizations {
   String get connectionsRuleHint => 'هسته دامنه‌ها و قانونی را که گرفته است فقط در سطح گزارش Info می‌نویسد.';
 
   @override
-  String get connectionsRuleHintAction => 'روی Info بگذار';
+  String get connectionsRuleHintAction => 'تنظیم روی Info';
 
   @override
-  String get connectionsRuleHintApplied => 'سطح گزارش هسته روی Info رفت — برای اعمال دوباره وصل شوید';
+  String get connectionsRuleHintApplied => 'سطح گزارش هسته روی Info تنظیم شد؛ برای اعمال، دوباره وصل شوید';
 
   @override
   String get connectionsRuleDefault => 'بدون قانون (عملکرد پیش‌فرض)';
@@ -2087,90 +2087,90 @@ class AppLocalizationsFa extends AppLocalizations {
   }
 
   @override
-  String get subscriptionsExpiredHint => 'فروشنده دیگر فهرست سرورها را به‌روز نمی‌کند. برای ادامهٔ کار اشتراک را تمدید کنید.';
+  String get subscriptionsExpiredHint => 'سرویس‌دهنده دیگر فهرست سرورها را به‌روز نمی‌کند. برای ادامهٔ کار اشتراک را تمدید کنید.';
 
   @override
   String get subscriptionsExpiredNotifTitle => 'اشتراک منقضی شد';
 
   @override
   String subscriptionsExpiredNotifBody(String name, String date) {
-    return '«$name» در $date منقضی شد. فروشنده دیگر فهرست سرورها را به‌روز نمی‌کند — برای اینکه سرورها کار کنند تمدیدش کنید.';
+    return '«$name» در $date منقضی شد. سرویس‌دهنده دیگر فهرست سرورها را به‌روز نمی‌کند — برای اینکه سرورها کار کنند تمدیدش کنید.';
   }
 
   @override
-  String get chainTitle => 'Proxy chain';
+  String get chainTitle => 'زنجیرهٔ پروکسی';
 
   @override
-  String get chainNew => 'New chain';
+  String get chainNew => 'زنجیرهٔ جدید';
 
   @override
-  String get chainCreate => 'Build a chain';
+  String get chainCreate => 'ساخت زنجیره';
 
   @override
-  String get chainCreateDesc => 'Send traffic through several servers in a row';
+  String get chainCreateDesc => 'عبور ترافیک از چند سرور پشت سر هم';
 
   @override
-  String get chainGroupTitle => 'Chains';
+  String get chainGroupTitle => 'زنجیره‌ها';
 
   @override
-  String get chainNameLabel => 'Chain name';
+  String get chainNameLabel => 'نام زنجیره';
 
   @override
-  String get chainNameHint => 'Leave empty to name it by the route';
+  String get chainNameHint => 'خالی بگذارید تا بر اساس مسیر نام‌گذاری شود';
 
   @override
-  String get chainHint => 'Traffic goes top to bottom. The first node is the one this device connects to; the last one is the address sites see.';
+  String get chainHint => 'ترافیک از بالا به پایین می‌رود: این دستگاه به گرهٔ اول وصل می‌شود و سایت‌ها آدرس گرهٔ آخر را می‌بینند.';
 
   @override
-  String get chainDeviceNode => 'This device';
+  String get chainDeviceNode => 'این دستگاه';
 
   @override
-  String get chainInternetNode => 'Internet';
+  String get chainInternetNode => 'اینترنت';
 
   @override
-  String get chainAddNode => 'Add node';
+  String get chainAddNode => 'افزودن گره';
 
   @override
-  String get chainRemoveNode => 'Remove node';
+  String get chainRemoveNode => 'حذف گره';
 
   @override
-  String get chainExitNodeHint => 'Exit node, sites see this address';
+  String get chainExitNodeHint => 'گرهٔ خروجی؛ سایت‌ها آدرس آن را می‌بینند';
 
   @override
-  String get chainNodeMissing => 'Server is gone, using the saved copy';
+  String get chainNodeMissing => 'این سرور دیگر وجود ندارد؛ از نسخهٔ ذخیره‌شده استفاده می‌شود';
 
   @override
-  String get chainSave => 'Save chain';
+  String get chainSave => 'ذخیرهٔ زنجیره';
 
   @override
-  String get chainNeedsTwoNodes => 'A chain needs at least two nodes';
+  String get chainNeedsTwoNodes => 'زنجیره دست‌کم به دو گره نیاز دارد';
 
   @override
-  String get chainPickNode => 'Choose a server';
+  String get chainPickNode => 'انتخاب سرور';
 
   @override
-  String get chainPickSearch => 'Search servers';
+  String get chainPickSearch => 'جست‌وجوی سرورها';
 
   @override
-  String get chainPickEmpty => 'No servers can be a chain node here. VLESS, VMess, Trojan, Shadowsocks and Hysteria2 work; AmneziaWG and ready-made JSON configs do not.';
+  String get chainPickEmpty => 'هیچ سروری نمی‌تواند گرهٔ زنجیره باشد. VLESS، VMess، Trojan، Shadowsocks و Hysteria2 مناسب‌اند؛ AmneziaWG و کانفیگ‌های آمادهٔ JSON نه.';
 
   @override
-  String get chainEdit => 'Edit chain';
+  String get chainEdit => 'ویرایش زنجیره';
 
   @override
-  String get chainDelete => 'Delete chain';
+  String get chainDelete => 'حذف زنجیره';
 
   @override
-  String get chainRouteLabel => 'Route';
+  String get chainRouteLabel => 'مسیر';
 
   @override
   String chainMaxNodes(int max) {
-    return 'A chain holds at most $max nodes';
+    return 'زنجیره حداکثر $max گره دارد';
   }
 
   @override
   String chainDeleteConfirm(String name) {
-    return 'Delete the chain \"$name\"? The servers it uses stay in the list.';
+    return 'زنجیرهٔ «$name» حذف شود؟ سرورهای آن در فهرست باقی می‌مانند.';
   }
 
   @override
@@ -2178,9 +2178,9 @@ class AppLocalizationsFa extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count nodes',
-      one: '1 node',
-      zero: 'no nodes',
+      other: '$count گره',
+      one: '1 گره',
+      zero: 'بدون گره',
     );
     return '$_temp0';
   }
@@ -2192,10 +2192,10 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsInternalsSubtitle => 'نسخه، هسته‌ها، پایگاه‌های جغرافیایی و نشست جاری';
 
   @override
-  String get settingsCoreXraySubtitle => 'هسته پیش‌فرض. همه انواع سرور را پشتیبانی می‌کند، از جمله زنجیره‌ها و پیکربندی‌های آماده JSON.';
+  String get settingsCoreXraySubtitle => 'هستهٔ پیش‌فرض. همهٔ انواع سرور را اجرا می‌کند، از جمله زنجیره‌ها و کانفیگ‌های آمادهٔ JSON.';
 
   @override
-  String get settingsCoreMihomoSubtitle => 'هسته سازگار با Clash. زنجیره‌ها و پیکربندی‌های آماده xray روی Xray می‌مانند.';
+  String get settingsCoreMihomoSubtitle => 'هستهٔ سازگار با Clash. زنجیره‌ها و کانفیگ‌های آمادهٔ xray روی Xray می‌مانند.';
 
   @override
   String get settingsCoreHint => 'از اتصال بعدی اعمال می‌شود — نشست فعلی راه‌اندازی مجدد نمی‌شود.';
@@ -2219,7 +2219,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsTunnelModeVpn => 'VPN';
 
   @override
-  String get settingsTunnelModeVpnSubtitle => 'همه ترافیک دستگاه از تونل عبور می‌کند';
+  String get settingsTunnelModeVpnSubtitle => 'همهٔ ترافیک دستگاه از تونل عبور می‌کند';
 
   @override
   String get settingsTunnelModeProxy => 'پروکسی';
@@ -2228,19 +2228,19 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsTunnelModeProxySubtitle => 'فقط پروکسی محلی، بدون VPN سیستمی';
 
   @override
-  String get settingsTunnelModeHint => 'حالت پروکسی، SOCKS و HTTP را روی 127.0.0.1 بالا می‌آورد — برنامه یا وای‌فای را به آن‌ها بدهید. این پروکسی برای هر برنامه‌ای روی دستگاه باز است. مسیریابی هر برنامه و رهگیری DNS فقط در حالت VPN کار می‌کند.';
+  String get settingsTunnelModeHint => 'حالت پروکسی، SOCKS و HTTP را روی 127.0.0.1 راه‌اندازی می‌کند؛ برنامه یا وای‌فای را روی آن‌ها تنظیم کنید. این پروکسی برای همهٔ برنامه‌های دستگاه باز است. مسیریابی به تفکیک برنامه و رهگیری DNS فقط در حالت VPN کار می‌کنند.';
 
   @override
   String get settingsCoreAuto => 'خودکار';
 
   @override
-  String get settingsCoreAutoSubtitle => 'لینک‌ها به Xray می‌روند و پیکربندی‌های آماده به هستهٔ خودشان';
+  String get settingsCoreAutoSubtitle => 'لینک‌ها به Xray می‌روند و کانفیگ‌های آماده به هستهٔ خودشان';
 
   @override
-  String get settingsCoreSkipClash => 'سرور فعال یک پیکربندی آمادهٔ Clash است — صرف‌نظر از هستهٔ انتخاب‌شده تنها mihomo آن را اجرا می‌کند.';
+  String get settingsCoreSkipClash => 'سرور فعال یک کانفیگ آمادهٔ Clash است — صرف‌نظر از هستهٔ انتخاب‌شده تنها mihomo آن را اجرا می‌کند.';
 
   @override
-  String get settingsCoreSkipCustom => 'سرور فعال یک پیکربندی آمادهٔ JSON برای Xray است، پس صرف‌نظر از هستهٔ انتخابی با libxray اجرا می‌شود. mihomo به اشتراکی با لینک‌های معمولی نیاز دارد.';
+  String get settingsCoreSkipCustom => 'سرور فعال یک کانفیگ آمادهٔ JSON برای Xray است، پس صرف‌نظر از هستهٔ انتخابی با libxray اجرا می‌شود. mihomo به اشتراکی با لینک‌های معمولی نیاز دارد.';
 
   @override
   String get settingsCoreSkipChain => 'سرور فعال یک زنجیره است: گره‌های آن با dialerProxy در Xray به هم وصل شده‌اند، پس صرف‌نظر از هستهٔ انتخاب‌شده با libxray اجرا می‌شود.';
@@ -2276,7 +2276,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsInternalsCopied => 'گزارش کپی شد';
 
   @override
-  String get settingsInternalsNoCores => 'برای این سکو هسته‌ای ارائه نشده است';
+  String get settingsInternalsNoCores => 'برای این پلتفرم هسته‌ای ارائه نشده است';
 
   @override
   String get settingsInternalsCoreMissing => 'یافت نشد';
@@ -2285,10 +2285,10 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsInternalsVersionFromEngines => 'ساخته‌شده از کد منبع';
 
   @override
-  String get settingsInternalsRoleCore => 'موتور پراکسی و TUN';
+  String get settingsInternalsRoleCore => 'موتور پروکسی و TUN';
 
   @override
-  String get settingsInternalsRoleProxy => 'موتور پراکسی';
+  String get settingsInternalsRoleProxy => 'موتور پروکسی';
 
   @override
   String get settingsInternalsRoleTun => 'دستگاه TUN';
@@ -2299,10 +2299,10 @@ class AppLocalizationsFa extends AppLocalizations {
   }
 
   @override
-  String get settingsInternalsGeoTrimmed => 'پایگاه دادهٔ کشورها کوتاه‌شده است';
+  String get settingsInternalsGeoTrimmed => 'پایگاه دادهٔ کشورها نسخهٔ کوتاه‌شده است';
 
   @override
-  String get settingsInternalsGeoTrimmedHint => 'فقط کدهایی که پیش‌تنظیم‌های خود برنامه لازم دارند؛ قاعده با کشور دیگر کنار گذاشته می‌شود.';
+  String get settingsInternalsGeoTrimmedHint => 'فقط کدهایی که قالب‌های آمادهٔ برنامه لازم دارند؛ قانونی که کشور دیگری داشته باشد کنار گذاشته می‌شود.';
 
   @override
   String get settingsInternalsGeoDownload => 'دریافت پایگاه دادهٔ کامل';
@@ -2325,10 +2325,10 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsInternalsMode => 'حالت';
 
   @override
-  String get settingsInternalsPorts => 'درگاه‌های محلی';
+  String get settingsInternalsPorts => 'پورت‌های محلی';
 
   @override
-  String get settingsInternalsClashPort => 'درگاه Clash API';
+  String get settingsInternalsClashPort => 'پورت Clash API';
 
   @override
   String get settingsInternalsUptime => 'مدت نشست';
@@ -2361,7 +2361,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsInternalsDart => 'Dart';
 
   @override
-  String get settingsInternalsBuildMode => 'ساخت';
+  String get settingsInternalsBuildMode => 'نوع ساخت';
 
   @override
   String get settingsInternalsUnavailable => '—';
@@ -2385,7 +2385,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get appearanceCustomColorHex => 'کد HEX';
 
   @override
-  String get appearanceCustomColorInvalid => 'شش رقم شانزده‌شانزدهی، برای مثال 7B2CBF';
+  String get appearanceCustomColorInvalid => 'شش رقم هگزادسیمال، برای مثال 7B2CBF';
 
   @override
   String get appearanceCustomColorApply => 'اعمال';
@@ -2406,13 +2406,13 @@ class AppLocalizationsFa extends AppLocalizations {
   String get appearanceCustomColorVariantHint => 'اشباع و روشنایی فقط در حالت «دقیق» اثر دارند؛ دو حالت دیگر خودشان آن‌ها را انتخاب می‌کنند.';
 
   @override
-  String get appearanceUiScaleTitle => 'اندازه رابط کاربری';
+  String get appearanceUiScaleTitle => 'اندازهٔ رابط کاربری';
 
   @override
   String get appearanceUiScaleSubtitle => 'روی اندازهٔ متن سیستم. فقط متن و سطرهای فهرست.';
 
   @override
-  String get appearanceIconShapeTitle => 'شکل نمادها';
+  String get appearanceIconShapeTitle => 'شکل آیکون‌ها';
 
   @override
   String get appearanceIconShapeCircle => 'دایره';
@@ -2445,10 +2445,10 @@ class AppLocalizationsFa extends AppLocalizations {
   String get subscriptionCardVeilStrong => 'زیاد';
 
   @override
-  String get subscriptionCardAutoSelect => 'Auto toggle in the server list';
+  String get subscriptionCardAutoSelect => 'کلید «خودکار» در فهرست سرورها';
 
   @override
-  String get subscriptionCardAutoSelectHint => 'Adds an «Auto» switch to the group header. With it on, the app picks the server itself.';
+  String get subscriptionCardAutoSelectHint => 'کلید «خودکار» را به سرتیتر گروه اضافه می‌کند. وقتی روشن باشد، برنامه خودش سرور را انتخاب می‌کند و وقتی سرور فعلی از کار بیفتد، به سرور دیگری می‌رود.';
 
   @override
   String get subscriptionCardContentTitle => 'چه چیزی نمایش داده شود';
@@ -2466,7 +2466,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get subscriptionCardPresetCustom => 'دلخواه';
 
   @override
-  String get subscriptionCardElementAnnounce => 'اطلاعیه ارائه‌دهنده';
+  String get subscriptionCardElementAnnounce => 'اطلاعیهٔ سرویس‌دهنده';
 
   @override
   String get subscriptionCardElementUsage => 'ترافیک';
@@ -2478,7 +2478,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get subscriptionCardElementActions => 'دکمه‌ها';
 
   @override
-  String get subscriptionCardContentHint => 'هشدارها همیشه نمایش داده می‌شوند: اشتراک منقضی، پیوند ناامن، به‌روزرسانی ناموفق.';
+  String get subscriptionCardContentHint => 'هشدارها همیشه نمایش داده می‌شوند: اشتراک منقضی، لینک ناامن، به‌روزرسانی ناموفق.';
 
   @override
   String get appearanceIconShapeSquare => 'مربع';
@@ -2523,7 +2523,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get appearanceIconShapePebble => 'سنگریزه';
 
   @override
-  String get cardImageRejectAspect => 'این تصویر برای کارت بلند است. تصویری عریض انتخاب کن — تقریباً از ۳:۲ تا ۵:۱.';
+  String get cardImageRejectAspect => 'این تصویر برای کارت بیش از حد بلند است. تصویری عریض انتخاب کنید، تقریباً از 3:2 تا 5:1.';
 
   @override
   String cardImageRejectSmall(int width) {

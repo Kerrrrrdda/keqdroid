@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:keqdroid/l10n/app_localizations.dart';
@@ -27,9 +30,11 @@ void main() {
       expect(l10n.navServers, 'سرورها');
       expect(l10n.navSubscriptions, 'اشتراک‌ها');
       expect(l10n.settingsRoutingTitle, 'قوانین مسیریابی');
-      // Термины сверены с иранским клиентом Hiddify, а не переведены дословно.
+      // Термины сверены с Hiddify, v2rayNG, v2rayN и NekoBox, а не переведены
+      // дословно. «Мимо VPN» — «مستقیم», как и список на том же экране: «دور
+      // زدن» в Иране читается как обход блокировок, то есть наоборот, через VPN.
       expect(l10n.settingsRoutingFinalProxy, 'پروکسی');
-      expect(l10n.settingsRoutingFinalDirect, 'دور زدن');
+      expect(l10n.settingsRoutingFinalDirect, 'مستقیم');
       expect(l10n.settingsRoutingFinalBlock, 'مسدود');
     });
 
@@ -63,6 +68,42 @@ void main() {
       expect(wrapped.substring(1, wrapped.length - 1), usage);
       // Пустое значение не превращается в два невидимых символа.
       expect(ltrIsolate(''), isEmpty);
+    });
+
+    test('names are laid out in their own direction', () {
+      // Латинское имя сервера в персидском интерфейсе — строка слева
+      // направо, иначе многоточие встаёт не с того края.
+      expect(
+        contentDirection('Germany | DE | Hysteria2', fallback: TextDirection.rtl),
+        TextDirection.ltr,
+      );
+      expect(
+        contentDirection('🇩🇪 آلمان ۱', fallback: TextDirection.ltr),
+        TextDirection.rtl,
+      );
+      // Одни цифры и значки — решает интерфейс.
+      expect(
+        contentDirection('🇩🇪 01', fallback: TextDirection.rtl),
+        TextDirection.rtl,
+      );
+    });
+
+    test('every string is translated and none is hand-reversed', () {
+      Map<String, dynamic> arb(String locale) =>
+          jsonDecode(File('lib/l10n/app_$locale.arb').readAsStringSync())
+              as Map<String, dynamic>;
+      final en = arb('en');
+      final fa = arb('fa');
+
+      final missing =
+          en.keys.where((k) => !k.startsWith('@') && !fa.containsKey(k));
+      expect(missing, isEmpty, reason: 'без перевода покажется английский');
+      // Схему URL разворачивали руками, чтобы справа налево она «смотрелась»:
+      // на экране выходила каша. Направление ставят метки, а не перестановка.
+      expect(
+        fa.values.whereType<String>().where((v) => v.contains('//:')),
+        isEmpty,
+      );
     });
 
     test('language picker knows Farsi', () {
