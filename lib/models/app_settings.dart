@@ -475,7 +475,11 @@ class AppSettings {
 
   static String _normalizeLanguageCode(String? raw) {
     final v = raw?.trim().toLowerCase();
-    if (v == 'en' || v == 'ru' || v == 'de' || v == 'zh') return v!;
+    // Язык, забытый здесь, живёт до перезапуска: выбрать его можно, а при
+    // чтении настроек он молча становится системным. Так было с фарси.
+    if (v == 'en' || v == 'ru' || v == 'de' || v == 'zh' || v == 'fa') {
+      return v!;
+    }
     return 'system';
   }
 
