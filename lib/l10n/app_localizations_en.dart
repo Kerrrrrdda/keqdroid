@@ -1899,6 +1899,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsPermBatteryDesc => 'Without it the system can block starting the VPN from the tile';
 
   @override
+  String get settingsPermAutostartTitle => 'Autostart';
+
+  @override
+  String get settingsPermAutostartDesc => 'Firmware setting: without it the VPN may not start from the tile and may shut down in the background';
+
+  @override
+  String get settingsPermAutostartHint => 'Find auto-launch and background activity (usually under Battery) and allow them';
+
+  @override
   String get settingsPermStatusGranted => 'Granted';
 
   @override

@@ -1901,6 +1901,15 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settingsPermBatteryDesc => 'Без неё система может не дать включить VPN из шторки';
 
   @override
+  String get settingsPermAutostartTitle => 'Автозапуск';
+
+  @override
+  String get settingsPermAutostartDesc => 'Настройка прошивки: без неё VPN может не включаться из шторки и отключаться в фоне';
+
+  @override
+  String get settingsPermAutostartHint => 'Найдите автозапуск и работу в фоне (обычно в разделе батареи) и разрешите их';
+
+  @override
   String get settingsPermStatusGranted => 'Разрешено';
 
   @override

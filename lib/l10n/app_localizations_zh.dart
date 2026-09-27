@@ -1899,6 +1899,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsPermBatteryDesc => '否则系统可能阻止从快捷设置磁贴启动 VPN';
 
   @override
+  String get settingsPermAutostartTitle => '自启动';
+
+  @override
+  String get settingsPermAutostartDesc => '厂商系统设置：未开启时，VPN 可能无法从快捷设置磁贴启动，并可能在后台被关闭';
+
+  @override
+  String get settingsPermAutostartHint => '找到自启动和后台运行（通常在电池相关设置中）并允许';
+
+  @override
   String get settingsPermStatusGranted => '已授予';
 
   @override

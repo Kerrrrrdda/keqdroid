@@ -17,12 +17,17 @@ class _PermissionsScreenState extends ConsumerState<_PermissionsScreen>
   bool? _notifEnabled;
   bool? _batteryUnrestricted;
 
+  /// Куда ведёт строка автозапуска (см. OemAutostart.kind): `screen`,
+  /// `appDetails` или null — у прошивки его нет, и строки нет тоже.
+  String? _autostart;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _refreshNotifStatus();
     _refreshBatteryStatus();
+    _loadAutostart();
   }
 
   @override
@@ -88,6 +93,47 @@ class _PermissionsScreenState extends ConsumerState<_PermissionsScreen>
     } catch (_) {}
   }
 
+  Future<void> _loadAutostart() async {
+    if (!Platform.isAndroid) return;
+    try {
+      final kind = await _channel.invokeMethod<String>('getOemAutostart');
+      if (mounted) setState(() => _autostart = kind == 'none' ? null : kind);
+    } catch (_) {
+      // Натив старый или не ответил — строки просто не будет.
+    }
+  }
+
+  Future<void> _openAutostart() async {
+    // Своего экрана у прошивки нет — откроется карточка приложения, и искать
+    // переключатель человеку придётся самому. Сказать, что искать, можно
+    // только до перехода: вернётся он, уже всё сделав или бросив.
+    if (_autostart == 'appDetails') {
+      final l10n = AppLocalizations.of(context)!;
+      final material = MaterialLocalizations.of(context);
+      final go = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(l10n.settingsPermAutostartTitle),
+          content: Text(l10n.settingsPermAutostartHint),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(material.cancelButtonLabel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(material.continueButtonLabel),
+            ),
+          ],
+        ),
+      );
+      if (go != true) return;
+    }
+    try {
+      await _channel.invokeMethod<void>('openOemAutostart');
+    } catch (_) {}
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -121,10 +167,9 @@ class _PermissionsScreenState extends ConsumerState<_PermissionsScreen>
               trailing: _statusChip(granted),
               onTap: granted ? _openAppSettings : _requestNotif,
             ),
-            // Не косметика: снятая оптимизация батареи — единственное право из
-            // официального списка исключений Android, дающее поднять сервис из
-            // фона. Без неё включение VPN из шторки живёт на честном слове и
-            // отваливается на прошивках с «Автозапуском».
+            // Не косметика: снятая оптимизация батареи — исключение из
+            // официального списка Android на подъём сервиса из фона. В режиме
+            // VPN это право даёт и согласие на VPN, в режиме прокси — только она.
             ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 16),
               leading: Icon(Icons.battery_saver_rounded, color: accent),
@@ -135,6 +180,17 @@ class _PermissionsScreenState extends ConsumerState<_PermissionsScreen>
                   ? _openAppSettings
                   : _requestBattery,
             ),
+            // Автозапуск прошивки Android не видит: человек выдаёт всё, что
+            // тот спрашивает, и честно считает, что разрешил всё, — а VPN
+            // из шторки не включается. Статуса нет: прочитать его нельзя.
+            if (_autostart != null)
+              _PermissionInfoTile(
+                icon: Icons.rocket_launch_rounded,
+                title: l10n.settingsPermAutostartTitle,
+                subtitle: l10n.settingsPermAutostartDesc,
+                onTap: _openAutostart,
+                accent: true,
+              ),
             _PermissionInfoTile(
               icon: Icons.qr_code_scanner_rounded,
               title: l10n.settingsPermCameraTitle,
@@ -207,18 +263,27 @@ class _PermissionInfoTile extends StatelessWidget {
   final String title;
   final String subtitle;
   final VoidCallback onTap;
+
+  /// Иконка цветом акцента, как у строк, от которых зависит работа VPN;
+  /// серые — справочные.
+  final bool accent;
+
   const _PermissionInfoTile({
     required this.icon,
     required this.title,
     required this.subtitle,
     required this.onTap,
+    this.accent = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-      leading: Icon(icon, color: AppTheme.textLight(context)),
+      leading: Icon(
+        icon,
+        color: accent ? AppTheme.accent(context) : AppTheme.textLight(context),
+      ),
       title: Text(title),
       subtitle: Text(subtitle),
       trailing: Icon(Icons.open_in_new_rounded, size: 18, color: AppTheme.textLight(context)),

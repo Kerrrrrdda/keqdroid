@@ -1899,6 +1899,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsPermBatteryDesc => 'Ohne sie kann das System den VPN-Start über die Kachel blockieren';
 
   @override
+  String get settingsPermAutostartTitle => 'Autostart';
+
+  @override
+  String get settingsPermAutostartDesc => 'Firmware-Einstellung: Ohne sie startet das VPN eventuell nicht über die Kachel und schaltet sich im Hintergrund ab';
+
+  @override
+  String get settingsPermAutostartHint => 'Suche Autostart und Hintergrundaktivität (meist unter Akku) und erlaube beides';
+
+  @override
   String get settingsPermStatusGranted => 'Erteilt';
 
   @override

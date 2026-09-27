@@ -3719,6 +3719,24 @@ abstract class AppLocalizations {
   /// **'Without it the system can block starting the VPN from the tile'**
   String get settingsPermBatteryDesc;
 
+  /// No description provided for @settingsPermAutostartTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Autostart'**
+  String get settingsPermAutostartTitle;
+
+  /// No description provided for @settingsPermAutostartDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Firmware setting: without it the VPN may not start from the tile and may shut down in the background'**
+  String get settingsPermAutostartDesc;
+
+  /// No description provided for @settingsPermAutostartHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Find auto-launch and background activity (usually under Battery) and allow them'**
+  String get settingsPermAutostartHint;
+
   /// No description provided for @settingsPermStatusGranted.
   ///
   /// In en, this message translates to:

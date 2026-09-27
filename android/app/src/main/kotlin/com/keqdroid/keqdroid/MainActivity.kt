@@ -506,13 +506,10 @@ class MainActivity : FlutterFragmentActivity() {
                                 result.error("OPEN_SETTINGS_FAILED", e.message, null)
                             }
                         }
-                        // Снятая оптимизация батареи — единственное исключение из
-                        // официального списка Android, которое обычное приложение
-                        // может получить само. Без него запуск сервиса из шторки
-                        // держится на честном слове: клика по плитке в том списке
-                        // нет вовсе, на стоке он проходит лишь потому, что SystemUI
-                        // держит плитку привязанной, — и первым же отваливается на
-                        // прошивках с «Автозапуском» (ColorOS, MIUI и родня).
+                        // Снятая оптимизация батареи — исключение из официального
+                        // списка Android на запуск сервиса из фона. В режиме VPN
+                        // такое право даёт уже согласие на VPN (REASON_OP_ACTIVATE_VPN),
+                        // в режиме прокси его может не быть — и тогда держится на ней.
                         "isIgnoringBatteryOptimizations" -> {
                             val pm = getSystemService(android.os.PowerManager::class.java)
                             result.success(pm?.isIgnoringBatteryOptimizations(packageName) ?: false)
@@ -528,6 +525,15 @@ class MainActivity : FlutterFragmentActivity() {
                                 result.success(true)
                             } catch (e: Exception) {
                                 result.error("BATTERY_OPT_REQUEST_FAILED", e.message, null)
+                            }
+                        }
+                        "getOemAutostart" -> result.success(OemAutostart.kind(this))
+                        "openOemAutostart" -> {
+                            try {
+                                OemAutostart.open(this)
+                                result.success(true)
+                            } catch (e: Exception) {
+                                result.error("OPEN_AUTOSTART_FAILED", e.message, null)
                             }
                         }
                         "getProcessExits" -> result.success(ProcessExits.recent(this))

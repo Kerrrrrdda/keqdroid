@@ -14,9 +14,11 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
     <!-- Только ради системного диалога «разрешить работу без ограничений»:
-         снятая оптимизация батареи — единственное исключение из официального
-         списка Android, дающее право поднять сервис из фона. На нём держится
-         включение VPN из шторки. -->
+         снятая оптимизация батареи — исключение из официального списка
+         Android, дающее право поднять сервис из фона. У режима VPN такое право
+         есть и так (согласие на VPN, REASON_OP_ACTIVATE_VPN), а у режима
+         прокси согласия может не быть, и включение из шторки держится на
+         этой строке. -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28"/>
 

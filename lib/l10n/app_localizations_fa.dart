@@ -1899,6 +1899,15 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsPermBatteryDesc => 'بدون آن، سیستم ممکن است اجازهٔ روشن کردن VPN از کاشی تنظیمات سریع را ندهد';
 
   @override
+  String get settingsPermAutostartTitle => 'اجرای خودکار';
+
+  @override
+  String get settingsPermAutostartDesc => 'تنظیم رام سازنده: بدون آن ممکن است VPN از کاشی تنظیمات سریع روشن نشود و در پس‌زمینه خاموش شود';
+
+  @override
+  String get settingsPermAutostartHint => 'اجرای خودکار و فعالیت در پس‌زمینه را (معمولاً در بخش باتری) پیدا و مجاز کنید';
+
+  @override
   String get settingsPermStatusGranted => 'داده شده';
 
   @override
