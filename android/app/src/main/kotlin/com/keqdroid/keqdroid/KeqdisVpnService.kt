@@ -260,7 +260,7 @@ class KeqdisVpnService : VpnService() {
 
     private val serviceScope = CoroutineScope(
         Dispatchers.IO + SupervisorJob() + CoroutineExceptionHandler { _, e ->
-            android.util.Log.e("KEQDIS", "Uncaught coroutine: ${e.message}", e)
+            NativeLog.e("KEQDIS", "Uncaught coroutine: ${e.message}", e)
         }
     )
     @Volatile private var statusListener: StatusListener? = null
@@ -319,7 +319,7 @@ class KeqdisVpnService : VpnService() {
             .getString(KEY_QS_STATUS, "disconnected")
             ?.lowercase()
         if (stale != "disconnected" && stale != "error") {
-            android.util.Log.w("KEQDIS", "onCreate: healing stale persisted status '$stale' → disconnected")
+            NativeLog.w("KEQDIS", "onCreate: healing stale persisted status '$stale' → disconnected")
             setStatus(VpnRunStatus.STOPPED)
         }
     }
@@ -336,7 +336,7 @@ class KeqdisVpnService : VpnService() {
                 .getOrElse {
                     // Упавший здесь процесс система подняла бы снова, и тем же
                     // путём, — круг перезапусков вместо одной неудачи.
-                    android.util.Log.e("KEQDIS", "restore failed: ${it.message}", it)
+                    NativeLog.e("KEQDIS", "restore failed: ${it.message}", it)
                     stopSelf(startId)
                     START_NOT_STICKY
                 }
@@ -378,7 +378,7 @@ class KeqdisVpnService : VpnService() {
         val wanted = getSharedPreferences(PREFS_QS, Context.MODE_PRIVATE)
             .getBoolean(KEY_QS_SESSION_WANTED, false)
         if (!alwaysOn && !wanted) {
-            android.util.Log.i("KEQDIS", "restore: no session was supposed to be up, staying down")
+            NativeLog.i("KEQDIS", "restore: no session was supposed to be up, staying down")
             stopSelf(startId)
             return START_NOT_STICKY
         }
@@ -395,7 +395,7 @@ class KeqdisVpnService : VpnService() {
             else -> null
         }
         if (start == null || refusal != null) {
-            android.util.Log.w("KEQDIS", "restore (alwaysOn=$alwaysOn): $refusal")
+            NativeLog.w("KEQDIS", "restore (alwaysOn=$alwaysOn): $refusal")
             appendCoreLog("could not bring the VPN back: $refusal")
             rememberSessionWanted(false)
             stopSelf(startId)
@@ -425,13 +425,13 @@ class KeqdisVpnService : VpnService() {
         lastIncludePackages = includePkgs
 
         val configPath = intent.getStringExtra(EXTRA_XRAY_CONFIG) ?: run {
-            android.util.Log.e("KEQDIS", "onStartCommand: missing EXTRA_XRAY_CONFIG")
+            NativeLog.e("KEQDIS", "onStartCommand: missing EXTRA_XRAY_CONFIG")
             return START_NOT_STICKY
         }
         val user = intent.getStringExtra(EXTRA_SOCKS_USERNAME)
         val pass = intent.getStringExtra(EXTRA_SOCKS_PASSWORD)
         if (user.isNullOrEmpty() || pass.isNullOrEmpty()) {
-            android.util.Log.e("KEQDIS", "onStartCommand: SOCKS5 credentials missing in Intent — aborting start")
+            NativeLog.e("KEQDIS", "onStartCommand: SOCKS5 credentials missing in Intent — aborting start")
             return START_NOT_STICKY
         }
         socksUsername = user
@@ -465,7 +465,7 @@ class KeqdisVpnService : VpnService() {
             }
         lastTunnelMode = tunnelMode
 
-        android.util.Log.d(
+        NativeLog.i(
             "KEQDIS",
             "onStartCommand: backend=$backend core=$coreKind engine=$coreEngine config=$configPath"
         )
@@ -499,7 +499,7 @@ class KeqdisVpnService : VpnService() {
             // для VPN-приложений (REASON_OP_ACTIVATE_VPN в ActiveServices), и
             // прошивка вправе его не признать. Необработанный отказ уронил бы
             // процесс, а система взялась бы поднимать его снова.
-            android.util.Log.e("KEQDIS", "startForeground refused: $e")
+            NativeLog.e("KEQDIS", "startForeground refused: $e")
             appendCoreLog("the system did not let the VPN run in the foreground: ${e.message}")
             unregisterNotificationReceiver()
             stopSelf(startId)
@@ -573,7 +573,7 @@ class KeqdisVpnService : VpnService() {
         try {
             kotlinx.coroutines.withTimeout(45_000L) { block() }
         } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
-            android.util.Log.e("KEQDIS", "start watchdog fired: connect attempt hung")
+            NativeLog.e("KEQDIS", "start watchdog fired: connect attempt hung")
             setStatus(VpnRunStatus.ERROR, "Connection attempt timed out")
             // best-effort вне мьютекса: возможно, завис именно его владелец
             runCatching { cleanup() }
@@ -771,7 +771,7 @@ class KeqdisVpnService : VpnService() {
                 runCatching { cleanup() }
                 throw e
             }
-            android.util.Log.e("KEQDIS", "startVpn failed: ${e.message}", e)
+            NativeLog.e("KEQDIS", "startVpn failed: ${e.message}", e)
             setStatus(VpnRunStatus.ERROR, e.message)
             cleanup()
             showControlNotification(e.message ?: "Error", isConnected = false, isTransitioning = false)
@@ -815,7 +815,7 @@ class KeqdisVpnService : VpnService() {
         try {
             cleanup()
         } catch (e: Exception) {
-            android.util.Log.w("KEQDIS", "cleanup failed: ${e.message}")
+            NativeLog.w("KEQDIS", "cleanup failed: ${e.message}")
         } finally {
             cleanupDone = true
             if (startId != null) stopSelf(startId) else stopSelf()
@@ -903,7 +903,7 @@ class KeqdisVpnService : VpnService() {
         watchStartedAt = System.currentTimeMillis()
         runCatching { cm.registerNetworkCallback(request, cb) }
             .onSuccess { networkCallback = cb }
-            .onFailure { android.util.Log.w("KEQDIS", "network watch: register failed: ${it.message}") }
+            .onFailure { NativeLog.w("KEQDIS", "network watch: register failed: ${it.message}") }
     }
 
     /// Снять слежение. Отложенный сброс здесь НЕ отменяется: сюда приходят в
@@ -939,7 +939,7 @@ class KeqdisVpnService : VpnService() {
         // выглядит как переезд, хотя ничего не переезжало.
         if (System.currentTimeMillis() - watchStartedAt < HANDOVER_DEBOUNCE_MS) return
 
-        android.util.Log.i("KEQDIS", "handover: network $network came up next to a live one")
+        NativeLog.i("KEQDIS", "handover: network $network came up next to a live one")
         handoverJob?.cancel()
         handoverJob = serviceScope.launch {
             delay(HANDOVER_DEBOUNCE_MS)
@@ -980,11 +980,11 @@ class KeqdisVpnService : VpnService() {
 
         if (lastCoreKind == CORE_KIND_MIHOMO) {
             if (closeMihomoConnections()) {
-                android.util.Log.i("KEQDIS", "handover: mihomo connections closed via API")
+                NativeLog.i("KEQDIS", "handover: mihomo connections closed via API")
             } else {
                 // Не повод перезапускать ядро: соединения рассосутся сами, а
                 // сорванный рестарт стоит дороже медленной минуты.
-                android.util.Log.w("KEQDIS", "handover: mihomo API did not answer, leaving connections as is")
+                NativeLog.w("KEQDIS", "handover: mihomo API did not answer, leaving connections as is")
             }
             return
         }
@@ -1040,13 +1040,13 @@ class KeqdisVpnService : VpnService() {
                 while (File("/proc/$previousPid").exists()) delay(100)
             }
             relaunchCore(config)
-            android.util.Log.i("KEQDIS", "handover: core restarted pid=$xrayPid")
+            NativeLog.i("KEQDIS", "handover: core restarted pid=$xrayPid")
         } catch (e: Exception) {
             if (e is CancellationException) throw e
             // Дальше сессия всё равно нежизнеспособна: ядра нет, из туннеля
             // читать некому. Ведём себя ровно как монитор при падении ядра,
             // чтобы приложение и плитка увидели честный исход.
-            android.util.Log.e("KEQDIS", "handover: core restart failed: ${e.message}", e)
+            NativeLog.e("KEQDIS", "handover: core restart failed: ${e.message}", e)
             setStatus(VpnRunStatus.ERROR, "Core restart after network change failed")
             cleanup()
             cleanupDone = true
@@ -1132,7 +1132,7 @@ class KeqdisVpnService : VpnService() {
 
         val tun = b.establish()
         if (tun == null) {
-            android.util.Log.e(
+            NativeLog.e(
                 "KEQDIS",
                 "buildTun: establish() returned null — " +
                         "manufacturer=${Build.MANUFACTURER} model=${Build.MODEL} " +
@@ -1163,11 +1163,11 @@ class KeqdisVpnService : VpnService() {
                     b.addAllowedApplication(pkg)
                     addedInc++
                 } catch (e: Exception) {
-                    android.util.Log.w("KEQDIS", "buildTun: addAllowedApplication skipped pkg=$pkg err=${e.message}")
+                    NativeLog.w("KEQDIS", "buildTun: addAllowedApplication skipped pkg=$pkg err=${e.message}")
                 }
             }
             if (addedInc == 0) {
-                android.util.Log.w("KEQDIS", "buildTun: include list produced 0 valid apps, falling back to full tunnel")
+                NativeLog.w("KEQDIS", "buildTun: include list produced 0 valid apps, falling back to full tunnel")
                 runCatching { b.addDisallowedApplication(packageName) }
             }
         } else {
@@ -1176,7 +1176,7 @@ class KeqdisVpnService : VpnService() {
                 try {
                     b.addDisallowedApplication(pkg)
                 } catch (e: Exception) {
-                    android.util.Log.w("KEQDIS", "buildTun: addDisallowedApplication skipped pkg=$pkg err=${e.message}")
+                    NativeLog.w("KEQDIS", "buildTun: addDisallowedApplication skipped pkg=$pkg err=${e.message}")
                 }
             }
         }
@@ -1192,10 +1192,10 @@ class KeqdisVpnService : VpnService() {
             if (activeNet != null) {
                 b.setUnderlyingNetworks(arrayOf(activeNet))
             } else {
-                android.util.Log.w("KEQDIS", "buildTun: activeNetwork is null on $manufacturer")
+                NativeLog.w("KEQDIS", "buildTun: activeNetwork is null on $manufacturer")
             }
         } catch (e: Exception) {
-            android.util.Log.w("KEQDIS", "buildTun: setUnderlyingNetworks failed on $manufacturer: ${e.message}")
+            NativeLog.w("KEQDIS", "buildTun: setUnderlyingNetworks failed on $manufacturer: ${e.message}")
         }
     }
 
@@ -1215,7 +1215,7 @@ class KeqdisVpnService : VpnService() {
         if (!needsExplicitUnderlying()) return
         if (tunInterface == null) return   // режим прокси: establish() не звался
         runCatching { setUnderlyingNetworks(arrayOf(network)) }
-            .onFailure { android.util.Log.w("KEQDIS", "handover: setUnderlyingNetworks failed: ${it.message}") }
+            .onFailure { NativeLog.w("KEQDIS", "handover: setUnderlyingNetworks failed: ${it.message}") }
     }
 
     // ── Xray ─────────────────────────────────────────────────────────────────
@@ -1301,12 +1301,12 @@ class KeqdisVpnService : VpnService() {
                 )
             }
             if (NativeHelper.tunReadyCount() > tunReadyFrom || log.contains(MIHOMO_TUN_READY)) {
-                android.util.Log.i("KEQDIS", "mihomo tun adapter is up")
+                NativeLog.i("KEQDIS", "mihomo tun adapter is up")
                 return
             }
             delay(100); waited += 100
         }
-        android.util.Log.i("KEQDIS", "mihomo tun: no verdict in the log, continuing")
+        NativeLog.i("KEQDIS", "mihomo tun: no verdict in the log, continuing")
     }
 
     /**
@@ -1325,7 +1325,7 @@ class KeqdisVpnService : VpnService() {
         }
         false
     }.getOrElse {
-        android.util.Log.w("KEQDIS", "xrayConfigHasTun: ${it.message}")
+        NativeLog.w("KEQDIS", "xrayConfigHasTun: ${it.message}")
         false
     }
 
@@ -1350,7 +1350,7 @@ class KeqdisVpnService : VpnService() {
             settings.put("mtu", TUN_MTU)
             inbound.put("settings", settings)
             file.writeText(root.toString())
-            android.util.Log.i("KEQDIS", "xray tun: mtu=$TUN_MTU")
+            NativeLog.i("KEQDIS", "xray tun: mtu=$TUN_MTU")
             return
         }
         throw IllegalStateException("xray config has no tun inbound")
@@ -1382,7 +1382,7 @@ class KeqdisVpnService : VpnService() {
         tun.put("mtu", TUN_MTU)
         root.put("tun", tun)
         file.writeText(yamlSafeJson(root.toString()))
-        android.util.Log.i("KEQDIS", "mihomo tun: fd=$tunFd mtu=$TUN_MTU")
+        NativeLog.i("KEQDIS", "mihomo tun: fd=$tunFd mtu=$TUN_MTU")
     }
 
     /**
@@ -1442,11 +1442,11 @@ class KeqdisVpnService : VpnService() {
         return try {
             relaunchCore(config)
             appendCoreLog("started the core again on the same tunnel, pid $xrayPid")
-            android.util.Log.i("KEQDIS", "[xray] pid=$deadPid revived as pid=$xrayPid")
+            NativeLog.i("KEQDIS", "[xray] pid=$deadPid revived as pid=$xrayPid")
             true
         } catch (e: Exception) {
             if (e is CancellationException) throw e
-            android.util.Log.e("KEQDIS", "[xray] revive of pid=$deadPid failed: ${e.message}", e)
+            NativeLog.e("KEQDIS", "[xray] revive of pid=$deadPid failed: ${e.message}", e)
             appendCoreLog("could not start the core again: ${e.message}")
             false
         }
@@ -1493,7 +1493,7 @@ class KeqdisVpnService : VpnService() {
         } catch (e: Exception) {
             // Не разобрали — запускаем как есть: без счётчика отказов, но с
             // тем уровнем, что заказан.
-            android.util.Log.w("KEQDIS", "session log level left as is: ${e.message}")
+            NativeLog.w("KEQDIS", "session log level left as is: ${e.message}")
             NativeHelper.setCoreLogLevel(0)
             config
         }
@@ -1526,7 +1526,7 @@ class KeqdisVpnService : VpnService() {
             NativeHelper.setCoreLogLevel(chosen)
             run.absolutePath
         } catch (e: Exception) {
-            android.util.Log.w("KEQDIS", "session log level left as is: ${e.message}")
+            NativeLog.w("KEQDIS", "session log level left as is: ${e.message}")
             NativeHelper.setCoreLogLevel(0)
             config
         }
@@ -1568,7 +1568,7 @@ class KeqdisVpnService : VpnService() {
             pid <= 0  -> throw IllegalStateException("fork() for Xray failed (pid=$pid)")
             else -> {} // valid pid
         }
-        android.util.Log.i("KEQDIS", "Xray started pid=$pid")
+        NativeLog.i("KEQDIS", "Xray started pid=$pid")
         coreStartedAt = android.os.SystemClock.elapsedRealtime()
 
         // Запускаем мониторинг процесса Xray
@@ -1576,7 +1576,7 @@ class KeqdisVpnService : VpnService() {
         serviceScope.launch(Dispatchers.IO) {
             try {
                 while (File("/proc/$pid").exists()) delay(500)
-                android.util.Log.w("KEQDIS", "[xray] pid=$pid exited")
+                NativeLog.w("KEQDIS", "[xray] pid=$pid exited")
                 opMutex.withLock {
                     if ((status == VpnRunStatus.RUNNING || status == VpnRunStatus.STARTING) &&
                         monitorPid == xrayPid) {
@@ -1586,7 +1586,7 @@ class KeqdisVpnService : VpnService() {
                         )
                         xrayPid = -1  // уже мёртв — не пытаемся убить повторно в cleanup()
                         if (status == VpnRunStatus.RUNNING && reviveCore(pid)) return@withLock
-                        android.util.Log.w("KEQDIS", "[xray] triggering full cleanup after unexpected exit")
+                        NativeLog.w("KEQDIS", "[xray] triggering full cleanup after unexpected exit")
                         setStatus(VpnRunStatus.ERROR, "Xray exited unexpectedly")
                         cleanup()
                         cleanupDone = true
@@ -1720,7 +1720,7 @@ class KeqdisVpnService : VpnService() {
         // codeCacheDir и filesDir — app_data_file — execv заблокирован SELinux на Android 10+.
         val bin = File(applicationInfo.nativeLibraryDir, name)
         if (!bin.exists()) throw IllegalStateException("$name not found in ${applicationInfo.nativeLibraryDir}")
-        android.util.Log.i("KEQDIS", "Using binary: ${bin.absolutePath}")
+        NativeLog.i("KEQDIS", "Using binary: ${bin.absolutePath}")
         return bin.absolutePath
     }
 
@@ -1747,7 +1747,7 @@ class KeqdisVpnService : VpnService() {
 
         // Log transitions to final states for QS tile debugging
         if (s == VpnRunStatus.STOPPED || s == VpnRunStatus.RUNNING || s == VpnRunStatus.ERROR) {
-            android.util.Log.d("KEQDIS_QS", "setStatus: $s → statusStr=$statusStr")
+            NativeLog.i("KEQDIS_QS", "setStatus: $s → statusStr=$statusStr")
         }
 
         // Persist status for Quick Settings tile (and other Android-only consumers).
@@ -1765,7 +1765,7 @@ class KeqdisVpnService : VpnService() {
         runCatching {
             contentResolver.notifyChange(VpnStatusProvider.STATUS_URI, null)
         }.onFailure { e ->
-            android.util.Log.w("KEQDIS", "notifyChange failed: ${e.message}")
+            NativeLog.w("KEQDIS", "notifyChange failed: ${e.message}")
         }
 
         statusListener?.invoke(statusStr, e)
@@ -1778,7 +1778,7 @@ class KeqdisVpnService : VpnService() {
                 setPackage(packageName)
             })
         }.onFailure { ex ->
-            android.util.Log.w("KEQDIS", "broadcastStatusChange failed: ${ex.message}")
+            NativeLog.w("KEQDIS", "broadcastStatusChange failed: ${ex.message}")
         }
     }
 
@@ -1943,7 +1943,7 @@ class KeqdisVpnService : VpnService() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 when (intent?.action) {
                     BROADCAST_ACTION_CONNECT -> {
-                        android.util.Log.d("KEQDIS", "[notification] Connect pressed")
+                        NativeLog.i("KEQDIS", "[notification] Connect pressed")
                         // Открываем приложение для подключения
                         val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
                         launchIntent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -1951,7 +1951,7 @@ class KeqdisVpnService : VpnService() {
                         startActivity(launchIntent)
                     }
                     BROADCAST_ACTION_DISCONNECT -> {
-                        android.util.Log.d("KEQDIS", "[notification] Disconnect pressed")
+                        NativeLog.i("KEQDIS", "[notification] Disconnect pressed")
                         serviceScope.launch { stopVpn() }
                     }
                 }

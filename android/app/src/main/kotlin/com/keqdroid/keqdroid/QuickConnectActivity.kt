@@ -86,7 +86,7 @@ class QuickConnectActivity : ComponentActivity() {
         try {
             if (Build.VERSION.SDK_INT >= 26) startForegroundService(start) else startService(start)
         } catch (e: Exception) {
-            android.util.Log.e("KEQDIS_QS", "quick connect: service start refused: $e")
+            NativeLog.e("KEQDIS_QS", "quick connect: service start refused: $e")
             runCatching { Toast.makeText(this, R.string.tile_error_start, Toast.LENGTH_LONG).show() }
             openApp()
         }

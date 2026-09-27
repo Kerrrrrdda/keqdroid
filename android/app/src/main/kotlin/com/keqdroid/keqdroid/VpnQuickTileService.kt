@@ -79,7 +79,7 @@ class VpnQuickTileService : TileService() {
                 )
             ) conn else null
         } catch (e: Exception) {
-            android.util.Log.w("KEQDIS_QS", "heal bind failed: ${e.message}")
+            NativeLog.w("KEQDIS_QS", "heal bind failed: ${e.message}")
             null
         }
     }
@@ -98,7 +98,7 @@ class VpnQuickTileService : TileService() {
                 observer
             )
         } catch (e: Exception) {
-            android.util.Log.e("KEQDIS", "Failed to register content observer: ${e.message}")
+            NativeLog.e("KEQDIS", "Failed to register content observer: ${e.message}")
         }
 
         try {
@@ -109,7 +109,7 @@ class VpnQuickTileService : TileService() {
                 registerReceiver(statusReceiver, filter)
             }
         } catch (e: Exception) {
-            android.util.Log.e("KEQDIS", "Failed to register broadcast receiver: ${e.message}")
+            NativeLog.e("KEQDIS", "Failed to register broadcast receiver: ${e.message}")
         }
 
         retryCount = 0
@@ -138,7 +138,7 @@ class VpnQuickTileService : TileService() {
         // плитка просто «дёргается и не включается». Поэтому ни один шаг ниже не
         // имеет права падать наружу, и каждая ветка пишется в лог.
         runCatching { handleClick() }.onFailure { t ->
-            android.util.Log.e("KEQDIS_QS", "onClick failed: $t", t)
+            NativeLog.e("KEQDIS_QS", "onClick failed: $t", t)
             toast(R.string.tile_error_start)
         }
     }
@@ -147,7 +147,7 @@ class VpnQuickTileService : TileService() {
         val prefs = getSharedPreferences(KeqdisVpnService.PREFS_QS, MODE_PRIVATE)
         val status = (prefs.getString(KeqdisVpnService.KEY_QS_STATUS, "disconnected")
             ?: "disconnected").lowercase()
-        android.util.Log.d("KEQDIS_QS", "onClick: status=$status")
+        NativeLog.i("KEQDIS_QS", "onClick: status=$status")
 
         // Запись в prefs переживает смерть процесса, а туннель — нет.
         //
@@ -163,7 +163,7 @@ class VpnQuickTileService : TileService() {
         // значит запись протухла, чиним и идём подключаться.
         val live = KeqdisVpnService.liveStatus.lowercase()
         if (status in ACTIVE_STATUSES && live !in ACTIVE_STATUSES) {
-            android.util.Log.w(
+            NativeLog.w(
                 "KEQDIS_QS",
                 "onClick: stale persisted status '$status' (live='$live') → healing and connecting",
             )
@@ -181,7 +181,7 @@ class VpnQuickTileService : TileService() {
 
         val start = KeqdisVpnService.snapshotStartIntent(this)
         if (start == null) {
-            android.util.Log.i("KEQDIS_QS", "onClick: no usable server snapshot → opening app")
+            NativeLog.i("KEQDIS_QS", "onClick: no usable server snapshot → opening app")
             openAppForConnect()
             return
         }
@@ -190,12 +190,12 @@ class VpnQuickTileService : TileService() {
         // интент под startActivityForResult. Невидимое окно спросит его и
         // само же подключит — открывать ради диалога всё приложение незачем.
         if (KeqdisVpnService.startsTunnel(start) && VpnService.prepare(this) != null) {
-            android.util.Log.i("KEQDIS_QS", "onClick: no VPN consent → quick connect window")
+            NativeLog.i("KEQDIS_QS", "onClick: no VPN consent → quick connect window")
             openQuickConnect()
             return
         }
         if (directStartBlocked()) {
-            android.util.Log.i("KEQDIS_QS", "onClick: this firmware blocks the tile → quick connect window")
+            NativeLog.i("KEQDIS_QS", "onClick: this firmware blocks the tile → quick connect window")
             openQuickConnect()
             return
         }
@@ -206,7 +206,7 @@ class VpnQuickTileService : TileService() {
             // ForegroundServiceStartNotAllowedException на Android 12+: право
             // на фоновый старт отняли («Ограничить фоновую активность»,
             // выключенный автозапуск прошивки). Из окна старт разрешён всегда.
-            android.util.Log.e("KEQDIS_QS", "onClick: service start refused by system: $e")
+            NativeLog.e("KEQDIS_QS", "onClick: service start refused by system: $e")
             rememberDirectStartBlocked()
             openQuickConnect()
             return
@@ -237,7 +237,7 @@ class VpnQuickTileService : TileService() {
         android.os.Handler(mainLooper).postDelayed({
             val live = KeqdisVpnService.liveStatus.lowercase()
             if (live !in ACTIVE_STATUSES) {
-                android.util.Log.e(
+                NativeLog.e(
                     "KEQDIS_QS",
                     "onClick: service did not come up (live='$live') — likely blocked by the OEM",
                 )
@@ -284,7 +284,7 @@ class VpnQuickTileService : TileService() {
             android.os.Handler(mainLooper).postDelayed({
                 if (QuickConnectActivity.openedAt >= launchedAt) return@postDelayed
                 if (KeqdisVpnService.liveStatus.lowercase() in ACTIVE_STATUSES) return@postDelayed
-                android.util.Log.w("KEQDIS_QS", "quick connect window did not open")
+                NativeLog.w("KEQDIS_QS", "quick connect window did not open")
                 toast(if (retryHelps) R.string.tile_error_blocked else R.string.tile_error_open_app)
             }, 2000)
         }
@@ -327,9 +327,9 @@ class VpnQuickTileService : TileService() {
                 // Прошивки с урезанным фоновым запуском активностей (MIUI/HyperOS
                 // и родня) режут запуск из шторки. Пробуем напрямую, а если и это
                 // не проходит — говорим вслух, иначе нажатие выглядит как «ничего».
-                android.util.Log.e("KEQDIS_QS", "startActivityAndCollapse failed: $e")
+                NativeLog.e("KEQDIS_QS", "startActivityAndCollapse failed: $e")
                 runCatching { startActivity(launchIntent) }.onFailure {
-                    android.util.Log.e("KEQDIS_QS", "startActivity fallback failed: $it")
+                    NativeLog.e("KEQDIS_QS", "startActivity fallback failed: $it")
                     toast(R.string.tile_error_open_app)
                     return@Runnable
                 }
@@ -364,7 +364,7 @@ class VpnQuickTileService : TileService() {
             persisted
         }
 
-        android.util.Log.d(
+        NativeLog.d(
             "KEQDIS_QS",
             "updateTileFromPrefs: status=$status (persisted=$persisted, live=$live)",
         )
@@ -373,13 +373,13 @@ class VpnQuickTileService : TileService() {
         if (tileObj == null) {
             // Retry mechanism: schedule another attempt if qsTile is not available yet
             if (retryCount < MAX_RETRIES) {
-                android.util.Log.d("KEQDIS_QS", "updateTileFromPrefs: qsTile is null, scheduling retry (${retryCount + 1}/$MAX_RETRIES)")
+                NativeLog.d("KEQDIS_QS", "updateTileFromPrefs: qsTile is null, scheduling retry (${retryCount + 1}/$MAX_RETRIES)")
                 retryHandler?.removeCallbacks(retryRunnable)
                 retryHandler = Handler(Looper.getMainLooper())
                 retryHandler?.postDelayed(retryRunnable, RETRY_DELAY_MS)
                 retryCount++
             } else {
-                android.util.Log.w("KEQDIS_QS", "updateTileFromPrefs: max retries reached, giving up")
+                NativeLog.w("KEQDIS_QS", "updateTileFromPrefs: max retries reached, giving up")
                 retryCount = 0
             }
             return
@@ -409,7 +409,7 @@ class VpnQuickTileService : TileService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             tileObj.subtitle = if (connecting) getString(R.string.tile_connecting) else null
         }
-        android.util.Log.d("KEQDIS_QS", "updateTileFromPrefs: new tile.state=${tileObj.state}")
+        NativeLog.d("KEQDIS_QS", "updateTileFromPrefs: new tile.state=${tileObj.state}")
         tileObj.updateTile()
     }
 }

@@ -62,7 +62,7 @@ object XrayGeoAssets {
             // больше кодов, и трогать его нельзя.
             val assetSize = assetSize(context, assetKey)
             if (out.exists() && assetSize > 0L && out.length() > assetSize) {
-                android.util.Log.i(
+                NativeLog.i(
                     "KEQDIS",
                     "Keeping richer geo base $name (${out.length()} bytes on disk " +
                         "vs $assetSize bundled)",
@@ -76,12 +76,12 @@ object XrayGeoAssets {
                 assetManager.open(assetKey).use { input ->
                     out.outputStream().use { output -> input.copyTo(output) }
                 }
-                android.util.Log.i(
+                NativeLog.i(
                     "KEQDIS",
                     "Extracted xray geo asset $name (${out.length()} bytes, $fingerprint)",
                 )
             } catch (e: Exception) {
-                android.util.Log.w(
+                NativeLog.w(
                     "KEQDIS",
                     "Xray geo asset $name not bundled - geoip:/geosite: routing may fail",
                 )

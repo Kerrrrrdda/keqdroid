@@ -127,7 +127,7 @@ object NativeHelper {
             }.getOrNull() ?: continue
             val binary = argv0.substringAfterLast('/')
             if (binary !in coreBinaries) continue
-            android.util.Log.w(TAG, "killOrphans: killing stale $binary pid=$pid")
+            NativeLog.w(TAG, "killOrphans: killing stale $binary pid=$pid")
             runCatching { android.os.Process.killProcess(pid) }
             killed++
         }

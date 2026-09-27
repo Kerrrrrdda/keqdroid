@@ -20,7 +20,12 @@ class VpnStatusProvider : ContentProvider() {
         val STATUS_URI: Uri = Uri.parse("content://$AUTHORITY/status")
     }
 
-    override fun onCreate(): Boolean = true
+    // Провайдер создаётся при старте процесса раньше любого компонента, поэтому
+    // журнал нативной части заводим здесь: его ждут и служба, и плитка.
+    override fun onCreate(): Boolean {
+        context?.let { NativeLog.init(it) }
+        return true
+    }
 
     override fun query(
         uri: Uri,

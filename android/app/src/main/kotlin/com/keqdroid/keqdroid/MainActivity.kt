@@ -455,7 +455,7 @@ class MainActivity : FlutterFragmentActivity() {
                             // так конфиг ядра и локальный прокси приложения гарантированно совпадают.
                             pendingSocksUsername = randomToken(16)
                             pendingSocksPassword = randomToken(24)
-                            android.util.Log.d("KEQDIS", "getSocksCredentials: generated new credentials")
+                            NativeLog.d("KEQDIS", "getSocksCredentials: generated new credentials")
                             result.success(mapOf(
                                 "username" to pendingSocksUsername!!,
                                 "password" to pendingSocksPassword!!,
@@ -591,6 +591,9 @@ class MainActivity : FlutterFragmentActivity() {
                         "getXrayLogs" -> {
                             val maxLines = call.argument<Int>("maxLines") ?: 300
                             getXrayLogs(maxLines, result)
+                        }
+                        "getNativeLog" -> mainScope.launch {
+                            result.success(withContext(Dispatchers.IO) { NativeLog.read() })
                         }
                         "resolveConnectionOwners" -> {
                             val items = call.argument<List<Map<String, Any?>>>("connections")
@@ -853,7 +856,7 @@ class MainActivity : FlutterFragmentActivity() {
         val username = pendingSocksUsername
         val password = pendingSocksPassword
         if (username.isNullOrEmpty() || password.isNullOrEmpty()) {
-            android.util.Log.e("KEQDIS", "startVpn: credentials missing — call getSocksCredentials first")
+            NativeLog.e("KEQDIS", "startVpn: credentials missing — call getSocksCredentials first")
             result.error("NO_CREDENTIALS", "Call getSocksCredentials before startVpn", null)
             return
         }
@@ -870,7 +873,7 @@ class MainActivity : FlutterFragmentActivity() {
                 return@launch
             }
 
-            android.util.Log.d("KEQDIS", "startVpn: sending credentials to service")
+            NativeLog.d("KEQDIS", "startVpn: sending credentials to service")
 
             // Сохраняем порт в SharedPreferences чтобы WorkManager-изолят мог его прочитать
             // через StorageService.getSocksPort(). Flutter хранит ключи с префиксом "flutter."
@@ -1034,7 +1037,7 @@ class MainActivity : FlutterFragmentActivity() {
                     )
                 }.getOrElse { e ->
                     emptyList<EphemeralXrayPing.BatchResult>()
-                        .also { android.util.Log.e("KEQDIS", "xrayUrlTestBatch failed: ${e.message}") }
+                        .also { NativeLog.e("KEQDIS", "xrayUrlTestBatch failed: ${e.message}") }
                 }
             }
             result.success(
@@ -1103,7 +1106,7 @@ class MainActivity : FlutterFragmentActivity() {
                     )
                 }.getOrElse { e ->
                     emptyList<EphemeralXrayPing.BatchResult>()
-                        .also { android.util.Log.e("KEQDIS", "xrayUrlTestMulti failed: ${e.message}") }
+                        .also { NativeLog.e("KEQDIS", "xrayUrlTestMulti failed: ${e.message}") }
                 }
             }
             result.success(
@@ -1182,7 +1185,7 @@ class MainActivity : FlutterFragmentActivity() {
                     )
                 }.getOrElse { e ->
                     emptyList<EphemeralXrayPing.SpeedBatchResult>()
-                        .also { android.util.Log.e("KEQDIS", "xraySpeedTestBatch failed: ${e.message}") }
+                        .also { NativeLog.e("KEQDIS", "xraySpeedTestBatch failed: ${e.message}") }
                 }
             }
             result.success(

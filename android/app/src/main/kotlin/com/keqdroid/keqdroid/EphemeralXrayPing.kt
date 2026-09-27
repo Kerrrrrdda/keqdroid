@@ -347,7 +347,7 @@ object EphemeralXrayPing {
                 pool.shutdownNow()
             }
         } catch (e: Exception) {
-            Log.e("KEQDIS", "urlTestMulti failed: ${e.message}")
+            NativeLog.e("KEQDIS", "urlTestMulti failed: ${e.message}")
             val err = Result(false, null, e.message ?: "batch failed", null)
             return probes.map { BatchResult(it.id, err) }
         } finally {
@@ -846,6 +846,8 @@ object EphemeralXrayPing {
             best!!
         } catch (e: Exception) {
 
+            // Мимо NativeLog намеренно: недоступный сервер в замере — не сбой
+            // приложения, а один прогон по подписке вытеснил бы из журнала всё.
             Log.w(TAG, "httpProbeViaSocks failed: ${e.message}")
 
             Result(false, null, e.message ?: e.javaClass.simpleName, null)
@@ -940,6 +942,7 @@ object EphemeralXrayPing {
 
         } catch (e: Exception) {
 
+            // Мимо NativeLog — по той же причине, что и в httpProbeViaSocks.
             Log.w(TAG, "downloadProbeViaSocks failed: ${e.message}")
 
             SpeedResult(false, null, e.message ?: e.javaClass.simpleName)
