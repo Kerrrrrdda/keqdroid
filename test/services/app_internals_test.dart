@@ -72,8 +72,10 @@ void main() {
     AppInternals sample({
       List<CoreInfo>? cores,
       SessionInfo? session,
+      List<ProcessExit> processExits = const [],
     }) {
       return AppInternals(
+        processExits: processExits,
         cores: cores ??
             [
               CoreInfo(
@@ -169,6 +171,124 @@ void main() {
       expect(report, isNot(contains('pid ')));
       expect(report, isNot(contains('elevated:')));
       expect(report, isNot(contains('uptime:')));
+      expect(report, isNot(contains('## process exits')));
+    });
+
+    test('смерти процесса — с причиной, статусом VPN и словами убийцы', () {
+      final report = AppInternalsService.report(
+        sample(
+          processExits: [
+            ProcessExit(
+              time: DateTime(2026, 9, 27, 3, 12, 44),
+              reason: 13,
+              reasonName: 'OTHER',
+              importance: 125,
+              description: 'athena kill',
+              vpnStatus: 'connected',
+            ),
+            ProcessExit(
+              time: DateTime(2026, 9, 26, 22, 1, 5),
+              reason: 10,
+              reasonName: 'USER_REQUESTED',
+              status: 0,
+              importance: 400,
+            ),
+          ],
+        ),
+      );
+
+      expect(report, contains('## process exits'));
+      expect(
+        report,
+        contains('2026-09-27 03:12:44 OTHER status=0 importance=125 '
+            'vpn=connected "athena kill"'),
+      );
+      // Без пометки о VPN и без описания — так и пишем, не выдумывая.
+      expect(
+        report,
+        contains('2026-09-26 22:01:05 USER_REQUESTED status=0 importance=400\n'),
+      );
+    });
+  });
+
+  group('смерть процесса', () {
+    ProcessExit exitWith(int reason, {int? sdkInt = 35}) => ProcessExit(
+          time: DateTime(2026, 9, 27),
+          reason: reason,
+          reasonName: '$reason',
+          sdkInt: sdkInt,
+        );
+
+    test('разбор ответа нативной стороны', () {
+      final exit = ProcessExit.fromMap({
+        'timestamp': DateTime(2026, 9, 27, 3, 12).millisecondsSinceEpoch,
+        'reason': 2,
+        'reasonName': 'SIGNALED',
+        'status': 9,
+        'importance': 125,
+        'description': '  ',
+        'vpnStatus': 'connected',
+      }, sdkInt: 33)!;
+
+      expect(exit.time, DateTime(2026, 9, 27, 3, 12));
+      expect(exit.reasonName, 'SIGNALED');
+      expect(exit.status, 9);
+      expect(exit.importance, 125);
+      // Пустое описание — это отсутствие описания.
+      expect(exit.description, isNull);
+      expect(exit.vpnWasOn, isTrue);
+    });
+
+    test('запись без времени отбрасывается, без остального — нет', () {
+      expect(ProcessExit.fromMap({'reason': 2}), isNull);
+      final bare = ProcessExit.fromMap({'timestamp': 0})!;
+      expect(bare.reason, 0);
+      expect(bare.reasonName, '0');
+      expect(bare.vpnStatus, isNull);
+      expect(bare.vpnWasOn, isFalse);
+    });
+
+    test('VPN считается включённым, только пока сессия жила', () {
+      ProcessExit withVpn(String? status) => ProcessExit(
+            time: DateTime(2026),
+            reason: 2,
+            reasonName: 'SIGNALED',
+            vpnStatus: status,
+          );
+      expect(withVpn('connected').vpnWasOn, isTrue);
+      expect(withVpn('connecting').vpnWasOn, isTrue);
+      expect(withVpn('disconnected').vpnWasOn, isFalse);
+      expect(withVpn('error').vpnWasOn, isFalse);
+      expect(withVpn(null).vpnWasOn, isFalse);
+    });
+
+    test('причины сводятся к тому, что можно сказать человеку', () {
+      // Коды — ApplicationExitInfo.REASON_*.
+      expect(exitWith(0).cause, ProcessExitCause.system); // UNKNOWN
+      expect(exitWith(1).cause, ProcessExitCause.self); // EXIT_SELF
+      expect(exitWith(2).cause, ProcessExitCause.system); // SIGNALED
+      expect(exitWith(3).cause, ProcessExitCause.memory); // LOW_MEMORY
+      expect(exitWith(4).cause, ProcessExitCause.crash); // CRASH
+      expect(exitWith(5).cause, ProcessExitCause.crash); // CRASH_NATIVE
+      expect(exitWith(6).cause, ProcessExitCause.crash); // ANR
+      expect(exitWith(7).cause, ProcessExitCause.crash); // INITIALIZATION_FAILURE
+      expect(exitWith(8).cause, ProcessExitCause.update); // PERMISSION_CHANGE
+      expect(exitWith(9).cause, ProcessExitCause.system); // EXCESSIVE_RESOURCE_USAGE
+      expect(exitWith(10).cause, ProcessExitCause.user); // USER_REQUESTED
+      expect(exitWith(11).cause, ProcessExitCause.user); // USER_STOPPED
+      expect(exitWith(12).cause, ProcessExitCause.system); // DEPENDENCY_DIED
+      expect(exitWith(13).cause, ProcessExitCause.system); // OTHER
+      expect(exitWith(14).cause, ProcessExitCause.system); // FREEZER
+      expect(exitWith(15).cause, ProcessExitCause.update); // PACKAGE_STATE_CHANGE
+      expect(exitWith(16).cause, ProcessExitCause.update); // PACKAGE_UPDATED
+      expect(exitWith(99).cause, ProcessExitCause.system);
+    });
+
+    test('до Android 14 ручная остановка неотличима от обновления', () {
+      expect(exitWith(10, sdkInt: 33).cause, ProcessExitCause.userOrUpdate);
+      expect(exitWith(10, sdkInt: 34).cause, ProcessExitCause.user);
+      // Остальные причины от версии не зависят.
+      expect(exitWith(2, sdkInt: 30).cause, ProcessExitCause.system);
     });
   });
 

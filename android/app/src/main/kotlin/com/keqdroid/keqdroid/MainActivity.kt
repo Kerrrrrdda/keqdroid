@@ -530,6 +530,7 @@ class MainActivity : FlutterFragmentActivity() {
                                 result.error("BATTERY_OPT_REQUEST_FAILED", e.message, null)
                             }
                         }
+                        "getProcessExits" -> result.success(ProcessExits.recent(this))
                         "getDeviceModel" -> result.success(android.os.Build.MODEL ?: "Android Device")
                         "getNativeInternals" -> {
                             // Панель «Внутренности» читает версии ядер прямо из

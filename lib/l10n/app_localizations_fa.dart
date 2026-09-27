@@ -2267,6 +2267,36 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsInternalsSession => 'نشست جاری';
 
   @override
+  String get settingsInternalsExits => 'چرا برنامه بسته شد';
+
+  @override
+  String get settingsInternalsExitsHint => 'این سوابق را خود سیستم نگه می‌دارد. اگر VPN در پس‌زمینه قطع شد، گزارش را با دکمهٔ بالا کپی کنید — این بخش در آن هست.';
+
+  @override
+  String get settingsInternalsExitSystem => 'توسط سیستم یا رام سازنده متوقف شد';
+
+  @override
+  String get settingsInternalsExitMemory => 'حافظهٔ سیستم کم آمد';
+
+  @override
+  String get settingsInternalsExitCrash => 'برنامه از کار افتاد';
+
+  @override
+  String get settingsInternalsExitUser => 'به‌صورت دستی بسته شد';
+
+  @override
+  String get settingsInternalsExitUserOrUpdate => 'به‌صورت دستی یا با به‌روزرسانی بسته شد';
+
+  @override
+  String get settingsInternalsExitUpdate => 'به‌روزرسانی برنامه یا تغییر دسترسی‌ها';
+
+  @override
+  String get settingsInternalsExitSelf => 'برنامه خودش بسته شد';
+
+  @override
+  String get settingsInternalsExitVpnOn => 'VPN روشن بود';
+
+  @override
   String get settingsInternalsBuild => 'برنامه و دستگاه';
 
   @override

@@ -72,6 +72,22 @@ class VpnNativeBridge {
     }
   }
 
+  /// Прошлые смерти процесса приложения, как их записала система (Android
+  /// 11+). Пустой список — записей нет, платформа не та или канал не ответил:
+  /// панель без этой секции обойдётся.
+  static Future<List<Map<Object?, Object?>>> getProcessExits() async {
+    if (!Platform.isAndroid) return const [];
+    try {
+      final list = await channel.invokeListMethod<Object?>('getProcessExits');
+      return [
+        for (final item in list ?? const <Object?>[])
+          if (item is Map) item.cast<Object?, Object?>(),
+      ];
+    } catch (_) {
+      return const [];
+    }
+  }
+
   /// Все источники цвета системной темы разом; выбор между ними — за
   /// [pickSystemAccent]. Нужны, когда плагин dynamic_color молчит: официальный
   /// флаг Material You есть далеко не у каждой прошивки, а цвет темы у них при

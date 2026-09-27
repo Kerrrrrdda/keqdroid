@@ -155,6 +155,27 @@ class _AppInternalsScreen extends ConsumerWidget {
 
       ExpressiveSectionHeader(l10n.settingsInternalsSession),
       ExpressiveGroup(children: _sessionRows(context, l10n, data.session)),
+
+      // Пять последних хватает, чтобы увидеть, повторяется ли одно и то же;
+      // остальное — в отчёте. Пусто вне Android и до 11-й версии.
+      if (data.processExits.isNotEmpty) ...[
+        ExpressiveSectionHeader(l10n.settingsInternalsExits),
+        ExpressiveGroup(
+          children: [
+            for (final exit in data.processExits.take(5))
+              _ProcessExitRow(exit: exit),
+          ],
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
+          child: Text(
+            l10n.settingsInternalsExitsHint,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppTheme.textLight(context),
+                ),
+          ),
+        ),
+      ],
     ];
   }
 
@@ -500,6 +521,40 @@ class _GeoTile extends StatelessWidget {
       ].join(' · ')),
     );
   }
+}
+
+/// Одна прошлая смерть процесса: когда, от чего и был ли включён VPN. Ради
+/// последнего секция и заведена — строки, где он был включён, выделены.
+class _ProcessExitRow extends StatelessWidget {
+  final ProcessExit exit;
+  const _ProcessExitRow({required this.exit});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final t = exit.time.toLocal();
+    String two(int v) => v.toString().padLeft(2, '0');
+    return _InternalsRow(
+      label: ltrIsolate('${formatFileDate(t)} ${two(t.hour)}:${two(t.minute)}'),
+      value: _causeLabel(l10n, exit.cause),
+      accent: exit.vpnWasOn,
+      detail: [
+        if (exit.vpnWasOn) l10n.settingsInternalsExitVpnOn,
+        if (exit.description != null) ltrIsolate(exit.description!),
+      ].join(' · '),
+    );
+  }
+
+  static String _causeLabel(AppLocalizations l10n, ProcessExitCause cause) =>
+      switch (cause) {
+        ProcessExitCause.system => l10n.settingsInternalsExitSystem,
+        ProcessExitCause.memory => l10n.settingsInternalsExitMemory,
+        ProcessExitCause.crash => l10n.settingsInternalsExitCrash,
+        ProcessExitCause.user => l10n.settingsInternalsExitUser,
+        ProcessExitCause.userOrUpdate => l10n.settingsInternalsExitUserOrUpdate,
+        ProcessExitCause.update => l10n.settingsInternalsExitUpdate,
+        ProcessExitCause.self => l10n.settingsInternalsExitSelf,
+      };
 }
 
 /// Лучший результат в пасхалке — и единственный её след на экране.

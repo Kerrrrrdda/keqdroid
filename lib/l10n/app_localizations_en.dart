@@ -2267,6 +2267,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsInternalsSession => 'Current session';
 
   @override
+  String get settingsInternalsExits => 'Why the app was closed';
+
+  @override
+  String get settingsInternalsExitsHint => 'The system keeps these records itself. If the VPN turned off in the background, copy the report with the button at the top — this section is in it.';
+
+  @override
+  String get settingsInternalsExitSystem => 'Stopped by the system or firmware';
+
+  @override
+  String get settingsInternalsExitMemory => 'The system ran out of memory';
+
+  @override
+  String get settingsInternalsExitCrash => 'The app crashed';
+
+  @override
+  String get settingsInternalsExitUser => 'Closed manually';
+
+  @override
+  String get settingsInternalsExitUserOrUpdate => 'Closed manually or by an update';
+
+  @override
+  String get settingsInternalsExitUpdate => 'App update or permission change';
+
+  @override
+  String get settingsInternalsExitSelf => 'The app exited on its own';
+
+  @override
+  String get settingsInternalsExitVpnOn => 'VPN was on';
+
+  @override
   String get settingsInternalsBuild => 'App and device';
 
   @override

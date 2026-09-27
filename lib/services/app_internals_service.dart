@@ -42,7 +42,18 @@ class AppInternalsService {
       geoBases: await _geoBases(),
       session: await _session(settings, state, android),
       build: await _build(android),
+      processExits: await _processExits(android),
     );
+  }
+
+  static Future<List<ProcessExit>> _processExits(
+    Map<String, Object?> android,
+  ) async {
+    final sdkInt = android['sdkInt'] as int?;
+    return [
+      for (final map in await VpnNativeBridge.getProcessExits())
+        ?ProcessExit.fromMap(map, sdkInt: sdkInt),
+    ];
   }
 
   // ── Ядра ────────────────────────────────────────────────────────────────
@@ -404,6 +415,30 @@ class AppInternalsService {
     for (final pid in session.corePids.entries) {
       out.writeln('pid ${pid.key}: ${pid.value}');
     }
+
+    // Ради этой секции отчёт и просят после «туннель умер в фоне»: кто убил
+    // процесс и был ли в тот момент включён VPN.
+    if (data.processExits.isNotEmpty) {
+      out
+        ..writeln()
+        ..writeln('## process exits');
+      for (final exit in data.processExits) {
+        out.write('${_reportTime(exit.time)} ${exit.reasonName}'
+            ' status=${exit.status} importance=${exit.importance}');
+        if (exit.vpnStatus != null) out.write(' vpn=${exit.vpnStatus}');
+        if (exit.description != null) out.write(' "${exit.description}"');
+        out.writeln();
+      }
+    }
     return out.toString();
+  }
+
+  /// Местное время до секунды, без зоны: отчёт читают рядом с логом ядра,
+  /// а там время того же вида.
+  static String _reportTime(DateTime time) {
+    final t = time.toLocal();
+    String two(int v) => v.toString().padLeft(2, '0');
+    return '${t.year}-${two(t.month)}-${two(t.day)} '
+        '${two(t.hour)}:${two(t.minute)}:${two(t.second)}';
   }
 }

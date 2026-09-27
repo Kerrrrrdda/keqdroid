@@ -13,12 +13,115 @@ class AppInternals {
     required this.geoBases,
     required this.session,
     required this.build,
+    this.processExits = const [],
   });
 
   final List<CoreInfo> cores;
   final List<GeoBaseInfo> geoBases;
   final SessionInfo session;
   final BuildInfo build;
+
+  /// Прошлые смерти процесса, от свежей к старой. Пусто вне Android и до 11-й
+  /// версии: раньше система их не записывает.
+  final List<ProcessExit> processExits;
+}
+
+/// Чем закончилась одна из прошлых жизней процесса — запись системы
+/// (`ApplicationExitInfo`), а не наша: убитый снаружи процесс сам ничего о
+/// своей смерти не пишет.
+class ProcessExit {
+  const ProcessExit({
+    required this.time,
+    required this.reason,
+    required this.reasonName,
+    this.status = 0,
+    this.importance = 0,
+    this.description,
+    this.vpnStatus,
+    this.sdkInt,
+  });
+
+  /// Разбор ответа нативной стороны; null — запись без времени, показывать
+  /// её негде.
+  static ProcessExit? fromMap(Map<Object?, Object?> map, {int? sdkInt}) {
+    final timestamp = map['timestamp'];
+    if (timestamp is! int) return null;
+    final reason = map['reason'] as int? ?? 0;
+    final description = (map['description'] as String?)?.trim();
+    return ProcessExit(
+      time: DateTime.fromMillisecondsSinceEpoch(timestamp),
+      reason: reason,
+      reasonName: map['reasonName'] as String? ?? '$reason',
+      status: map['status'] as int? ?? 0,
+      importance: map['importance'] as int? ?? 0,
+      description: description == null || description.isEmpty ? null : description,
+      vpnStatus: map['vpnStatus'] as String?,
+      sdkInt: sdkInt,
+    );
+  }
+
+  final DateTime time;
+
+  /// `ApplicationExitInfo.REASON_*`.
+  final int reason;
+  final String reasonName;
+
+  /// Код выхода или номер сигнала — смотря по [reason].
+  final int status;
+
+  /// Насколько процесс был важен системе в момент смерти: 125 — работал
+  /// сервис переднего плана, 100 — было открыто окно.
+  final int importance;
+
+  /// Слова убийцы, если он их оставил: у REASON_OTHER, например, здесь
+  /// единственное объяснение, кто и за что.
+  final String? description;
+
+  /// Статус VPN, который процесс заранее отдал системе на этот случай.
+  final String? vpnStatus;
+
+  /// Версия Android: до 14-й обновление приложения записывалось той же
+  /// причиной, что и ручная остановка.
+  final int? sdkInt;
+
+  bool get vpnWasOn => vpnStatus == 'connected' || vpnStatus == 'connecting';
+
+  ProcessExitCause get cause => switch (reason) {
+        1 => ProcessExitCause.self,
+        3 => ProcessExitCause.memory,
+        4 || 5 || 6 || 7 => ProcessExitCause.crash,
+        10 when (sdkInt ?? 34) < 34 => ProcessExitCause.userOrUpdate,
+        10 || 11 => ProcessExitCause.user,
+        8 || 15 || 16 => ProcessExitCause.update,
+        // SIGNALED сюда же: так выглядят и убийства прошивок (kill -9 от
+        // своих демонов), и нехватка памяти там, где система не умеет её
+        // отличать (ActivityManager.isLowMemoryKillReportSupported).
+        _ => ProcessExitCause.system,
+      };
+}
+
+/// Причина смерти процесса, сведённая к тому, что можно сказать человеку.
+enum ProcessExitCause {
+  /// Система или прошивка: SIGNALED, OTHER, FREEZER, лишний расход ресурсов.
+  system,
+
+  /// Системе не хватило памяти.
+  memory,
+
+  /// Сбой самого приложения: исключение, падение нативного кода, зависание.
+  crash,
+
+  /// Остановлено человеком: «Остановить» в настройках, смахивание из недавних.
+  user,
+
+  /// То же, но до Android 14, где обновление записывалось так же.
+  userOrUpdate,
+
+  /// Обновление приложения или смена его разрешений.
+  update,
+
+  /// Процесс завершился сам.
+  self,
 }
 
 /// За что отвечает ядро. Текст подписи живёт в локализации, здесь — только роль.

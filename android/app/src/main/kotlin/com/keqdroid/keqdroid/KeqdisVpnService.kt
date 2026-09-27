@@ -1573,6 +1573,8 @@ class KeqdisVpnService : VpnService() {
         }
         // Тот же статус в памяти процесса — см. [liveStatus].
         liveStatus = statusStr
+        // И в запись системы о смерти процесса, если он умрёт с этим статусом.
+        ProcessExits.noteVpnStatus(this, statusStr)
 
         // Log transitions to final states for QS tile debugging
         if (s == VpnRunStatus.STOPPED || s == VpnRunStatus.RUNNING || s == VpnRunStatus.ERROR) {

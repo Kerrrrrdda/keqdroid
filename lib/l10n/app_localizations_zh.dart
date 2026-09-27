@@ -2265,6 +2265,36 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsInternalsSession => '当前会话';
 
   @override
+  String get settingsInternalsExits => '应用为何被关闭';
+
+  @override
+  String get settingsInternalsExitsHint => '这些记录由系统自行保存。如果 VPN 在后台断开，请用顶部按钮复制报告——其中包含此部分。';
+
+  @override
+  String get settingsInternalsExitSystem => '被系统或厂商固件结束';
+
+  @override
+  String get settingsInternalsExitMemory => '系统内存不足';
+
+  @override
+  String get settingsInternalsExitCrash => '应用崩溃';
+
+  @override
+  String get settingsInternalsExitUser => '被手动关闭';
+
+  @override
+  String get settingsInternalsExitUserOrUpdate => '被手动关闭或因更新关闭';
+
+  @override
+  String get settingsInternalsExitUpdate => '应用更新或权限变更';
+
+  @override
+  String get settingsInternalsExitSelf => '应用自行退出';
+
+  @override
+  String get settingsInternalsExitVpnOn => '当时 VPN 已开启';
+
+  @override
   String get settingsInternalsBuild => '应用与设备';
 
   @override

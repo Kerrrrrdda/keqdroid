@@ -4403,6 +4403,66 @@ abstract class AppLocalizations {
   /// **'Current session'**
   String get settingsInternalsSession;
 
+  /// No description provided for @settingsInternalsExits.
+  ///
+  /// In en, this message translates to:
+  /// **'Why the app was closed'**
+  String get settingsInternalsExits;
+
+  /// No description provided for @settingsInternalsExitsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The system keeps these records itself. If the VPN turned off in the background, copy the report with the button at the top — this section is in it.'**
+  String get settingsInternalsExitsHint;
+
+  /// No description provided for @settingsInternalsExitSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped by the system or firmware'**
+  String get settingsInternalsExitSystem;
+
+  /// No description provided for @settingsInternalsExitMemory.
+  ///
+  /// In en, this message translates to:
+  /// **'The system ran out of memory'**
+  String get settingsInternalsExitMemory;
+
+  /// No description provided for @settingsInternalsExitCrash.
+  ///
+  /// In en, this message translates to:
+  /// **'The app crashed'**
+  String get settingsInternalsExitCrash;
+
+  /// No description provided for @settingsInternalsExitUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed manually'**
+  String get settingsInternalsExitUser;
+
+  /// No description provided for @settingsInternalsExitUserOrUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed manually or by an update'**
+  String get settingsInternalsExitUserOrUpdate;
+
+  /// No description provided for @settingsInternalsExitUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'App update or permission change'**
+  String get settingsInternalsExitUpdate;
+
+  /// No description provided for @settingsInternalsExitSelf.
+  ///
+  /// In en, this message translates to:
+  /// **'The app exited on its own'**
+  String get settingsInternalsExitSelf;
+
+  /// No description provided for @settingsInternalsExitVpnOn.
+  ///
+  /// In en, this message translates to:
+  /// **'VPN was on'**
+  String get settingsInternalsExitVpnOn;
+
   /// No description provided for @settingsInternalsBuild.
   ///
   /// In en, this message translates to:

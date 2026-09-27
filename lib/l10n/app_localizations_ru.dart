@@ -2272,6 +2272,36 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settingsInternalsSession => 'Текущая сессия';
 
   @override
+  String get settingsInternalsExits => 'Почему закрывалось приложение';
+
+  @override
+  String get settingsInternalsExitsHint => 'Записи ведёт сама система. Если VPN отключился в фоне, скопируйте отчёт кнопкой сверху — этот раздел есть в нём.';
+
+  @override
+  String get settingsInternalsExitSystem => 'Остановлено системой или прошивкой';
+
+  @override
+  String get settingsInternalsExitMemory => 'Системе не хватило памяти';
+
+  @override
+  String get settingsInternalsExitCrash => 'Сбой приложения';
+
+  @override
+  String get settingsInternalsExitUser => 'Закрыто вручную';
+
+  @override
+  String get settingsInternalsExitUserOrUpdate => 'Закрыто вручную или обновлением';
+
+  @override
+  String get settingsInternalsExitUpdate => 'Обновление или смена разрешений';
+
+  @override
+  String get settingsInternalsExitSelf => 'Приложение завершилось само';
+
+  @override
+  String get settingsInternalsExitVpnOn => 'VPN был включён';
+
+  @override
   String get settingsInternalsBuild => 'Приложение и устройство';
 
   @override
