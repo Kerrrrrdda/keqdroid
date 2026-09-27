@@ -1,7 +1,6 @@
 package com.keqdroid.keqdroid
 
 import android.content.Context
-import io.flutter.FlutterInjector
 import java.io.File
 
 // Copies bundled xray geo databases into [targetDir] (app filesDir).
@@ -28,8 +27,14 @@ object XrayGeoAssets {
     )
     private const val stampName = "geo_assets.stamp"
 
+    // Путь ассета внутри APK — сами, а не через FlutterLoader.getLookupKeyForAsset:
+    // тот работает, только когда Flutter в процессе уже поднят, иначе роняет
+    // NullPointerException. А сервис стартует и там, где Flutter не запускался
+    // вовсе: из плитки после убийства приложения, при подъёме сессии системой.
+    // Каталог — умолчание Flutter, у нас не переопределён.
+    private const val flutterAssetsDir = "flutter_assets"
+
     fun ensure(context: Context, targetDir: File) {
-        val loader = FlutterInjector.instance().flutterLoader()
         val assetManager = context.assets
         val stampFile = File(targetDir, stampName)
         val previous = readStamp(stampFile)
@@ -37,7 +42,7 @@ object XrayGeoAssets {
 
         for ((name, asset) in geoFiles) {
             val out = File(targetDir, name)
-            val assetKey = loader.getLookupKeyForAsset(asset)
+            val assetKey = "$flutterAssetsDir/$asset"
             val fingerprint = fingerprint(context, assetKey)
             current[name] = fingerprint
 
