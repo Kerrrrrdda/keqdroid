@@ -21,6 +21,7 @@ import 'package:keqdroid/services/vpn_engine.dart';
 import 'package:keqdroid/screens/subscriptions_tab.dart';
 import 'package:keqdroid/screens/settings_tab.dart';
 import 'package:keqdroid/services/linux_background_service.dart';
+import 'package:keqdroid/services/memory_watch.dart';
 import 'package:keqdroid/services/storage_service.dart';
 import 'package:keqdroid/services/update_service.dart';
 import 'package:keqdroid/tunnel/core_capabilities.dart';
@@ -111,6 +112,10 @@ Future<void> main() async {
         child: KeqdisApp(home: home),
       ),
     );
+
+    // Слепки памяти в app.log: утечку после сна на десктопе иначе не поймать
+    // (см. MemoryWatch). На Android их снимает служба VPN.
+    MemoryWatch.instance.start();
 
     // После первого кадра и в фоне: иначе это чтение ложится на первое
     // подключение (см. CoreCapabilities.warmUp).

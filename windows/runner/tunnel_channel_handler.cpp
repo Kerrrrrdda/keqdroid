@@ -5,6 +5,7 @@
 #include "windows_autostart.h"
 #include "windows_core_lifecycle.h"
 #include "windows_hotkeys.h"
+#include "windows_process_memory.h"
 #include "windows_traffic_stats.h"
 #include "windows_tray.h"
 
@@ -1481,6 +1482,56 @@ void RegisterKeqdisTunnelChannel(flutter::FlutterEngine* engine) {
         if (call.method_name() == "getDeviceModel") {
           result->Success(
               flutter::EncodableValue(std::string("Windows PC")));
+          return;
+        }
+
+        // Слепок памяти для app.log: сам keqdroid.exe и ядра, чьи pid
+        // передал Dart (у него они есть, у раннера — нет).
+        if (call.method_name() == "getProcessResources") {
+          const auto encode = [](const ProcessResources& r) {
+            flutter::EncodableMap m;
+            m[flutter::EncodableValue("ok")] = flutter::EncodableValue(r.ok);
+            m[flutter::EncodableValue("privateBytes")] =
+                flutter::EncodableValue(static_cast<int64_t>(r.private_bytes));
+            m[flutter::EncodableValue("workingSet")] =
+                flutter::EncodableValue(static_cast<int64_t>(r.working_set));
+            m[flutter::EncodableValue("peakWorkingSet")] =
+                flutter::EncodableValue(static_cast<int64_t>(r.peak_working_set));
+            m[flutter::EncodableValue("handles")] =
+                flutter::EncodableValue(static_cast<int32_t>(r.handles));
+            m[flutter::EncodableValue("threads")] =
+                flutter::EncodableValue(static_cast<int32_t>(r.threads));
+            m[flutter::EncodableValue("gdiObjects")] =
+                flutter::EncodableValue(static_cast<int32_t>(r.gdi_objects));
+            m[flutter::EncodableValue("userObjects")] =
+                flutter::EncodableValue(static_cast<int32_t>(r.user_objects));
+            return flutter::EncodableValue(m);
+          };
+          flutter::EncodableMap cores;
+          const auto* args = std::get_if<flutter::EncodableMap>(call.arguments());
+          if (args != nullptr) {
+            const auto it = args->find(flutter::EncodableValue("cores"));
+            const auto* pids = it == args->end()
+                                   ? nullptr
+                                   : std::get_if<flutter::EncodableMap>(&it->second);
+            if (pids != nullptr) {
+              for (const auto& [name, pid] : *pids) {
+                int64_t value = 0;
+                if (const auto* v32 = std::get_if<int32_t>(&pid)) value = *v32;
+                if (const auto* v64 = std::get_if<int64_t>(&pid)) value = *v64;
+                if (value > 0) {
+                  cores[name] =
+                      encode(QueryProcessResources(static_cast<uint32_t>(value)));
+                }
+              }
+            }
+          }
+          flutter::EncodableMap response;
+          response[flutter::EncodableValue("self")] =
+              encode(QueryProcessResources(0));
+          response[flutter::EncodableValue("cores")] =
+              flutter::EncodableValue(cores);
+          result->Success(flutter::EncodableValue(response));
           return;
         }
 

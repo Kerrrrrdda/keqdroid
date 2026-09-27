@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
 
+import '../core/connections_poll_stats.dart';
 import '../models/connection_entry.dart';
 import '../platform/vpn_native_bridge.dart';
 import '../tunnel/linux_tunnel_backend.dart';
@@ -112,6 +113,10 @@ class ConnectionsService {
       );
     }
 
+    final poll = ConnectionsPollStats.instance.begin();
+    var ok = false;
+    var chars = 0;
+    int? connections;
     try {
       final req = await _http
           .get('127.0.0.1', port, '/connections')
@@ -132,6 +137,10 @@ class ConnectionsService {
         );
       }
       final body = await resp.transform(utf8.decoder).join();
+      chars = body.length;
+      // Дальше — сверка с логом ядра, а не ожидание ответа: в «медленные» она
+      // попадать не должна.
+      poll.stop();
       final json = jsonDecode(body);
       if (json is! Map<String, dynamic>) {
         return const ConnectionsSnapshot(
@@ -141,6 +150,8 @@ class ConnectionsService {
         );
       }
       final raw = json['connections'];
+      if (raw is List) connections = raw.length;
+      ok = true;
       final entries = <ConnectionEntry>[];
       if (raw is List) {
         for (final item in raw) {
@@ -185,6 +196,9 @@ class ConnectionsService {
         source: ConnectionsSource.unavailable,
         note: 'Core API unreachable: $e',
       );
+    } finally {
+      ConnectionsPollStats.instance
+          .end(poll, ok: ok, bodyChars: chars, connections: connections);
     }
   }
 

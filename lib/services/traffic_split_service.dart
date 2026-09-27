@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
 
+import '../core/connections_poll_stats.dart';
 import '../models/traffic_split.dart';
 
 /// Куда ядро отправило соединение.
@@ -87,6 +88,9 @@ class TrafficSplitSource {
     required int port,
     required String secret,
   }) async {
+    final poll = ConnectionsPollStats.instance.begin();
+    var chars = 0;
+    ConnectionsSnapshot? snapshot;
     try {
       final req = await _http
           .get('127.0.0.1', port, '/connections')
@@ -101,10 +105,19 @@ class TrafficSplitSource {
         await resp.drain<void>();
         return null;
       }
-      return parseSnapshot(await resp.transform(utf8.decoder).join());
+      final body = await resp.transform(utf8.decoder).join();
+      chars = body.length;
+      return snapshot = parseSnapshot(body);
     } catch (_) {
       _reset();
       return null;
+    } finally {
+      ConnectionsPollStats.instance.end(
+        poll,
+        ok: snapshot != null,
+        bodyChars: chars,
+        connections: snapshot?.connections.length,
+      );
     }
   }
 

@@ -4,6 +4,8 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
+import '../core/app_logger.dart';
+import '../core/connections_poll_stats.dart';
 import 'connection_mode.dart';
 import 'tunnel_state.dart';
 
@@ -118,6 +120,11 @@ mixin DesktopTrafficStats {
   void setTrafficStatsPollingEnabled(bool enabled) {
     if (statsPollingEnabled == enabled) return;
     statsPollingEnabled = enabled;
+    // Рядом со слепками памяти: видно, шёл ли секундный опрос ядра, пока
+    // она росла, — окно могло быть спрятано в трей всё это время.
+    AppLogger.instance.info(
+      'traffic polling ${enabled ? 'resumed: window shown' : 'paused: window hidden'}',
+    );
     if (!enabled) {
       // Только глушим таймер; сессионные поля (тоталы, started) не трогаем —
       // при возобновлении кумулятивные счётчики ядра дадут корректные тоталы.
@@ -160,6 +167,10 @@ mixin DesktopTrafficStats {
     int port, {
     String secret = '',
   }) async {
+    final poll = ConnectionsPollStats.instance.begin();
+    var ok = false;
+    var chars = 0;
+    int? connections;
     try {
       final req = await statsHttp
           .get('127.0.0.1', port, '/connections')
@@ -173,13 +184,19 @@ mixin DesktopTrafficStats {
         return null;
       }
       final body = await resp.transform(utf8.decoder).join();
+      chars = body.length;
       final json = jsonDecode(body) as Map<String, dynamic>;
+      connections = (json['connections'] as List?)?.length;
       final down = (json['downloadTotal'] as num?)?.toInt() ?? 0;
       final up = (json['uploadTotal'] as num?)?.toInt() ?? 0;
+      ok = true;
       return (down: down, up: up);
     } catch (_) {
       resetStatsHttp();
       return null;
+    } finally {
+      ConnectionsPollStats.instance
+          .end(poll, ok: ok, bodyChars: chars, connections: connections);
     }
   }
 

@@ -13,6 +13,7 @@ add_executable(${BINARY_NAME} WIN32
   "windows_core_lifecycle.cpp"
   "windows_hotkeys.cpp"
   "windows_traffic_stats.cpp"
+  "windows_process_memory.cpp"
   "windows_tray.cpp"
   "proxy_debug_log.cpp"
   "windows_apps_list.cpp"
@@ -51,7 +52,7 @@ target_compile_definitions(${BINARY_NAME} PRIVATE "NOMINMAX")
 target_link_libraries(${BINARY_NAME} PRIVATE flutter flutter_wrapper_app)
 # taskschd/ole32/oleaut32 — автозапуск с правами администратора: задачу
 # планировщика читаем через COM (windows_autostart.cpp).
-target_link_libraries(${BINARY_NAME} PRIVATE "dwmapi.lib" "wininet.lib" "winhttp.lib" "gdiplus.lib" "iphlpapi.lib" "shell32.lib" "taskschd.lib" "ole32.lib" "oleaut32.lib" "advapi32.lib")
+target_link_libraries(${BINARY_NAME} PRIVATE "dwmapi.lib" "wininet.lib" "winhttp.lib" "gdiplus.lib" "iphlpapi.lib" "shell32.lib" "taskschd.lib" "ole32.lib" "oleaut32.lib" "advapi32.lib" "psapi.lib")
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
 
 # Run the Flutter tool portions of the build. This must not be removed.
