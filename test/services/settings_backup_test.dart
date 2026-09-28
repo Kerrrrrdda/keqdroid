@@ -376,4 +376,88 @@ void main() {
       }
     });
   });
+
+  group('чтение файла бэкапа', () {
+    // Правила маршрутизации лежат в бэкапе строкой с JSON внутри — отсюда
+    // экранированные кавычки и скобки внутри строк, как на жалобе
+    // («}omain:rshb.ru\",\n …»).
+    KeqdisBackup backupWithRules(List<String> rules) => KeqdisBackup(
+          version: 1,
+          exportedAt: DateTime.utc(2026, 9, 28),
+          data: {
+            'appSettings': {'directRules': jsonEncode(rules)},
+          },
+        );
+
+    List<int> bytesOf(KeqdisBackup backup) => utf8.encode(backup.toJsonString());
+
+    // Ровно то, что оставляет запись без обрезки: новый файл с начала, дальше
+    // конец старого с того же байта.
+    List<int> overwritten(List<int> fresh, List<int> old) =>
+        [...fresh, ...old.sublist(fresh.length)];
+
+    test('целый файл читается как раньше', () {
+      final text = backupWithRules(['domain:rt.ru']).toJsonString();
+      final backup = KeqdisBackup.parse(utf8.encode(text));
+      expect(backup.data, jsonDecode(text)['data']);
+    });
+
+    test('новый бэкап поверх более длинного старого читается без хвоста', () {
+      final old = bytesOf(backupWithRules([
+        for (var i = 0; i < 40; i++) 'domain:site$i.ru',
+        'domain:rshb.ru',
+        'domain:rt.ru',
+      ]));
+      final fresh = backupWithRules(['domain:{x}.ru', 'regexp:"q"']);
+      final onDisk = overwritten(bytesOf(fresh), old);
+      expect(() => jsonDecode(utf8.decode(onDisk)), throwsFormatException);
+
+      expect(KeqdisBackup.parse(onDisk).data, fresh.data);
+    });
+
+    test('хвост, начатый с середины русской буквы, тоже отрезается', () {
+      final old = bytesOf(backupWithRules([
+        for (var i = 0; i < 40; i++) 'domain:сайт$i.рф',
+      ]));
+      // Подбираем длину нового так, чтобы граница пришлась на второй байт
+      // кириллической буквы старого файла.
+      late KeqdisBackup fresh;
+      late List<int> freshBytes;
+      for (var pad = 0;; pad++) {
+        fresh = backupWithRules(['domain:${'x' * pad}.ru']);
+        freshBytes = bytesOf(fresh);
+        final next = old[freshBytes.length];
+        if (next >= 0x80 && next < 0xC0) break;
+      }
+      final onDisk = overwritten(freshBytes, old);
+      expect(() => utf8.decode(onDisk), throwsFormatException);
+
+      expect(KeqdisBackup.parse(onDisk).data, fresh.data);
+    });
+
+    test('оборванный файл по-прежнему не читается', () {
+      final bytes = bytesOf(backupWithRules(['domain:rt.ru']));
+      expect(
+        () => KeqdisBackup.parse(bytes.sublist(0, bytes.length - 10)),
+        throwsFormatException,
+      );
+    });
+
+    test('мусор внутри объекта не прячется за обрезкой', () {
+      final text = backupWithRules(['domain:rt.ru'])
+          .toJsonString()
+          .replaceFirst('"version"', 'version');
+      expect(
+        () => KeqdisBackup.parse(utf8.encode('$text tail')),
+        throwsFormatException,
+      );
+    });
+
+    test('не объект — не бэкап', () {
+      expect(
+        () => KeqdisBackup.parse(utf8.encode('[1, 2]')),
+        throwsFormatException,
+      );
+    });
+  });
 }

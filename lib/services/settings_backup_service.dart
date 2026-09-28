@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../core/app_logger.dart';
 import '../models/app_settings.dart';
 import '../models/server_item.dart';
 import '../models/subscription.dart';
@@ -39,6 +40,79 @@ class KeqdisBackup {
     return pretty
         ? const JsonEncoder.withIndent('  ').convert(obj)
         : jsonEncode(obj);
+  }
+
+  /// Файл бэкапа целиком, байтами.
+  ///
+  /// Всё после первого законченного объекта отбрасывается. Такой хвост
+  /// оставлял экспорт на Android до того, как запись стала обрезать файл:
+  /// новый бэкап поверх более длинного старого ложился в начало целиком, а за
+  /// ним шёл конец прежнего. Сам бэкап в таком файле цел, терять его незачем.
+  ///
+  /// Режем до декодирования UTF-8: граница хвоста приходится на любой байт
+  /// старого файла, в том числе на середину кириллической буквы или флага в
+  /// имени сервера, и такой файл падал бы ещё на декодировании.
+  static KeqdisBackup parse(List<int> bytes) {
+    Object? parsed;
+    try {
+      parsed = jsonDecode(utf8.decode(bytes));
+    } on FormatException catch (error, stackTrace) {
+      final end = _leadingObjectEnd(bytes);
+      if (end == null) rethrow;
+      try {
+        parsed = jsonDecode(utf8.decode(bytes.sublist(0, end)));
+      } on FormatException {
+        // Ошибка про настоящее место поломки полезнее, чем про обрезок.
+        Error.throwWithStackTrace(error, stackTrace);
+      }
+      AppLogger.instance.warn(
+        'Backup file has ${bytes.length - end} bytes after the JSON object; '
+        'ignored as a leftover of an overwritten file',
+      );
+    }
+    if (parsed is! Map<String, dynamic>) {
+      throw const FormatException('Invalid JSON file');
+    }
+    return fromJson(parsed);
+  }
+
+  static const _quote = 0x22, _backslash = 0x5C, _braceOpen = 0x7B;
+  static const _openers = {_braceOpen, 0x5B}, _closers = {0x7D, 0x5D};
+  static const _whitespace = {0x20, 0x09, 0x0A, 0x0D};
+
+  /// Длина первого объекта верхнего уровня, если файл с него начинается и он
+  /// закрывается. Скобки внутри строк не считаются — в бэкапе ими полны
+  /// правила маршрутизации. Считать по байтам можно: в UTF-8 байты ASCII
+  /// никогда не встречаются внутри многобайтовых символов.
+  static int? _leadingObjectEnd(List<int> bytes) {
+    var i = 0;
+    while (i < bytes.length && _whitespace.contains(bytes[i])) {
+      i++;
+    }
+    if (i == bytes.length || bytes[i] != _braceOpen) return null;
+    var depth = 0;
+    var inString = false;
+    var escaped = false;
+    for (; i < bytes.length; i++) {
+      final b = bytes[i];
+      if (inString) {
+        if (escaped) {
+          escaped = false;
+        } else if (b == _backslash) {
+          escaped = true;
+        } else if (b == _quote) {
+          inString = false;
+        }
+      } else if (b == _quote) {
+        inString = true;
+      } else if (_openers.contains(b)) {
+        depth++;
+      } else if (_closers.contains(b)) {
+        depth--;
+        if (depth == 0) return i + 1;
+      }
+    }
+    return null;
   }
 
   static KeqdisBackup fromJson(Map<String, dynamic> json) {

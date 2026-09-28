@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 
 import '../core/app_logger.dart';
@@ -10,7 +11,8 @@ import '../core/exceptions.dart';
 /// Системные диалоги «открыть файл» и «сохранить файл».
 ///
 /// Везде, кроме Linux, это тонкая обёртка над file_picker — там диалоги свои и
-/// они не подводят.
+/// они не подводят. Исключение — сохранение на Android: запись там своя, см.
+/// [saveFile].
 ///
 /// На Linux своего диалога у приложения нет: file_picker ходит по D-Bus в портал
 /// XDG, а рисует диалог backend портала. На голых сессиях без backend'а (niri,
@@ -21,6 +23,8 @@ import '../core/exceptions.dart';
 /// zenity/qarma/kdialog. Нет и их — бросаем [FileDialogUnavailableException],
 /// чтобы экран сказал, чего не хватает.
 abstract final class AppFileDialogs {
+  static const _nativeChannel = MethodChannel('keqdis_vpn_channel');
+
   /// Быстрее этого человек диалог не закроет — значит, его и не показывали.
   static const _silentFailureWindow = Duration(milliseconds: 400);
 
@@ -65,11 +69,24 @@ abstract final class AppFileDialogs {
 
   /// Диалог сохранения: возвращает путь, по которому уже лежат [bytes], или
   /// `null`, если человек отказался.
+  ///
+  /// [mimeType] нужен только системному диалогу Android: по нему он решает,
+  /// какое расширение оставить в имени.
   static Future<String?> saveFile({
     required String fileName,
     required Uint8List bytes,
     String? dialogTitle,
+    String mimeType = 'application/octet-stream',
   }) async {
+    if (Platform.isAndroid) {
+      // Пишет натив, а не file_picker: тот не обрезает файл при перезаписи
+      // (подробности у writeDocument в MainActivity).
+      return _nativeChannel.invokeMethod<String>('saveDocument', {
+        'fileName': fileName,
+        'mimeType': mimeType,
+        'bytes': bytes,
+      });
+    }
     if (!Platform.isLinux) {
       return FilePicker.saveFile(
         dialogTitle: dialogTitle,

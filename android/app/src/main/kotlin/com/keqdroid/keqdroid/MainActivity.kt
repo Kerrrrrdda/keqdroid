@@ -81,6 +81,32 @@ class MainActivity : FlutterFragmentActivity() {
             pendingPermissionResult?.success(activityResult.resultCode == Activity.RESULT_OK)
             pendingPermissionResult = null
         }
+    // Сохранение файла через системный диалог; почему своё, а не file_picker, —
+    // у writeDocument.
+    private var pendingSaveBytes: ByteArray? = null
+    private var pendingSaveResult: MethodChannel.Result? = null
+
+    private val saveDocumentLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { activityResult: ActivityResult ->
+            val result = pendingSaveResult ?: return@registerForActivityResult
+            val bytes = pendingSaveBytes
+            pendingSaveResult = null
+            pendingSaveBytes = null
+            val uri = activityResult.data?.data
+            if (activityResult.resultCode != Activity.RESULT_OK || uri == null || bytes == null) {
+                result.success(null)
+                return@registerForActivityResult
+            }
+            mainScope.launch {
+                try {
+                    withContext(Dispatchers.IO) { writeDocument(uri, bytes) }
+                    result.success(uri.toString())
+                } catch (e: Exception) {
+                    result.error("SAVE_FAILED", e.message ?: e.javaClass.simpleName, null)
+                }
+            }
+        }
+
     private var pendingSocksUsername: String? = null
     private var pendingSocksPassword: String? = null
 
@@ -449,6 +475,12 @@ class MainActivity : FlutterFragmentActivity() {
                         }
                         "stopVpn"              -> stopVpn(result)
                         "requestVpnPermission" -> requestVpnPermission(result)
+                        "saveDocument" -> saveDocument(
+                            call.argument<String>("fileName") ?: "",
+                            call.argument<String>("mimeType") ?: "application/octet-stream",
+                            call.argument<ByteArray>("bytes") ?: ByteArray(0),
+                            result,
+                        )
                         "getSocksCredentials"  -> {
                             // Генерируем свежие credentials.
                             // Они будут переданы в сервис через Intent при startVpn —
@@ -942,6 +974,49 @@ class MainActivity : FlutterFragmentActivity() {
         permissionRequestInFlight = true
         pendingPermissionResult = result
         vpnPermissionLauncher.launch(intent)
+    }
+
+    private fun saveDocument(
+        fileName: String,
+        mimeType: String,
+        bytes: ByteArray,
+        result: MethodChannel.Result,
+    ) {
+        if (pendingSaveResult != null) {
+            result.error("SAVE_IN_PROGRESS", "Save dialog is already shown", null)
+            return
+        }
+        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = mimeType
+            putExtra(Intent.EXTRA_TITLE, fileName)
+        }
+        pendingSaveResult = result
+        pendingSaveBytes = bytes
+        try {
+            saveDocumentLauncher.launch(intent)
+        } catch (e: Exception) {
+            // Нет ни одного приложения под ACTION_CREATE_DOCUMENT (урезанные прошивки).
+            pendingSaveResult = null
+            pendingSaveBytes = null
+            result.error("SAVE_UNAVAILABLE", e.message ?: e.javaClass.simpleName, null)
+        }
+    }
+
+    // file_picker открывает файл в умолчательном "w", а про него в
+    // ContentResolver прямо сказано: обрезать файл провайдер не обязан. Человек
+    // выбирает в диалоге старый бэкап, соглашается заменить, и если новый
+    // короче, за ним остаётся конец старого. Отсюда "wt". Провайдер, не
+    // знающий "wt", получает прежнее "w" — хуже, чем было, не станет, а хвост
+    // после законченного JSON импорт отрезает сам (KeqdisBackup.parse).
+    private fun writeDocument(uri: android.net.Uri, bytes: ByteArray) {
+        val stream = try {
+            contentResolver.openOutputStream(uri, "wt")
+        } catch (_: Exception) {
+            null
+        } ?: contentResolver.openOutputStream(uri, "w")
+            ?: throw IOException("No output stream for $uri")
+        stream.use { it.write(bytes) }
     }
 
     override fun onNewIntent(intent: Intent) {

@@ -52,6 +52,7 @@ class _BackupRestoreScreenState extends ConsumerState<_BackupRestoreScreen> {
         dialogTitle: l10n.settingsSelectLocation,
         fileName: fileName,
         bytes: Uint8List.fromList(utf8.encode(jsonText)),
+        mimeType: 'application/json',
       );
 
       if (savedPath == null) {
@@ -89,12 +90,7 @@ class _BackupRestoreScreenState extends ConsumerState<_BackupRestoreScreen> {
       );
       if (res == null) return;
 
-      final bytes = await res.readAsBytes();
-      final text = utf8.decode(bytes);
-      final parsed = jsonDecode(text);
-      if (parsed is! Map<String, dynamic>) throw const FormatException('Invalid JSON file');
-
-      final backup = KeqdisBackup.fromJson(parsed);
+      final backup = KeqdisBackup.parse(await res.readAsBytes());
       final available = SettingsBackupService.detectSections(backup);
       if (available.isEmpty) {
         throw const FormatException('No supported sections found in backup');
