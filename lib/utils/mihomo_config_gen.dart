@@ -2244,9 +2244,10 @@ class MihomoConfigGen {
   /// Соответствие типов почти дословное; расходятся два случая. `regexp:`
   /// становится `DOMAIN-REGEX` — синтаксис регулярок у ядер разный (Go RE2 у
   /// mihomo против RE2 же у xray, но с другой обвязкой), так что сложное
-  /// выражение может повести себя иначе. Голое слово без точки оба генератора
-  /// считают ключевым словом, а не доменом: у xray это `regexp:.*\.name$`,
-  /// здесь — `DOMAIN-KEYWORD`.
+  /// выражение может повести себя иначе. Голое слово без точки — зона: `ru`
+  /// значит «всё на .ru» и у xray (`regexp:.*\.ru$`), и у sing-box
+  /// (`domain_suffix`). `DOMAIN-KEYWORD` ловил бы буквы в любом месте домена:
+  /// `su` уводил напрямую AI Studio (alkalimakersuite-pa.clients6.google.com).
   static String _domainRule(String raw) {
     final v = raw.trim();
     final lower = v.toLowerCase();
@@ -2261,9 +2262,6 @@ class MihomoConfigGen {
       return 'DOMAIN-REGEX,${v.substring('regexp:'.length)}';
     }
     if (v.startsWith('.')) return 'DOMAIN-SUFFIX,${v.substring(1)}';
-    // Голое имя без точки — это ключевое слово, а не домен: так его понимает и
-    // xray-генератор (`regexp:.*\.name$`).
-    if (!v.contains('.')) return 'DOMAIN-KEYWORD,$v';
     return 'DOMAIN-SUFFIX,$v';
   }
 

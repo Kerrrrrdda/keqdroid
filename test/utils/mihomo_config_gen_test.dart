@@ -766,6 +766,23 @@ void main() {
       // адреса. Проверяем префикс, а не суффикс правила.
       expect(rules, contains('IP-CIDR,1.2.3.4/32,DIRECT'));
     });
+
+    // Шпаргалка обещает «ru — всё, что оканчивается на .ru», и так понимают
+    // слово xray и sing-box. `DOMAIN-KEYWORD` ловил буквы в любом месте: `su`
+    // уводил напрямую AI Studio (alkalimakersuite-pa.clients6.google.com).
+    test('голое слово — суффикс домена, а не буквы где угодно', () {
+      final rules = _rules(MihomoConfigGen.build(
+        'vless://uuid@nl.example:443?type=tcp&security=none',
+        const AppSettings(directRules: 'ru, su, xn--p1ai'),
+        socksPort: 2080,
+      ));
+      expect(rules, containsAll([
+        'DOMAIN-SUFFIX,ru,DIRECT',
+        'DOMAIN-SUFFIX,su,DIRECT',
+        'DOMAIN-SUFFIX,xn--p1ai,DIRECT',
+      ]));
+      expect(rules.where((r) => r.startsWith('DOMAIN-KEYWORD')), isEmpty);
+    });
   });
 
   group('sniffer', () {
