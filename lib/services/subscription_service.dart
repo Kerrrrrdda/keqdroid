@@ -592,10 +592,14 @@ class SubscriptionService {
         }
       }
 
-      // отменённые и http-ошибки (4xx/5xx) не ретраим
+      // отменённые и http-ошибки (4xx/5xx) не ретраим. Сбой сокета или TLS
+      // посреди обмена Dio отдаёт как unknown с исключением dart:io внутри —
+      // он разовый так же, как отказ соединения: у проверки обновлений ловили
+      // испорченное начало ответа, и повтор тут же проходил.
       final isRetryable = e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout ||
-          e.type == DioExceptionType.connectionError;
+          e.type == DioExceptionType.connectionError ||
+          (e.type == DioExceptionType.unknown && e.error is IOException);
 
       // один retry при сетевой ошибке через 2с
       if (isRetryable && attempt == 0) {
