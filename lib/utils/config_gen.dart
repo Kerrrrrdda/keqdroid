@@ -78,17 +78,6 @@ class ConfigGeneratorV2 {
   static bool _isIpLiteral(String value) =>
       InternetAddress.tryParse(value.trim()) != null;
 
-  /// Приватные/LAN/спец-диапазоны — всегда direct. Единый список, чтобы
-  /// проверка «есть ли пользовательские IP-правила» и итоговое direct-правило
-  /// не разъезжались при правках.
-  static const Set<String> _basePrivateRanges = {
-    '0.0.0.0/8', '10.0.0.0/8', '100.64.0.0/10', '127.0.0.0/8',
-    '169.254.0.0/16', '172.16.0.0/12', '172.19.0.0/30',
-    '192.0.0.0/24', '192.168.0.0/16',
-    '198.51.100.0/24', '203.0.113.0/24',
-    '::1/128', 'fc00::/7', 'fe80::/10',
-  };
-
   /// DNS-адрес, который VpnService отдаёт системе на Android — второй хост
   /// подсети TUN (`KeqdisVpnService.TUN_DNS_ADDRESS`, держать в паре с ним).
   /// Слушать на нём некому и не должно: запрос приходит в tun-инбаунд и обязан
@@ -1994,7 +1983,7 @@ class ConfigGeneratorV2 {
     // Базовые приватные/LAN диапазоны — всегда direct, не считаются
     // «пользовательскими» IP-правилами (иначе стратегию поднимало бы всегда).
     final extraDirectIps = directIps
-        .where((ip) => !_basePrivateRanges.contains(ip.trim()))
+        .where((ip) => !kBasePrivateRanges.contains(ip.trim()))
         .toList();
 
     final core = settings.xrayCore;
@@ -2183,7 +2172,7 @@ class ConfigGeneratorV2 {
     rules.add(rule('direct-private', {
       'ip': [
         ...extraDirectIps,
-        ..._basePrivateRanges,
+        ...kBasePrivateRanges,
       ],
       'outboundTag': 'direct',
     }));

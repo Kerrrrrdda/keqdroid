@@ -716,42 +716,23 @@ void main() {
       expect(finalOf(AppSettings.finalOutboundBlock), 'MATCH,REJECT');
     });
 
-    // Зеркало `AsIs` → `IPIfNonMatch` у xray: с подменой назначения на домен
-    // IP-правило с `no-resolve` промахнулось бы мимо собственного адреса.
-    test('подмена назначения снимает no-resolve с пользовательских IP-правил',
+    test('сервер и приватные сети не резолвят домен ни при какой стратегии',
         () {
-      List<String> rulesFor({required bool routeOnly, required String direct}) =>
-          _rules(MihomoConfigGen.build(
-            'vless://uuid@nl.example:443?type=tcp&security=none',
-            AppSettings(
-              directRules: direct,
-              xrayCore: XrayCoreSettings(sniffingRouteOnly: routeOnly),
-            ),
-            socksPort: 2080,
-            resolvedServerIp: '203.0.113.7',
-          ));
-
-      expect(
-        rulesFor(routeOnly: false, direct: '10.130.0.0/16'),
-        contains('IP-CIDR,10.130.0.0/16,DIRECT'),
-      );
-      expect(
-        rulesFor(routeOnly: true, direct: '10.130.0.0/16'),
-        contains('IP-CIDR,10.130.0.0/16,DIRECT,no-resolve'),
-      );
-
-      // Без пользовательских IP-правил резолвить каждый домен незачем — как и
-      // у xray, где стратегия остаётся `AsIs`.
-      final domainsOnly = rulesFor(routeOnly: false, direct: 'vk.com');
-      expect(
-        domainsOnly,
-        contains('IP-CIDR,192.168.0.0/16,DIRECT,no-resolve'),
-      );
-      // Адрес сервера защищён от круга при любых настройках.
-      expect(
-        domainsOnly,
-        contains('IP-CIDR,203.0.113.7/32,DIRECT,no-resolve'),
-      );
+      for (final strategy in ['AsIs', 'IPIfNonMatch', 'IPOnDemand']) {
+        final rules = _rules(MihomoConfigGen.build(
+          'vless://uuid@nl.example:443?type=tcp&security=none',
+          AppSettings(
+            directRules: '10.130.0.0/16',
+            xrayCore: XrayCoreSettings(routingDomainStrategy: strategy),
+          ),
+          socksPort: 2080,
+          resolvedServerIp: '203.0.113.7',
+        ));
+        // Резолв ради правила, защищающего от круга, — тот же круг.
+        expect(rules, contains('IP-CIDR,203.0.113.7/32,DIRECT,no-resolve'));
+        expect(rules, isNot(contains('IP-CIDR,203.0.113.7/32,DIRECT')));
+        expect(rules, contains('IP-CIDR,192.168.0.0/16,DIRECT,no-resolve'));
+      }
     });
 
     // Голый адрес mihomo у IP-CIDR не примет — нужен префикс.
@@ -782,6 +763,67 @@ void main() {
         'DOMAIN-SUFFIX,xn--p1ai,DIRECT',
       ]));
       expect(rules.where((r) => r.startsWith('DOMAIN-KEYWORD')), isEmpty);
+    });
+
+    List<String> rulesFor({
+      String direct = 'vk.com, geoip:ru',
+      String proxy = '',
+      String strategy = 'AsIs',
+    }) =>
+        _rules(MihomoConfigGen.build(
+          'vless://uuid@nl.example:443?type=tcp&security=none',
+          AppSettings(
+            directRules: direct,
+            proxyRules: proxy,
+            xrayCore: XrayCoreSettings(routingDomainStrategy: strategy),
+          ),
+          socksPort: 2080,
+          resolvedServerIp: '203.0.113.7',
+        ));
+
+    // Под `AsIs` xray не резолвит домен ради geoip. mihomo резолвил всегда, и
+    // TikTok уходил напрямую: DNS из дома отдавал кэш Akamai внутри сети
+    // провайдера, а его адрес по базе российский.
+    test('AsIs: geoip не резолвит домен, как у xray', () {
+      final rules = rulesFor();
+      expect(rules, contains('GEOIP,ru,DIRECT,no-resolve'));
+      expect(rules, isNot(contains('GEOIP,ru,DIRECT')));
+    });
+
+    // xray сначала сверяет все доменные правила и только потом, если ни одно
+    // не подошло, резолвит и проверяет IP. Одним проходом mihomo так не умеет:
+    // geoip обхода стоит раньше доменов прокси и резолвил бы первым.
+    test('IPIfNonMatch: домены всех списков раньше резолва', () {
+      final rules = rulesFor(proxy: 'tiktok.com', strategy: 'IPIfNonMatch');
+      final lazy = rules.indexOf('GEOIP,ru,DIRECT,no-resolve');
+      final proxyDomain = rules.indexOf('DOMAIN-SUFFIX,tiktok.com,proxy');
+      final resolving = rules.indexOf('GEOIP,ru,DIRECT');
+
+      // Соединение, пришедшее адресом, решается в прежнем порядке.
+      expect(lazy, isNonNegative);
+      expect(lazy, lessThan(proxyDomain));
+      // Резолв — только после всех доменов и перед финалом.
+      expect(proxyDomain, lessThan(resolving));
+      expect(resolving, lessThan(rules.length - 1));
+      expect(rules.last, 'MATCH,proxy');
+    });
+
+    test('IPOnDemand: резолв на первом же IP-правиле', () {
+      final rules = rulesFor(strategy: 'IPOnDemand');
+      expect(rules, contains('GEOIP,ru,DIRECT'));
+      expect(rules, isNot(contains('GEOIP,ru,DIRECT,no-resolve')));
+    });
+
+    // Тот же подъём стратегии, что делает xray-генератор: без него свой CIDR
+    // не срабатывал бы для соединений по домену (браузер через прокси).
+    test('свой CIDR поднимает AsIs до IPIfNonMatch', () {
+      final rules = rulesFor(direct: '10.130.0.0/16, geoip:ru');
+      expect(rules, containsAll([
+        'IP-CIDR,10.130.0.0/16,DIRECT,no-resolve',
+        'GEOIP,ru,DIRECT,no-resolve',
+        'IP-CIDR,10.130.0.0/16,DIRECT',
+        'GEOIP,ru,DIRECT',
+      ]));
     });
   });
 
@@ -1258,14 +1300,13 @@ void main() {
 
     // Ядро стирает подменный адрес перед выбором правила и восстанавливает
     // домен, поэтому IP-правилу с no-resolve сравнивать нечего — оно
-    // промахивается всегда.
-    test('пользовательские IP-правила теряют no-resolve', () {
+    // промахивается всегда. Свой CIDR держится на копии с резолвом, которую
+    // приносит подъём стратегии до IPIfNonMatch.
+    test('свой CIDR работает и с подменными адресами', () {
       final rules = (MihomoConfigGen.build(
         link,
         on.copyWith(
           directRules: '10.8.0.0/24',
-          // Снифер в режиме routeOnly — то есть прежнее условие снятия
-          // no-resolve не выполнено, и решает именно fake-ip.
           xrayCore: const XrayCoreSettings(sniffingRouteOnly: true),
         ),
         socksPort: 2080,
@@ -1274,8 +1315,9 @@ void main() {
       )['rules'] as List)
           .cast<String>();
 
-      expect(rules, contains('IP-CIDR,10.8.0.0/24,DIRECT'));
-      expect(rules, isNot(contains('IP-CIDR,10.8.0.0/24,DIRECT,no-resolve')));
+      final resolving = rules.indexOf('IP-CIDR,10.8.0.0/24,DIRECT');
+      expect(resolving, isNonNegative);
+      expect(resolving, lessThan(rules.length - 1));
     });
 
     // Правило против круга обязано решать без резолва при любых настройках:

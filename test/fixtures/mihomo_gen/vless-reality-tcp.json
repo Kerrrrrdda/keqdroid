@@ -80,7 +80,7 @@
     "GEOSITE,category-ads-all,REJECT",
     "IP-CIDR,198.51.100.10/32,DIRECT,no-resolve",
     "DOMAIN-SUFFIX,direct.example,DIRECT",
-    "IP-CIDR,10.10.0.0/16,DIRECT",
+    "IP-CIDR,10.10.0.0/16,DIRECT,no-resolve",
     "IP-CIDR,0.0.0.0/8,DIRECT,no-resolve",
     "IP-CIDR,10.0.0.0/8,DIRECT,no-resolve",
     "IP-CIDR,100.64.0.0/10,DIRECT,no-resolve",
@@ -93,6 +93,7 @@
     "IP-CIDR,203.0.113.0/24,DIRECT,no-resolve",
     "DOMAIN-SUFFIX,proxy.example,proxy",
     "GEOSITE,google,proxy",
+    "IP-CIDR,10.10.0.0/16,DIRECT",
     "MATCH,proxy"
   ]
 }

@@ -255,7 +255,6 @@ class MihomoConfigGen {
         managedProcessNames: processRules ? managedProcessNames : const [],
         appProcessName: processRules ? appProcessName : '',
         tunOwned: tun != null,
-        fakeIp: fakeIp,
         windows: windows,
       ),
     };
@@ -345,7 +344,6 @@ class MihomoConfigGen {
       appendRules: buildUserRules(
         settings,
         proxyTarget: clash.primaryTarget,
-        fakeIp: fakeIp,
       ),
       extra: {
         // Свои адреса для доменов — только когда автор конфига своих не
@@ -2011,15 +2009,8 @@ class MihomoConfigGen {
   ///
   /// Порядок повторяет xray-генератор, иначе одно и то же правило вело бы себя
   /// по-разному в зависимости от ядра: блок, сам сервер, обход, приватные сети,
-  /// прокси, финал.
-  ///
-  /// `no-resolve` на пользовательских IP-правилах — зеркало
-  /// `routingDomainStrategy` у xray. Обычно назначение и так приходит голым IP,
-  /// резолвить нечего, и запрет экономит запрос. Но со снятым
-  /// `sniffingRouteOnly` ядро подменяет назначение вынюханным доменом, и тогда
-  /// `IP-CIDR` с `no-resolve` промахивается мимо собственного адреса — тот самый
-  /// баг «корпоративный CIDR в обходе не работает». Поэтому резолв разрешаем,
-  /// но только когда пользовательские IP-правила вообще есть.
+  /// прокси, финал. Резолвить ли домен ради IP-правил, решает та же стратегия,
+  /// что у xray, — см. [buildUserRules].
   static List<String> buildRules(
     AppSettings settings, {
     required String serverAddress,
@@ -2029,7 +2020,6 @@ class MihomoConfigGen {
     List<String> managedProcessNames = const [],
     String appProcessName = '',
     bool tunOwned = false,
-    bool fakeIp = false,
     bool? windows,
   }) {
     final rules = <String>[
@@ -2040,7 +2030,7 @@ class MihomoConfigGen {
         proxyTarget: proxyTarget,
         windows: windows,
       ),
-      ...buildUserRules(settings, blockedOnly: true, fakeIp: fakeIp),
+      ...buildUserRules(settings, blockedOnly: true),
       ...buildServerDirectRules(
         serverAddress: serverAddress,
         resolvedServerIp: resolvedServerIp,
@@ -2054,7 +2044,6 @@ class MihomoConfigGen {
         proxyTarget: proxyTarget,
         blockedOnly: false,
         skipBlocked: true,
-        fakeIp: fakeIp,
       ),
     ];
 
@@ -2179,57 +2168,78 @@ class MihomoConfigGen {
   ///
   /// [blockedOnly]/[skipBlocked] разделяют список надвое: у ссылки блокировки
   /// решают раньше правила про сам сервер, и порядок этот менять нельзя.
+  ///
+  /// Резолвить ли домен ради IP-правил (`GEOIP`, `IP-CIDR`), решает
+  /// [_ipRuleStrategy] — так же, как у xray. Под `AsIs` IP-правила судят только
+  /// соединения, пришедшие адресом. Раньше `GEOIP` резолвил всегда, и TikTok
+  /// уходил напрямую: DNS из дома отдавал кэш Akamai внутри сети провайдера, а
+  /// его адрес по базе российский.
+  ///
+  /// `IPIfNonMatch` у xray сначала сверяет домены всех списков и лишь потом
+  /// резолвит; mihomo идёт по правилам одним проходом. Поэтому IP-правила
+  /// пишутся дважды: на своём месте с `no-resolve` — для соединений по адресу,
+  /// и в конце, после всех доменов, с резолвом. Иначе geoip обхода опередил бы
+  /// домены из списка прокси. `IPOnDemand` — резолв на первом же IP-правиле,
+  /// это родное поведение mihomo.
   static List<String> buildUserRules(
     AppSettings settings, {
     String proxyTarget = proxyName,
     bool blockedOnly = false,
     bool skipBlocked = false,
-    bool fakeIp = false,
   }) {
     final rules = <String>[];
+    final strategy = _ipRuleStrategy(settings);
+    final inPlace = strategy == 'IPOnDemand' ? '' : ',no-resolve';
 
-    final hasUserIpRules = [
-      settings.blockedRules,
-      settings.directRules,
-      settings.proxyRules,
-    ].any((raw) => splitGeoipTokens(
-          splitDomainsAndIps(_parseList(raw)).ips,
-        ).plainIps.isNotEmpty);
-    // С fake-ip назначение и вовсе перестаёт быть адресом: ядро выдало системе
-    // подменный, а перед выбором правила стирает его (`preHandleMetadata`
-    // чистит `DstIP` для fake-адресов) и восстанавливает домен. Правило с
-    // `no-resolve` тогда сравнивать не с чем — оно промахивается всегда, и
-    // «корпоративный CIDR в обходе не работает» возвращается в полном объёме.
-    final resolveForIpRules =
-        (fakeIp || !settings.xrayCore.sniffingRouteOnly) && hasUserIpRules;
-    final ipSuffix = resolveForIpRules ? '' : ',no-resolve';
+    List<String> ipRules(String raw, String target, String suffix) {
+      final geo = splitGeoipTokens(splitDomainsAndIps(_parseList(raw)).ips);
+      return [
+        for (final code in geo.geoipCodes) 'GEOIP,$code,$target$suffix',
+        for (final ip in geo.plainIps) 'IP-CIDR,${_cidr(ip)},$target$suffix',
+      ];
+    }
 
     void addGroup(String raw, String target) {
-      final split = splitDomainsAndIps(_parseList(raw));
-      final geo = splitGeoipTokens(split.ips);
-      for (final d in split.domains) {
+      for (final d in splitDomainsAndIps(_parseList(raw)).domains) {
         rules.add('${_domainRule(d)},$target');
       }
-      for (final code in geo.geoipCodes) {
-        rules.add('GEOIP,$code,$target');
-      }
-      for (final ip in geo.plainIps) {
-        rules.add('IP-CIDR,${_cidr(ip)},$target$ipSuffix');
-      }
+      rules.addAll(ipRules(raw, target, inPlace));
     }
 
     if (!skipBlocked) addGroup(settings.blockedRules, 'REJECT');
     if (blockedOnly) return rules;
 
     addGroup(settings.directRules, 'DIRECT');
-    // Приватные диапазоны xray под `AsIs` тоже по домену не проверяет, так что
-    // резолв им не положен независимо от настроек снифинга.
+    // Приватные сети резолва не получают ни при какой стратегии, как и раньше.
     for (final range in _privateRanges) {
       rules.add('IP-CIDR,$range,DIRECT,no-resolve');
     }
-
     addGroup(settings.proxyRules, proxyTarget);
+
+    if (strategy == 'IPIfNonMatch') {
+      rules
+        ..addAll(ipRules(settings.blockedRules, 'REJECT', ''))
+        ..addAll(ipRules(settings.directRules, 'DIRECT', ''))
+        ..addAll(ipRules(settings.proxyRules, proxyTarget, ''));
+    }
     return rules;
+  }
+
+  /// Стратегия резолва для IP-правил — та же, что выбирает xray-генератор:
+  /// выбор пользователя, но `AsIs` при своих адресах в списках поднимается до
+  /// `IPIfNonMatch`. Без подъёма корпоративный CIDR в обходе не срабатывал бы
+  /// для соединений по домену (браузер через прокси шлёт `CONNECT host`).
+  static String _ipRuleStrategy(AppSettings settings) {
+    final chosen = settings.xrayCore.routingDomainStrategy;
+    if (chosen != 'AsIs') return chosen;
+    List<String> ips(String raw) =>
+        splitGeoipTokens(splitDomainsAndIps(_parseList(raw)).ips).plainIps;
+    // Приватные сети в обходе своими не считаются — их туда кладёт пресет.
+    final hasUserIps = ips(settings.blockedRules).isNotEmpty ||
+        ips(settings.proxyRules).isNotEmpty ||
+        ips(settings.directRules)
+            .any((ip) => !kBasePrivateRanges.contains(ip.trim()));
+    return hasUserIps ? 'IPIfNonMatch' : 'AsIs';
   }
 
   static String _finalTarget(String finalOutbound, String proxyTarget) =>
