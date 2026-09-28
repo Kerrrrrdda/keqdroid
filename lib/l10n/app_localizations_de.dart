@@ -17,21 +17,21 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get vpnConnecting => 'Verbinden...';
+  String get vpnConnecting => 'Verbinden…';
 
   @override
-  String get vpnDisconnecting => 'Trennen...';
+  String get vpnDisconnecting => 'Wird getrennt…';
 
   @override
   String vpnTapToConnect(Object serverName) {
-    return 'Tippen, um mit $serverName zu verbinden';
+    return 'Tippe, um dich mit $serverName zu verbinden';
   }
 
   @override
-  String get vpnSelectServer => 'Wähle unten einen Server';
+  String get vpnSelectServer => 'Wähle unten einen Server aus';
 
   @override
-  String get vpnSelectServerFirst => 'Wähle zuerst einen Server';
+  String get vpnSelectServerFirst => 'Wähle zuerst einen Server aus';
 
   @override
   String get updateTitle => 'Update verfügbar';
@@ -46,10 +46,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get updateActionNow => 'Aktualisieren';
 
   @override
-  String get updateApplying => 'Update wird installiert...';
+  String get updateApplying => 'Update wird installiert…';
 
   @override
-  String get errorSubscriptionTitle => 'Abonnement-Fehler';
+  String get errorSubscriptionTitle => 'Abonnementfehler';
 
   @override
   String get errorConnectionPermission => 'Verbindung fehlgeschlagen: Berechtigung';
@@ -67,13 +67,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get errorConnectionGeneric => 'Verbindungsfehler';
 
   @override
-  String get errorProviderConfigTitle => 'Provider-Konfiguration erforderlich';
+  String get errorProviderConfigTitle => 'Einrichtung beim Anbieter erforderlich';
 
   @override
-  String get errorProviderNoHostsMessage => 'Dem Provider sind für dieses Abonnement keine Hosts zugewiesen.';
+  String get errorProviderNoHostsMessage => 'Der Anbieter hat diesem Abonnement keine Hosts zugewiesen.';
 
   @override
-  String get errorProviderNoHostsAction => 'Öffne das Provider-Panel, füge Hosts hinzu oder weise sie zu und aktualisiere dann das Abonnement.';
+  String get errorProviderNoHostsAction => 'Öffne das Panel des Anbieters, füge Hosts hinzu oder weise sie zu und aktualisiere dann das Abonnement.';
 
   @override
   String errorActionLabel(Object action) {
@@ -90,10 +90,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get splitModeSelectedOnly => 'Nur ausgewählte';
 
   @override
-  String get splitModeAllExceptSelected => 'Alle außer ausgewählte';
+  String get splitModeAllExceptSelected => 'Alle außer ausgewählten';
 
   @override
-  String get splitSearchHint => 'Apps suchen...';
+  String get splitSearchHint => 'Apps suchen…';
 
   @override
   String get splitNoAppsFound => 'Keine Apps gefunden';
@@ -105,7 +105,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String splitSelectedAppsCount(int count) {
-    return '$count App(s) ausgewählt';
+    return 'Ausgewählte Apps: $count';
   }
 
   @override
@@ -115,20 +115,20 @@ class AppLocalizationsDe extends AppLocalizations {
   String get splitShowSystemApps => 'System-Apps anzeigen';
 
   @override
-  String get splitAddRussianAppsBypass => 'Russische Apps zum Umgehen hinzufügen';
+  String get splitAddRussianAppsBypass => 'Russische Apps vom VPN ausschließen';
 
   @override
-  String get splitClear => 'Löschen';
+  String get splitClear => 'Leeren';
 
   @override
   String get splitNoRussianAppsFound => 'Keine russischen Apps in der Liste der installierten Apps gefunden';
 
   @override
-  String get splitRussianAppsAlreadyAdded => 'Alle russischen Apps sind bereits in der Umgehungsliste';
+  String get splitRussianAppsAlreadyAdded => 'Alle russischen Apps sind bereits ausgeschlossen';
 
   @override
   String splitAddedRussianApps(int count) {
-    return '$count russische App(s) zur Umgehungsliste hinzugefügt';
+    return 'Russische Apps ausgeschlossen: $count';
   }
 
   @override
@@ -144,7 +144,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get serversEmptyTitle => 'Noch keine Server';
 
   @override
-  String get serversEmptyHint => 'Füge im Tab Abonnements ein Abonnement hinzu';
+  String get serversEmptyHint => 'Füge auf dem Tab „Abonnements“ ein Abonnement hinzu';
 
   @override
   String get subscriptionsTitle => 'Abonnements';
@@ -176,7 +176,7 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get settingsRoutingSubtitle => 'Direct- / Proxy- / Block-Regeln und Presets';
+  String get settingsRoutingSubtitle => 'Regeln für Direkt, Proxy und Blockieren, fertige Vorlagen';
 
   @override
   String get settingsResetRoutingTitle => 'Routing auf Standard zurücksetzen';
@@ -185,90 +185,90 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsRoutingResetDone => 'Routing-Regeln zurückgesetzt';
 
   @override
-  String get settingsRoutingHeaderDesc => 'Welche Seiten am VPN vorbei gehen, welche hindurch und welche blockiert werden';
+  String get settingsRoutingHeaderDesc => 'Welche Websites am VPN vorbeigehen, welche hindurch und welche blockiert werden';
 
   @override
-  String get settingsRoutingPresetsTitle => 'Schnelle Presets';
+  String get settingsRoutingPresetsTitle => 'Schnelle Vorlagen';
 
   @override
-  String get settingsRoutingPresetsHint => 'Fertige Liste — landet im Feld unten';
+  String get settingsRoutingPresetsHint => 'Eine fertige Liste, sie wird dem Feld unten hinzugefügt';
 
   @override
-  String get settingsRoutingPresetChoose => 'Preset wählen…';
+  String get settingsRoutingPresetChoose => 'Vorlage wählen…';
 
   @override
   String get settingsRoutingPresetAdd => 'Hinzufügen';
 
   @override
-  String get settingsRoutingPresetRuTitle => 'Russische Seiten — Direkt';
+  String get settingsRoutingPresetRuTitle => 'Russische Websites direkt';
 
   @override
-  String get settingsRoutingPresetRuDesc => 'Alle .ru / .рф Domains und großen RU-Dienste umgehen das VPN (fügt Domains zu Direkt hinzu)';
+  String get settingsRoutingPresetRuDesc => 'Alle .ru- und .рф-Domains und große russische Dienste gehen am VPN vorbei (fügt Domains zu „Direkt“ hinzu)';
 
   @override
-  String get settingsRoutingPresetRuGeoipTitle => 'Russland-IPs (GeoIP) — Direkt';
+  String get settingsRoutingPresetRuGeoipTitle => 'Russische IPs (GeoIP) direkt';
 
   @override
-  String get settingsRoutingPresetRuGeoipDesc => 'Alle russischen IP-Bereiche umgehen das VPN per GeoIP — funktioniert im Proxy-Modus';
+  String get settingsRoutingPresetRuGeoipDesc => 'Alle russischen IP-Bereiche gehen per GeoIP am VPN vorbei. Funktioniert auch im Proxy-Modus.';
 
   @override
-  String get settingsRoutingPresetRuGeositeTitle => 'Russische Seiten (GeoSite) — Direkt';
+  String get settingsRoutingPresetRuGeositeTitle => 'Russische Websites (GeoSite) direkt';
 
   @override
-  String get settingsRoutingPresetRuGeositeDesc => 'Russische Domains aus der GeoSite-Datenbank umgehen das VPN';
+  String get settingsRoutingPresetRuGeositeDesc => 'Russische Domains aus der GeoSite-Datenbank gehen am VPN vorbei';
 
   @override
-  String get settingsRoutingPresetBanksTitle => 'Banken & Behörden — Direkt';
+  String get settingsRoutingPresetBanksTitle => 'Banken und Behörden direkt';
 
   @override
-  String get settingsRoutingPresetBanksDesc => 'Banken, Zahlungen und Behördenportale umgehen das VPN';
+  String get settingsRoutingPresetBanksDesc => 'Banken, Zahlungsdienste und Behördenportale gehen am VPN vorbei';
 
   @override
-  String get settingsRoutingPresetLanIpsTitle => 'Lokales Netzwerk — Direkt';
+  String get settingsRoutingPresetLanIpsTitle => 'Lokales Netzwerk direkt';
 
   @override
-  String get settingsRoutingPresetLanIpsDesc => 'Private LAN-IP-Bereiche (192.168.x, 10.x, …) umgehen das VPN';
+  String get settingsRoutingPresetLanIpsDesc => 'Private IP-Bereiche des lokalen Netzwerks (192.168.x, 10.x, …) gehen am VPN vorbei';
 
   @override
-  String get settingsRoutingPresetAdsTitle => 'Werbung & Tracker — Blockieren';
+  String get settingsRoutingPresetAdsTitle => 'Werbung und Tracker blockieren';
 
   @override
-  String get settingsRoutingPresetAdsDesc => 'Gängige Werbe-/Analyse-Hosts verwerfen';
+  String get settingsRoutingPresetAdsDesc => 'Gängige Werbe- und Analyse-Hosts blockieren';
 
   @override
-  String get settingsRoutingPresetAdsGeositeTitle => 'Werbung (GeoSite) — Blockieren';
+  String get settingsRoutingPresetAdsGeositeTitle => 'Werbung (GeoSite) blockieren';
 
   @override
-  String get settingsRoutingPresetAdsGeositeDesc => 'Breite Werbe-/Tracker-Liste aus der GeoSite-Datenbank blockieren';
+  String get settingsRoutingPresetAdsGeositeDesc => 'Umfangreiche Werbe- und Tracker-Liste aus der GeoSite-Datenbank blockieren';
 
   @override
-  String get settingsRoutingPresetStreamingTitle => 'Streaming — Proxy';
+  String get settingsRoutingPresetStreamingTitle => 'Streaming über das VPN';
 
   @override
-  String get settingsRoutingPresetStreamingDesc => 'YouTube, Netflix, Twitch zwingend über das VPN';
+  String get settingsRoutingPresetStreamingDesc => 'YouTube, Netflix und Twitch immer über das VPN';
 
   @override
-  String get settingsRoutingPresetMessengersTitle => 'Messenger — Proxy';
+  String get settingsRoutingPresetMessengersTitle => 'Messenger über das VPN';
 
   @override
-  String get settingsRoutingPresetMessengersDesc => 'Telegram, Discord, WhatsApp zwingend über das VPN';
+  String get settingsRoutingPresetMessengersDesc => 'Telegram, Discord und WhatsApp immer über das VPN';
 
   @override
   String settingsRoutingPresetApplied(String name) {
-    return '\"$name\" hinzugefügt';
+    return '„$name“ hinzugefügt';
   }
 
   @override
-  String get settingsRoutingDirectTitle => 'Direkt (VPN umgehen)';
+  String get settingsRoutingDirectTitle => 'Direkt (am VPN vorbei)';
 
   @override
-  String get settingsRoutingProxyTitle => 'Proxy (VPN erzwingen)';
+  String get settingsRoutingProxyTitle => 'Proxy (über das VPN)';
 
   @override
   String get settingsRoutingBlockTitle => 'Blockiert';
 
   @override
-  String get settingsRoutingValuesHint => 'Eine pro Zeile oder durch Komma getrennt';
+  String get settingsRoutingValuesHint => 'Ein Eintrag pro Zeile oder durch Kommas getrennt';
 
   @override
   String get settingsRoutingFinalTitle => 'Übriger Datenverkehr';
@@ -277,7 +277,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsRoutingFinalProxy => 'Proxy';
 
   @override
-  String get settingsRoutingFinalDirect => 'Umgehen';
+  String get settingsRoutingFinalDirect => 'Direkt';
 
   @override
   String get settingsRoutingFinalBlock => 'Blockieren';
@@ -310,7 +310,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsRoutingRuleValues => 'Werte';
 
   @override
-  String get settingsRoutingRuleValuesHint => 'Eines pro Zeile oder durch Komma getrennt';
+  String get settingsRoutingRuleValuesHint => 'Ein Eintrag pro Zeile oder durch Kommas getrennt';
 
   @override
   String get settingsRoutingRuleMatchBy => 'Abgleich nach';
@@ -337,10 +337,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsRoutingRuleDeleteConfirm => 'Diese Regel löschen?';
 
   @override
-  String get routingCheatSheetTitle => 'Regeln schreiben';
+  String get routingCheatSheetTitle => 'So schreibst du Regeln';
 
   @override
-  String get routingCheatSheetBody => 'Regeln sind einfach eine Liste: was wohin geht. Jede Zeile ist eine Domain, eine IP oder ein Geo-Tag, daneben die Aktion: direkt raus (umgehen), über das VPN (Proxy) oder blockiert.\n\n## Domains\nvk.com — die Domain selbst und alle Subdomains\nru — alles, was auf .ru endet (einfach ein Wort ohne Punkt)\n.example.com — nur Subdomains, nicht die Domain selbst\nfull:example.com — genau dieser Host, keine Subdomains\nregexp:… — ein regulärer Ausdruck, wenn es kompliziert sein muss\n\n## IP-Adressen\n1.2.3.4 — eine einzelne Adresse\n10.0.0.0/8 — ein ganzer Bereich (CIDR)\n\n## GeoIP — nach Land\ngeoip:ru — alle russischen IPs. Statt ru jedes Land: us, de, cn, ua, kz…\nDazu fertige Pakete: geoip:private (LAN), geoip:telegram, geoip:google.\nNach Land? Genau dafür — geoip kennt sie alle.\n\n## GeoSite — fertige Listen\ngeosite:google, geosite:netflix, geosite:telegram, geosite:category-ads-all…\nDas sind keine Länder, sondern Dienst-Kategorien, die jemand schon zusammengestellt hat.\nLänder gibt es hier kaum (nur geolocation-cn und geolocation-!cn), nach Land ist also eher geoip.\n\n## Am PC (Kern keqrnel)\nGeo funktioniert wie am Handy: das in keqrnel eingebaute xray macht den Abgleich. Es braucht nur geoip.dat und geosite.dat neben keqdroid.exe — im Release liegen sie schon dort. Wenn Geo-Regeln ignoriert wirken, prüf zuerst diese zwei Dateien.\n\n## Reihenfolge\nVon oben nach unten: erst Block, dann dein Server (immer direkt, sonst gibt es eine Schleife), dann Umgehen, dann Proxy. Alles Übrige folgt dem Schalter Übriger Datenverkehr oben.';
+  String get routingCheatSheetBody => 'Regeln sind einfach eine Liste: was wohin geht. Jede Zeile ist eine Domain, eine IP oder ein Geo-Tag, daneben steht die Aktion: direkt (am VPN vorbei), über das VPN (Proxy) oder blockiert.\n\n## Domains\nvk.com – die Domain selbst und alle ihre Subdomains\nru – alles, was auf .ru endet (nur das Wort, ohne Punkt)\n.example.com – nur Subdomains, nicht die Domain selbst\nfull:example.com – genau dieser Host, ohne Subdomains\nregexp:… – ein regulärer Ausdruck, falls es wirklich knifflig wird\n\n## IP-Adressen\n1.2.3.4 – eine einzelne Adresse\n10.0.0.0/8 – ein ganzer Bereich (CIDR)\n\n## GeoIP: nach Land\ngeoip:ru – alle russischen IPs. Statt ru geht jedes Land: us, de, cn, ua, kz…\nDazu fertige Pakete: geoip:private (LAN), geoip:telegram, geoip:google.\nDu willst nach Land filtern? Dann hier, geoip kennt sie alle.\n\n## GeoSite: fertige Listen\ngeosite:google, geosite:netflix, geosite:telegram, geosite:category-ads-all…\nDas sind keine Länder, sondern Kategorien von Diensten, die schon jemand für dich zusammengestellt hat.\nLänder gibt es hier kaum (nur geolocation-cn und geolocation-!cn), nach Land geht es also mit geoip.\n\n## Am PC (Kern keqrnel)\nGeo funktioniert wie auf dem Handy: Den Abgleich macht das in keqrnel eingebaute xray. Es braucht nur geoip.dat und geosite.dat neben keqdroid.exe. Im Release liegen sie schon dort. Wenn Geo-Regeln ignoriert werden, prüfe zuerst diese beiden Dateien.\n\n## Reihenfolge\nVon oben nach unten: zuerst Blockieren, dann dein Server (immer direkt, sonst entsteht eine Schleife), dann Direkt, dann Proxy. Alles Übrige folgt dem Schalter „Übriger Datenverkehr“ oben.';
 
   @override
   String settingsRoutingItemCount(int count) {
@@ -377,19 +377,19 @@ class AppLocalizationsDe extends AppLocalizations {
   String get themeUseDynamicColors => 'Dynamische Android-Farben verwenden';
 
   @override
-  String get themePaletteHint => 'Hell/Dunkel schaltet weiterhin separat';
+  String get themePaletteHint => 'Hell und Dunkel werden weiterhin separat umgeschaltet';
 
   @override
   String get themeUseSystemColors => 'System-Akzentfarben verwenden';
 
   @override
-  String get themeColorThemesTitle => 'Farbthemen';
+  String get themeColorThemesTitle => 'Farbdesigns';
 
   @override
   String get serversTwoColumnsTitle => 'Zwei Spalten';
 
   @override
-  String get appearanceServerIconThemeColors => 'Server-Icons ohne Flagge in Themenfarben';
+  String get appearanceServerIconThemeColors => 'Serversymbole ohne Flagge in Designfarben';
 
   @override
   String get settingsLanProxyTitle => 'LAN-Proxy';
@@ -424,7 +424,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsLanPasswordLabel => 'Passwort';
 
   @override
-  String get settingsLanAuthHint => 'Beide Felder gesetzt — Geräte melden sich damit am Proxy an. Leer — kein Passwort (jeder im Netzwerk kann ihn nutzen).';
+  String get settingsLanAuthHint => 'Sind beide Felder ausgefüllt, melden sich Geräte damit am Proxy an. Bleiben sie leer, gibt es kein Passwort und jeder in deinem Netzwerk kann den Proxy nutzen.';
 
   @override
   String get settingsLocalPortsTitle => 'Lokale Proxy-Ports';
@@ -433,7 +433,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsLocalPortsHint => 'SOCKS5 und HTTP, Standard 2080 / 2081, müssen verschieden sein. Gilt ab der nächsten Verbindung.';
 
   @override
-  String get settingsPortInvalid => 'Geben Sie einen Port zwischen 1 und 65535 ein';
+  String get settingsPortInvalid => 'Gib einen Port zwischen 1 und 65535 ein';
 
   @override
   String get settingsPortsMustDiffer => 'SOCKS- und HTTP-Port müssen sich unterscheiden';
@@ -447,10 +447,10 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get settingsXrayCoreTitle => 'Kern-Einstellungen';
+  String get settingsXrayCoreTitle => 'Kerneinstellungen';
 
   @override
-  String get settingsXrayCoreSubtitle => 'DNS, Mux, Fragmentierung, TUN und Logs';
+  String get settingsXrayCoreSubtitle => 'DNS, Mux, Fragmentierung, TUN und Protokolle';
 
   @override
   String get settingsXrayDnsSection => 'DNS';
@@ -459,22 +459,22 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsXrayDnsCustom => 'Eigene DNS-Server';
 
   @override
-  String get settingsXrayDnsCustomHint => 'Eine Adresse pro Zeile (DoH, DoT oder einfach)';
+  String get settingsXrayDnsCustomHint => 'Eine Adresse pro Zeile (DoH, DoT oder unverschlüsselt)';
 
   @override
   String get settingsXrayDnsServers => 'DNS-Server';
 
   @override
-  String get settingsXrayDnsSplitDirect => 'Getrennter Resolver für Direct-Domains';
+  String get settingsXrayDnsSplitDirect => 'Eigener Resolver für direkte Domains';
 
   @override
-  String get settingsXrayDnsSplitDirectHint => 'Verwendet den ersten Server für Domains aus der Direct-Liste';
+  String get settingsXrayDnsSplitDirectHint => 'Domains aus der Direkt-Liste löst der erste Server auf';
 
   @override
-  String get settingsXrayDnsHosts => 'Eigene Adressen fur Domains';
+  String get settingsXrayDnsHosts => 'Eigene Adressen für Domains';
 
   @override
-  String get settingsXrayDnsPolicy => 'Resolver fur einzelne Domains';
+  String get settingsXrayDnsPolicy => 'Resolver für einzelne Domains';
 
   @override
   String get settingsXrayDnsQueryStrategy => 'Abfragestrategie';
@@ -528,19 +528,19 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsXrayGeneralSection => 'Allgemein';
 
   @override
-  String get settingsXrayLogLevel => 'Log-Level';
+  String get settingsXrayLogLevel => 'Protokollebene';
 
   @override
   String get settingsXrayDomainStrategy => 'Routing-Domainstrategie';
 
   @override
-  String get settingsXrayConcurrentDial => 'Alle Adressen gleichzeitig anwahlen';
+  String get settingsXrayConcurrentDial => 'Alle Adressen gleichzeitig anwählen';
 
   @override
   String get settingsXrayConcurrentDialHint => 'Hilft, wenn ein Teil der Serveradressen gesperrt ist';
 
   @override
-  String get settingsXraySniffing => 'Domains im Verkehr erkennen (Sniffing)';
+  String get settingsXraySniffing => 'Domains im Datenverkehr erkennen (Sniffing)';
 
   @override
   String get settingsXraySniffingRouteOnly => 'Erkannte Domain nur fürs Routing';
@@ -555,13 +555,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsXrayXmuxParamsHint => 'Leer nutzt den Xray-Standard. Zahl oder Bereich, z. B. 16-32.';
 
   @override
-  String get settingsXraySniffingHint => 'Zielprotokoll und Domain aus dem eingehenden Verkehr erkennen';
+  String get settingsXraySniffingHint => 'Zielprotokoll und Domain aus dem eingehenden Datenverkehr erkennen';
 
   @override
   String get settingsXraySniffingRouteOnlyHint => 'Die erkannte Domain wählt nur die Regel; verbunden wird zur Adresse der App.';
 
   @override
-  String get settingsXrayResetDefaults => 'Auf Standard zurücksetzen';
+  String get settingsXrayResetDefaults => 'Zurücksetzen';
 
   @override
   String get settingsXrayResetDone => 'Xray-Kerneinstellungen wiederhergestellt';
@@ -591,7 +591,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsXrayFragmentEnable => 'TLS-ClientHello aufteilen';
 
   @override
-  String get settingsXrayFragmentEnableHint => 'Das erste Paket geht in Stücken raus, DPI liest die SNI nicht.';
+  String get settingsXrayFragmentEnableHint => 'Das erste Paket geht in Stücken hinaus, sodass DPI die SNI nicht lesen kann.';
 
   @override
   String get settingsXrayNoiseSection => 'UDP-Rauschen';
@@ -600,13 +600,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsXrayNoiseEnable => 'Rauschen vor UDP senden';
 
   @override
-  String get settingsXrayNoiseEnableHint => 'Vor dem ersten echten Paket geht Müll an den Server. Für hysteria und mkcp, wo es kein ClientHello zu schneiden gibt.';
+  String get settingsXrayNoiseEnableHint => 'Vor dem ersten echten Paket geht ein Paket mit Zufallsdaten an den Server. Für hysteria und mkcp, wo es kein ClientHello zum Aufteilen gibt.';
 
   @override
   String get settingsXrayNoiseKindTitle => 'Was gesendet wird';
 
   @override
-  String get settingsXrayNoiseKindRand => 'Zufälliger Müll';
+  String get settingsXrayNoiseKindRand => 'Zufallsdaten';
 
   @override
   String get settingsXrayNoiseKindStr => 'Eigenes Paket: Text';
@@ -627,7 +627,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsXrayNoiseRandBytes => 'Bytewerte (0-255)';
 
   @override
-  String get settingsXrayNoiseDelay => 'Pause, ms';
+  String get settingsXrayNoiseDelay => 'Verzögerung, ms';
 
   @override
   String get settingsXrayNoiseReset => 'Wiederholung, Sek.';
@@ -645,7 +645,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsXrayFragmentPacketsFirst => 'Erste Pakete des Streams';
 
   @override
-  String get settingsXrayFragmentParamsTitle => 'Stückgröße und Pause';
+  String get settingsXrayFragmentParamsTitle => 'Stückgröße und Verzögerung';
 
   @override
   String get settingsXrayFragmentParamsHint => 'Zahl oder Bereich, z. B. 100-200.';
@@ -654,7 +654,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsXrayFragmentLength => 'Größe, Bytes';
 
   @override
-  String get settingsXrayFragmentInterval => 'Pause, ms';
+  String get settingsXrayFragmentInterval => 'Verzögerung, ms';
 
   @override
   String get settingsTunSection => 'TUN-Modus';
@@ -675,7 +675,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsTunStackMixedHint => 'gVisor für TCP, system für UDP. Braucht einen Kern mit gVisor.';
 
   @override
-  String get settingsTunStackMipsHint => 'Mihomos eigener Userspace-Stack anstelle von gVisor: leichter, mit wählbarer TCP-Staukontrolle. Nur auf dem mihomo-Kern.';
+  String get settingsTunStackMipsHint => 'Der eigene Userspace-Stack von mihomo statt gVisor: leichter, mit wählbarer TCP-Staukontrolle. Nur mit dem mihomo-Kern.';
 
   @override
   String get settingsTunMtu => 'MTU';
@@ -690,10 +690,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsTunUdpTimeoutHint => 'NAT-Lebensdauer inaktiver UDP-Sitzungen, Standard 300';
 
   @override
-  String get settingsTunStrictRouteTitle => 'Strict Route';
+  String get settingsTunStrictRouteTitle => 'Strenges Routing (strict route)';
 
   @override
-  String get settingsTunStrictRouteHint => 'Verhindert, dass Traffic am TUN vorbeiläuft. Unter Windows kann es das Routing stören, wenn ein anderes VPN (z. B. Tailscale) aktiv ist';
+  String get settingsTunStrictRouteHint => 'Verhindert, dass Datenverkehr am TUN vorbeiläuft. Unter Windows kann es das Routing stören, wenn ein anderes VPN (z. B. Tailscale) aktiv ist';
 
   @override
   String get settingsTunStrictRouteAuto => 'Auto';
@@ -711,19 +711,19 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsTunEin => 'Endpoint-independent NAT';
 
   @override
-  String get settingsTunEinHint => 'Full-Cone-NAT für UDP — hilft P2P und Spielen. Nur gVisor-/mixed-Stack';
+  String get settingsTunEinHint => 'Full-Cone-NAT für UDP, hilft bei P2P und Spielen. Nur mit dem gVisor- oder mixed-Stack';
 
   @override
-  String get settingsTunAutoRoute => 'Auto Route';
+  String get settingsTunAutoRoute => 'Automatisches Routing (auto route)';
 
   @override
-  String get settingsTunAutoRouteHint => 'Fügt Systemrouten in den Tunnel ein. Ohne sie erreicht nichts das TUN.';
+  String get settingsTunAutoRouteHint => 'Fügt Systemrouten in den Tunnel ein. Ohne diese Option gelangt kein Datenverkehr ins TUN.';
 
   @override
   String get settingsTunIpv6 => 'IPv6 im Tunnel halten';
 
   @override
-  String get settingsTunIpv6Hint => 'Gibt dem TUN-Interface eine IPv6-Adresse; sonst läuft aller IPv6 am Tunnel vorbei.';
+  String get settingsTunIpv6Hint => 'Gibt dem TUN-Interface eine IPv6-Adresse, sonst läuft der gesamte IPv6-Verkehr am Tunnel vorbei.';
 
   @override
   String get settingsFakeIp => 'Fake IP';
@@ -762,13 +762,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsPingKeepAlive => 'Auf warmer Verbindung messen';
 
   @override
-  String get settingsPingKeepAliveHint => 'Die Anfrage geht zweimal raus, gezählt wird die zweite — ohne Handshake. Aus: eine einzige Anfrage samt Aufwärmen, wie beim ersten Öffnen einer Seite.';
+  String get settingsPingKeepAliveHint => 'Die Anfrage geht zweimal hinaus und gezählt wird die zweite, also ohne Handshake. Aus: eine einzige Anfrage samt Aufwärmen, wie beim ersten Öffnen einer Website.';
 
   @override
   String get settingsPingMethodSpeed => 'Geschwindigkeitstest';
 
   @override
-  String get settingsPingMethodSpeedHint => 'Lädt eine feste Datenmenge über den Server herunter und zeigt den Durchsatz in Mbit/s an (funktioniert ohne VPN)';
+  String get settingsPingMethodSpeedHint => 'Lädt eine feste Datenmenge über den Server herunter und zeigt den Durchsatz in Mbit/s (funktioniert auch ohne VPN)';
 
   @override
   String get settingsPingTargetTitle => 'HTTP-Test-URL';
@@ -789,10 +789,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsPingCustomUrl => 'URL';
 
   @override
-  String get settingsPingCustomUrlHint => 'https:// oder http:// Adresse für die GET-Anfrage';
+  String get settingsPingCustomUrlHint => 'Adresse für die GET-Anfrage (https:// oder http://)';
 
   @override
-  String get settingsPingCustomUrlInvalid => 'Ungültige oder unsichere URL (kein localhost oder private Netzwerke)';
+  String get settingsPingCustomUrlInvalid => 'Ungültige oder unsichere URL (localhost und private Netzwerke sind nicht erlaubt)';
 
   @override
   String get subscriptionNameLabel => 'Name';
@@ -810,7 +810,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get subscriptionsAddSubscription => 'Abonnement hinzufügen';
 
   @override
-  String get subscriptionsAddAndFetch => 'Hinzufügen & abrufen';
+  String get subscriptionsAddAndFetch => 'Hinzufügen und laden';
 
   @override
   String get subscriptionsEditSubscription => 'Abonnement bearbeiten';
@@ -851,7 +851,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get subscriptionIdentityHwid => 'HWID';
 
   @override
-  String get subscriptionIdentityHwidOff => 'In den erweiterten Einstellungen ist „Geräte-HWID teilen“ aus — es wird gar keine HWID gesendet, auch keine eigene.';
+  String get subscriptionIdentityHwidOff => 'In den erweiterten Einstellungen ist „Geräte-HWID senden“ ausgeschaltet, daher wird keine HWID gesendet, auch keine eigene.';
 
   @override
   String get subscriptionIdentityUserAgent => 'User-Agent';
@@ -878,7 +878,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get subscriptionIdentitySectionUaDesktop => 'Desktop-Clients';
 
   @override
-  String get subscriptionIdentitySectionUaCores => 'Cores und nacktes HTTP';
+  String get subscriptionIdentitySectionUaCores => 'Kerne und reines HTTP';
 
   @override
   String get subscriptionIdentitySectionOs => 'Betriebssysteme';
@@ -890,16 +890,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get subscriptionIdentitySectionDesktop => 'Desktop';
 
   @override
-  String get subscriptionIdentitySectionAndroidRelease => 'Android — Release';
+  String get subscriptionIdentitySectionAndroidRelease => 'Android-Versionen';
 
   @override
-  String get subscriptionIdentitySectionAndroidBuild => 'Android — Build';
+  String get subscriptionIdentitySectionAndroidBuild => 'Android-Builds';
 
   @override
-  String get subscriptionIdentitySectionIosRelease => 'iOS — Release';
+  String get subscriptionIdentitySectionIosRelease => 'iOS-Versionen';
 
   @override
-  String get subscriptionIdentitySectionIosBuild => 'iOS — Build';
+  String get subscriptionIdentitySectionIosBuild => 'iOS-Builds';
 
   @override
   String get subscriptionIdentitySearchOrEnter => 'Suchen oder eigenen Wert eingeben';
@@ -918,7 +918,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String subscriptionsDeleteConfirm(Object name) {
-    return 'Möchtest du \"$name\" wirklich löschen?\n\nDadurch werden auch alle zugehörigen Server entfernt.';
+    return 'Möchtest du „$name“ wirklich löschen?\n\nDadurch werden auch alle zugehörigen Server entfernt.';
   }
 
   @override
@@ -983,12 +983,12 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String subscriptionsDaysAgo(int days) {
-    return 'vor $days T.';
+    return 'vor $days Tg.';
   }
 
   @override
   String subscriptionsInDays(int days) {
-    return 'in $days T.';
+    return 'in $days Tg.';
   }
 
   @override
@@ -1051,7 +1051,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get subscriptionsAutoUpdateOff => 'Nicht automatisch aktualisieren';
 
   @override
-  String get subscriptionsProviderPage => 'Abo-Seite';
+  String get subscriptionsProviderPage => 'Abonnementseite';
 
   @override
   String get subscriptionsSupport => 'Support';
@@ -1069,10 +1069,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsAdvancedGroupDiagnostics => 'Diagnose';
 
   @override
-  String get settingsBackupRestore => 'Sichern & wiederherstellen';
+  String get settingsBackupRestore => 'Sichern und wiederherstellen';
 
   @override
-  String get settingsBackupRestoreSubtitle => 'Split-Tunneling, Abonnements, Server und Einstellungen exportieren/importieren';
+  String get settingsBackupRestoreSubtitle => 'Export/Import: Split-Tunneling, Abonnements, Server, Einstellungen';
 
   @override
   String get settingsSelectAtLeastOne => 'Wähle mindestens einen Abschnitt zum Exportieren';
@@ -1120,18 +1120,18 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsPickExportedFile => 'Was wiederhergestellt wird, wählst du nach der Datei';
 
   @override
-  String get settingsWorking => 'Wird ausgeführt...';
+  String get settingsWorking => 'Wird ausgeführt…';
 
   @override
   String settingsImportedSections(int count) {
-    return 'Importiert: $count Abschnitt(e)';
+    return 'Importierte Abschnitte: $count';
   }
 
   @override
-  String get settingsShareHwidTitle => 'Geräte-HWID teilen';
+  String get settingsShareHwidTitle => 'Geräte-HWID senden';
 
   @override
-  String get settingsShareHwidOn => 'Wird mit Abo-Anfragen gesendet';
+  String get settingsShareHwidOn => 'Wird mit Abonnementanfragen gesendet';
 
   @override
   String get settingsShareHwidOff => 'Wird nicht gesendet';
@@ -1146,22 +1146,22 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsDebugModeOff => 'Aus';
 
   @override
-  String get settingsOpenXrayLogs => 'Xray-Logs öffnen';
+  String get settingsOpenXrayLogs => 'Kernprotokoll öffnen';
 
   @override
-  String get settingsXrayCoreLogs => 'Xray-Kern-Logs';
+  String get settingsXrayCoreLogs => 'Kernprotokoll';
 
   @override
   String get settingsRefresh => 'Aktualisieren';
 
   @override
-  String get settingsCopyLogs => 'Logs kopieren';
+  String get settingsCopyLogs => 'Protokoll kopieren';
 
   @override
   String get settingsAppVersion => 'App-Version';
 
   @override
-  String get settingsChecking => 'Wird geprüft...';
+  String get settingsChecking => 'Wird geprüft…';
 
   @override
   String get settingsCheckFailed => 'Prüfung fehlgeschlagen';
@@ -1176,7 +1176,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsNewVersionAvailable => 'Neue Version verfügbar';
 
   @override
-  String get settingsDownloading => 'Wird heruntergeladen...';
+  String get settingsDownloading => 'Wird heruntergeladen…';
 
   @override
   String get settingsCheckForUpdates => 'Nach Updates suchen';
@@ -1210,7 +1210,7 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get settingsLanguageSystem => 'Systemstandard';
+  String get settingsLanguageSystem => 'Systemsprache';
 
   @override
   String get settingsLanguageEnglish => 'English';
@@ -1251,7 +1251,7 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get splitProxyModeWarning => 'Im Proxy-Modus wird Split-Tunneling nicht angewendet — der gesamte Verkehr läuft über den System-Proxy. Wechsle den Verbindungsmodus auf TUN (im Seitenpanel), damit die Regeln pro Prozess wirken.';
+  String get splitProxyModeWarning => 'Im Proxy-Modus wird Split-Tunneling nicht angewendet, der gesamte Datenverkehr läuft über den System-Proxy. Wechsle den Verbindungsmodus in der Seitenleiste auf TUN, damit die Regeln pro Prozess greifen.';
 
   @override
   String get settingsLatestVersionInstalled => 'Du hast die neueste Version';
@@ -1275,10 +1275,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get serversDeleteServer => 'Server löschen';
 
   @override
-  String get settingsDebugHintDesktop => 'Zeigt Xray-Sitzungslogs an. Live-VPN-Metriken werden unter der Verbindungstaste angezeigt.';
+  String get settingsDebugHintDesktop => 'Zeigt das Sitzungsprotokoll des Kerns. Live-Messwerte des VPN stehen unter der Verbinden-Schaltfläche.';
 
   @override
-  String get settingsDebugHintMobile => 'Zeigt Live-VPN-Metriken in Serverkarten und Xray-Logs an.';
+  String get settingsDebugHintMobile => 'Zeigt Live-Messwerte des VPN in den Serverkarten und das Kernprotokoll.';
 
   @override
   String get desktopConnectionMode => 'Verbindungsmodus';
@@ -1290,10 +1290,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsDesktopTitle => 'Windows';
 
   @override
-  String get settingsDesktopSubtitle => 'Tray, Autostart, Auto-Connect';
+  String get settingsDesktopSubtitle => 'Infobereich, Autostart, automatisches Verbinden';
 
   @override
-  String get settingsMinimizeToTray => 'Beim Schließen in Tray minimieren';
+  String get settingsMinimizeToTray => 'Beim Schließen in den Infobereich minimieren';
 
   @override
   String get settingsLaunchAtStartup => 'Mit Windows starten';
@@ -1314,7 +1314,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get desktopTunAdminTitle => 'Administratorrechte erforderlich';
 
   @override
-  String get desktopTunAdminMessage => 'Der TUN-Modus benötigt Administratorrechte. Starten Sie die App als Administrator neu — der Modus in der Seitenleiste bleibt erhalten.';
+  String get desktopTunAdminMessage => 'Der TUN-Modus benötigt Administratorrechte. Starte die App als Administrator neu, der in der Seitenleiste gewählte Modus bleibt erhalten.';
 
   @override
   String get desktopTunAdminRestart => 'Als Administrator neu starten';
@@ -1405,25 +1405,25 @@ class AppLocalizationsDe extends AppLocalizations {
   String get serversAutoSelect => 'Auto';
 
   @override
-  String get serversAutoSelectTooltip => 'Die App wahlt den Server dieses Abos und wechselt, wenn er nicht mehr funktioniert';
+  String get serversAutoSelectTooltip => 'Die App wählt den Server in diesem Abonnement selbst und wechselt, wenn er nicht mehr funktioniert';
 
   @override
   String get serversManualGroup => 'Manuelle Server';
 
   @override
-  String get serversEmptyGroupHint => 'Keine Server in diesem Abo';
+  String get serversEmptyGroupHint => 'Keine Server in diesem Abonnement';
 
   @override
-  String get statsInLabel => 'In';
+  String get statsInLabel => 'Empfangen';
 
   @override
   String get statsTimeLabel => 'Zeit';
 
   @override
-  String get statsDownloadLabel => 'Empfangsrate';
+  String get statsDownloadLabel => 'Download';
 
   @override
-  String get statsUploadLabel => 'Senderate';
+  String get statsUploadLabel => 'Upload';
 
   @override
   String get statsSplitVpnTag => 'VPN';
@@ -1444,21 +1444,21 @@ class AppLocalizationsDe extends AppLocalizations {
   String get qrScanTitle => 'QR-Code scannen';
 
   @override
-  String get qrScanHint => 'Richten Sie die Kamera auf einen QR-Code';
+  String get qrScanHint => 'Richte die Kamera auf einen QR-Code';
 
   @override
   String get qrScanCameraError => 'Kamera nicht verfügbar';
 
   @override
-  String get serversScanQrHint => 'Server- oder Abo-Link';
+  String get serversScanQrHint => 'Server- oder Abonnement-Link';
 
   @override
   String qrSubscriptionAdded(Object name) {
-    return 'Abo hinzugefügt: $name';
+    return 'Abonnement hinzugefügt: $name';
   }
 
   @override
-  String get qrNotSubscriptionLink => 'QR-Code enthält keinen Abo-Link';
+  String get qrNotSubscriptionLink => 'Der QR-Code enthält keinen Abonnement-Link';
 
   @override
   String get settingsHotkeysTitle => 'Tastenkürzel';
@@ -1467,10 +1467,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsHotkeysSubtitle => 'Kürzel für Verbindung, Modus und Server';
 
   @override
-  String get hotkeysHintGlobal => 'Kürzel funktionieren systemweit — auch wenn das Fenster im Tray versteckt ist. Alle Kürzel sind deaktiviert, bis Sie sie zuweisen.';
+  String get hotkeysHintGlobal => 'Kürzel funktionieren systemweit, auch wenn das Fenster im Infobereich versteckt ist. Alle Kürzel sind inaktiv, bis du sie zuweist.';
 
   @override
-  String get hotkeysHintInApp => 'Unter Linux funktionieren Kürzel, solange das App-Fenster fokussiert ist. Alle Kürzel sind deaktiviert, bis Sie sie zuweisen.';
+  String get hotkeysHintInApp => 'Unter Linux funktionieren Kürzel, solange das App-Fenster im Fokus ist. Alle Kürzel sind inaktiv, bis du sie zuweist.';
 
   @override
   String get hotkeyActionToggleConnection => 'Verbinden / Trennen';
@@ -1482,7 +1482,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get hotkeyActionBestPing => 'Zum Server mit bestem Ping wechseln';
 
   @override
-  String get hotkeyActionToggleWindow => 'Fenster zeigen / verstecken';
+  String get hotkeyActionToggleWindow => 'Fenster anzeigen / ausblenden';
 
   @override
   String get hotkeyNotSet => 'Nicht belegt';
@@ -1491,7 +1491,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get hotkeyPressKeys => 'Tasten drücken…';
 
   @override
-  String get hotkeyRecordingHint => 'Esc — Abbrechen, Backspace — Löschen';
+  String get hotkeyRecordingHint => 'Esc bricht ab, Rücktaste löscht';
 
   @override
   String get hotkeyNeedsModifier => 'Modifikator (Strg/Alt/Umschalt/Win) oder F-Taste nötig';
@@ -1505,17 +1505,17 @@ class AppLocalizationsDe extends AppLocalizations {
   String get hotkeyClearTooltip => 'Kürzel entfernen';
 
   @override
-  String get hotkeyNoPingData => 'Noch keine Ping-Ergebnisse — zuerst einen Ping-Test starten';
+  String get hotkeyNoPingData => 'Noch keine Ping-Ergebnisse, starte zuerst einen Ping-Test';
 
   @override
-  String get clipboardNoSubscriptionLink => 'Zwischenablage enthält keinen Abo-Link (http/https)';
+  String get clipboardNoSubscriptionLink => 'Die Zwischenablage enthält keinen Abonnement-Link (http/https)';
 
   @override
   String get splitTunnelingReconnectHint => 'Änderungen gelten nach dem erneuten Verbinden des VPN';
 
   @override
   String serversDeleteConfirm(Object name) {
-    return 'Server \"$name\" wirklich löschen?';
+    return 'Server „$name“ wirklich löschen?';
   }
 
   @override
@@ -1549,43 +1549,43 @@ class AppLocalizationsDe extends AppLocalizations {
   String get errorVpnPermissionAction => 'Erlaube die VPN-Berechtigung im Systemdialog und versuche es erneut.';
 
   @override
-  String get errorHwidBindMessage => 'Der Anbieter verlangt eine HWID-Bindung für dieses Gerät.';
+  String get errorHwidBindMessage => 'Der Anbieter verlangt, dieses Gerät per HWID zu verknüpfen.';
 
   @override
-  String get errorHwidBindAction => 'Binde dieses Gerät im Anbieter-Panel und aktualisiere dann das Abo.';
+  String get errorHwidBindAction => 'Verknüpfe dieses Gerät im Panel des Anbieters und aktualisiere dann das Abonnement.';
 
   @override
-  String get errorDeviceLimitMessage => 'Der Anbieter hat das Abo wegen des Gerätelimits abgelehnt.';
+  String get errorDeviceLimitMessage => 'Der Anbieter hat das Abonnement wegen des Gerätelimits abgelehnt.';
 
   @override
-  String get errorDeviceLimitAction => 'Entferne alte Geräte im Anbieter-Panel oder erhöhe das Gerätelimit.';
+  String get errorDeviceLimitAction => 'Entferne alte Geräte im Panel des Anbieters oder erhöhe das Gerätelimit.';
 
   @override
-  String get errorConfigInvalidMessage => 'Die Abo- oder Serverkonfiguration ist ungültig.';
+  String get errorConfigInvalidMessage => 'Die Abonnement- oder Serverkonfiguration ist ungültig.';
 
   @override
-  String get errorConfigInvalidAction => 'Prüfe das URL-/Konfigurationsformat und importiere einen gültigen Abo-Link.';
+  String get errorConfigInvalidAction => 'Prüfe den Link bzw. die Konfiguration und importiere einen gültigen Abonnement-Link.';
 
   @override
-  String get errorAuthDeniedMessage => 'Der Zugriff auf das Abo wurde vom Anbieter verweigert.';
+  String get errorAuthDeniedMessage => 'Der Anbieter verweigert den Zugriff auf das Abonnement.';
 
   @override
-  String get errorAuthDeniedAction => 'Prüfe Token/Zugangsdaten und ob das Abo noch gültig ist.';
+  String get errorAuthDeniedAction => 'Prüfe Token bzw. Zugangsdaten und ob das Abonnement noch gültig ist.';
 
   @override
-  String get errorSubUrlInvalidMessage => 'Der Abo-Link fehlt oder ist abgelaufen.';
+  String get errorSubUrlInvalidMessage => 'Der Abonnement-Link fehlt oder ist abgelaufen.';
 
   @override
   String get errorSubUrlInvalidAction => 'Fordere eine neue URL vom Anbieter an und aktualisiere sie in der App.';
 
   @override
-  String get errorSubInsecureHttpMessage => 'Der Abo-Link nutzt unverschlüsseltes http, Updates sind blockiert.';
+  String get errorSubInsecureHttpMessage => 'Der Abonnement-Link nutzt unverschlüsseltes http, Updates sind blockiert.';
 
   @override
   String get errorSubInsecureHttpAction => 'Ersetze den Link durch seine https-Version.';
 
   @override
-  String get subInsecureHttpWarning => 'http-Link — Updates blockiert';
+  String get subInsecureHttpWarning => 'http-Link, Updates blockiert';
 
   @override
   String get subSwitchToHttps => 'Auf https umstellen';
@@ -1612,13 +1612,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get errorVpnPermissionTitle => 'Berechtigung erforderlich';
 
   @override
-  String get errorHwidBindTitle => 'Gerätebindung erforderlich';
+  String get errorHwidBindTitle => 'Geräteverknüpfung erforderlich';
 
   @override
   String get errorDeviceLimitTitle => 'Gerätelimit erreicht';
 
   @override
-  String get errorProviderNoHostsTitle => 'Anbieter-Konfiguration erforderlich';
+  String get errorProviderNoHostsTitle => 'Einrichtung beim Anbieter erforderlich';
 
   @override
   String get errorConfigInvalidTitle => 'Konfigurationsfehler';
@@ -1627,10 +1627,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get errorAuthDeniedTitle => 'Autorisierung fehlgeschlagen';
 
   @override
-  String get errorSubUrlInvalidTitle => 'Abo-Link ungültig';
+  String get errorSubUrlInvalidTitle => 'Ungültiger Abonnement-Link';
 
   @override
-  String get errorSubInsecureHttpTitle => 'Unsicherer Abo-Link';
+  String get errorSubInsecureHttpTitle => 'Unsicherer Abonnement-Link';
 
   @override
   String get errorNetworkTitle => 'Netzwerkfehler';
@@ -1645,7 +1645,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get serversPin => 'Server anheften';
 
   @override
-  String get serversUnpin => 'Server lösen';
+  String get serversUnpin => 'Server loslösen';
 
   @override
   String get serversRename => 'Umbenennen';
@@ -1680,7 +1680,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get serverEditorSectionTransport => 'Transport';
 
   @override
-  String get serverEditorSectionProtocol => 'Protokoll-Einstellungen';
+  String get serverEditorSectionProtocol => 'Protokolleinstellungen';
 
   @override
   String get serverEditorAddress => 'Adresse';
@@ -1719,7 +1719,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get serverEditorSpx => 'SpiderX (spx)';
 
   @override
-  String get serverEditorPinnedCert => 'Angeheftetes Zertifikat (SHA-256)';
+  String get serverEditorPinnedCert => 'Gepinntes Zertifikat (SHA-256)';
 
   @override
   String get serverEditorVerifyCertName => 'Zertifikatsname prüfen';
@@ -1758,7 +1758,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get serverEditorIssueRealityKey => 'REALITY braucht den öffentlichen Schlüssel des Servers.';
 
   @override
-  String get serverEditorIssueEncryption => 'Encryption ist none oder ein mlkem768x25519plus-Schlüssel.';
+  String get serverEditorIssueEncryption => 'Encryption muss none oder ein mlkem768x25519plus-Schlüssel sein.';
 
   @override
   String get serverEditorIssueNoSecurity => 'Ohne TLS, REALITY oder Encryption erlaubt der Kern nur private Adressen.';
@@ -1815,13 +1815,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get serverEditorPreview => 'Ergebnis-Link';
 
   @override
-  String get serverEditorSubscriptionNote => 'Server aus einem Abo: Änderungen bleiben beim Abo-Update erhalten.';
+  String get serverEditorSubscriptionNote => 'Server aus einem Abonnement: Deine Änderungen bleiben beim Aktualisieren erhalten.';
 
   @override
-  String get serverEditorOverriddenNote => 'Konfiguration manuell geändert — Abo-Updates ersetzen sie nicht mehr.';
+  String get serverEditorOverriddenNote => 'Konfiguration manuell geändert, Abonnement-Updates ersetzen sie nicht mehr.';
 
   @override
-  String get serverEditorRevert => 'Abo-Konfiguration wiederherstellen';
+  String get serverEditorRevert => 'Konfiguration aus dem Abonnement wiederherstellen';
 
   @override
   String get serverEditorSaved => 'Konfiguration gespeichert';
@@ -1845,19 +1845,19 @@ class AppLocalizationsDe extends AppLocalizations {
   String get appearanceAmoled => 'Reines Schwarz (AMOLED)';
 
   @override
-  String get appearanceAmoledNeedsDark => 'Verfügbar bei aktiviertem dunklen Design';
+  String get appearanceAmoledNeedsDark => 'Nur mit dunklem Design verfügbar';
 
   @override
   String get appearanceHaptics => 'Vibration';
 
   @override
-  String get appearanceShowTraffic => 'Tempo und Datenmenge';
+  String get appearanceShowTraffic => 'Geschwindigkeit und Datenmenge';
 
   @override
   String get appearanceShowTime => 'Verbindungsdauer';
 
   @override
-  String get appearanceShowTrafficSplit => 'VPN- und Direkt-Verkehr getrennt';
+  String get appearanceShowTrafficSplit => 'VPN- und Direktverkehr getrennt';
 
   @override
   String get appearanceWaveLatencyColor => 'Wellenfarbe nach Ping';
@@ -1875,10 +1875,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsResetConfirmAction => 'Zurücksetzen';
 
   @override
-  String get settingsResetRoutingConfirm => 'Die integrierten Routing-Regeln werden wiederhergestellt und deine Direct-/Proxy-/Block-Listen verworfen. Das kann nicht rückgängig gemacht werden.';
+  String get settingsResetRoutingConfirm => 'Die integrierten Routing-Regeln werden wiederhergestellt, deine Listen für Direkt, Proxy und Blockieren werden verworfen. Das kann nicht rückgängig gemacht werden.';
 
   @override
-  String get settingsXrayResetConfirm => 'Die Standardeinstellungen für Xray-Core, TUN und die lokalen Ports werden wiederhergestellt. Das kann nicht rückgängig gemacht werden.';
+  String get settingsXrayResetConfirm => 'Die Standardeinstellungen für den Xray-Kern, TUN und die lokalen Ports werden wiederhergestellt. Das kann nicht rückgängig gemacht werden.';
 
   @override
   String get settingsPermissionsTitle => 'Berechtigungen';
@@ -1890,7 +1890,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsPermNotifTitle => 'Benachrichtigungen';
 
   @override
-  String get settingsPermNotifDesc => 'VPN-Statusleiste und Abo-Update-Hinweise';
+  String get settingsPermNotifDesc => 'VPN-Statusbenachrichtigung und Hinweise zu Abonnement-Updates';
 
   @override
   String get settingsPermBatteryTitle => 'Uneingeschränkte Hintergrundaktivität';
@@ -1929,7 +1929,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsPermOpenAppSettings => 'App-Einstellungen öffnen';
 
   @override
-  String get settingsPermRevokeHint => 'Jede Berechtigung lässt sich in den System-App-Einstellungen widerrufen.';
+  String get settingsPermRevokeHint => 'Jede Berechtigung lässt sich in den App-Einstellungen des Systems widerrufen.';
 
   @override
   String get settingsPermTunHeader => 'TUN-Modus (Linux)';
@@ -1944,13 +1944,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get appearanceNotifSectionTitle => 'Benachrichtigungen';
 
   @override
-  String get appearanceNotifSpeedTitle => 'Verbindungsgeschwindigkeit in Benachrichtigung';
+  String get appearanceNotifSpeedTitle => 'Verbindungsgeschwindigkeit in der Benachrichtigung';
 
   @override
-  String get appearanceNotifUptimeTitle => 'Verbindungszeit in Benachrichtigung';
+  String get appearanceNotifUptimeTitle => 'Verbindungsdauer in der Benachrichtigung';
 
   @override
-  String get appearanceNotifSubUpdatesTitle => 'Benachrichtigungen zu Abo-Updates';
+  String get appearanceNotifSubUpdatesTitle => 'Benachrichtigungen zu Abonnement-Updates';
 
   @override
   String get tunRememberTitle => 'Autorisierung merken?';
@@ -1959,7 +1959,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tunRememberMessage => 'Der TUN-Modus benötigt Root und fragt jedes Mal nach deinem Passwort. Eine polkit-Regel installieren, damit er künftig ohne Passwort startet? Zur Installation wirst du einmal nach dem Passwort gefragt.';
 
   @override
-  String get tunRememberWarning => 'Danach kann jedes unter deinem Benutzer laufende Programm den VPN-Core ohne Passwort als Root starten. Rückgängig jederzeit unter „Erweitert → Berechtigungen“.';
+  String get tunRememberWarning => 'Danach kann jedes unter deinem Benutzer laufende Programm den VPN-Kern ohne Passwort als Root starten. Rückgängig machen kannst du das jederzeit unter „Erweitert → Berechtigungen“.';
 
   @override
   String get tunRememberEnable => 'Aktivieren';
@@ -1974,22 +1974,22 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tunRememberFailed => 'TUN-Autorisierung konnte nicht geändert werden';
 
   @override
-  String get settingsRoutingPresetTelegramGeoTitle => 'Telegram (GeoIP+GeoSite) — Proxy';
+  String get settingsRoutingPresetTelegramGeoTitle => 'Telegram (GeoIP+GeoSite) über das VPN';
 
   @override
   String get settingsRoutingPresetTelegramGeoDesc => 'Telegram über Domains und IP-Bereiche (MTProto nutzt reine IPs)';
 
   @override
-  String get settingsRoutingPresetRefilterTitle => 'In Russland gesperrt (Re-filter) — Proxy';
+  String get settingsRoutingPresetRefilterTitle => 'In Russland gesperrt (Re-filter) über das VPN';
 
   @override
   String get settingsRoutingPresetRefilterDesc => 'In Russland gesperrte Domains und IPs laufen über das VPN, alles andere direkt';
 
   @override
-  String get settingsRoutingGeoUnknownTitle => 'Nicht in den Geo-Datenbanken — wird ignoriert';
+  String get settingsRoutingGeoUnknownTitle => 'Nicht in den Geo-Datenbanken – wird ignoriert';
 
   @override
-  String get settingsRoutingGeoUnknownHint => 'Bei einem unbekannten Geo-Code bricht der Core die gesamte Konfiguration ab, daher werden solche Einträge vor dem Verbinden entfernt. Wähle oben per Globus-Button einen vorhandenen Code.';
+  String get settingsRoutingGeoUnknownHint => 'Bei einem unbekannten Geo-Code verwirft der Kern die gesamte Konfiguration, daher werden solche Einträge vor dem Verbinden entfernt. Wähle oben mit der Globus-Schaltfläche einen vorhandenen Code.';
 
   @override
   String get settingsRoutingGeoPickerTooltip => 'Geo-Code einfügen';
@@ -2046,31 +2046,31 @@ class AppLocalizationsDe extends AppLocalizations {
   String get connectionsPaused => 'Pausiert';
 
   @override
-  String get connectionsSourceApi => 'live aus dem Core';
+  String get connectionsSourceApi => 'live aus dem Kern';
 
   @override
-  String get connectionsSourceLog => 'aus dem Core-Log';
+  String get connectionsSourceLog => 'aus dem Kernprotokoll';
 
   @override
   String get connectionsSourceUnavailable => 'keine Quelle';
 
   @override
-  String get connectionsRuleHint => 'Domains und die zutreffende Regel protokolliert der Core nur bei Log-Level Info.';
+  String get connectionsRuleHint => 'Domains und die zutreffende Regel protokolliert der Kern nur bei Protokollebene Info.';
 
   @override
   String get connectionsRuleHintAction => 'Info setzen';
 
   @override
-  String get connectionsRuleHintApplied => 'Core-Log-Level auf Info gesetzt — neu verbinden zum Übernehmen';
+  String get connectionsRuleHintApplied => 'Protokollebene des Kerns auf Info gesetzt. Verbinde dich neu, um sie zu übernehmen';
 
   @override
   String get connectionsRuleDefault => 'keine Regel (Standardaktion)';
 
   @override
-  String get connectionsRuleViaCore => 'entscheidet der Core (benötigt Info-Logs)';
+  String get connectionsRuleViaCore => 'entscheidet der Kern (braucht Protokollebene Info)';
 
   @override
-  String get connectionsVerdictCore => 'CORE';
+  String get connectionsVerdictCore => 'KERN';
 
   @override
   String get connectionsVerdictProxy => 'PROXY';
@@ -2079,31 +2079,31 @@ class AppLocalizationsDe extends AppLocalizations {
   String get connectionsVerdictDirect => 'DIREKT';
 
   @override
-  String get connectionsVerdictBlock => 'GESPERRT';
+  String get connectionsVerdictBlock => 'BLOCKIERT';
 
   @override
   String get connectionsClosed => 'geschlossen';
 
   @override
-  String get connectionsAppNamesHint => 'App-Namen liefert das System, und es kennt nur offene Verbindungen — geschlossene bleiben ohne Namen.';
+  String get connectionsAppNamesHint => 'App-Namen liefert das System, und es kennt nur offene Verbindungen – geschlossene bleiben ohne Namen.';
 
   @override
-  String get connectionsSplitTunnelNote => 'Apps außerhalb des Tunnels stehen hier nicht: Android leitet sie daran vorbei, ihr Datenverkehr erreicht den Core nie.';
+  String get connectionsSplitTunnelNote => 'Apps außerhalb des Tunnels stehen hier nicht: Android leitet sie daran vorbei, ihr Datenverkehr erreicht den Kern nie.';
 
   @override
   String subscriptionsExpiredOn(String date) {
-    return 'Abo am $date abgelaufen';
+    return 'Abonnement am $date abgelaufen';
   }
 
   @override
-  String get subscriptionsExpiredHint => 'Der Anbieter aktualisiert die Serverliste nicht mehr. Verlängere das Abo, damit es weiter funktioniert.';
+  String get subscriptionsExpiredHint => 'Der Anbieter aktualisiert die Serverliste nicht mehr. Verlängere das Abonnement, damit es weiter funktioniert.';
 
   @override
-  String get subscriptionsExpiredNotifTitle => 'Abo abgelaufen';
+  String get subscriptionsExpiredNotifTitle => 'Abonnement abgelaufen';
 
   @override
   String subscriptionsExpiredNotifBody(String name, String date) {
-    return '„$name“ ist am $date abgelaufen. Der Anbieter aktualisiert die Serverliste nicht mehr — verlängere das Abo, damit die Server weiter funktionieren.';
+    return '„$name“ ist am $date abgelaufen. Der Anbieter aktualisiert die Serverliste nicht mehr. Verlängere das Abonnement, damit die Server weiter funktionieren.';
   }
 
   @override
@@ -2125,10 +2125,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get chainNameLabel => 'Name der Kette';
 
   @override
-  String get chainNameHint => 'Leer lassen — dann benennt die Route sie';
+  String get chainNameHint => 'Leer lassen, um sie nach der Route zu benennen';
 
   @override
-  String get chainHint => 'Der Verkehr läuft von oben nach unten. Der erste Knoten ist der, mit dem sich dieses Gerät verbindet; der letzte ist die Adresse, die Webseiten sehen.';
+  String get chainHint => 'Der Datenverkehr läuft von oben nach unten. Mit dem ersten Knoten verbindet sich dieses Gerät, die Adresse des letzten sehen die Websites.';
 
   @override
   String get chainDeviceNode => 'Dieses Gerät';
@@ -2143,10 +2143,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get chainRemoveNode => 'Knoten entfernen';
 
   @override
-  String get chainExitNodeHint => 'Ausgangsknoten — diese Adresse sehen Webseiten';
+  String get chainExitNodeHint => 'Ausgangsknoten, seine Adresse sehen die Websites';
 
   @override
-  String get chainNodeMissing => 'Server ist weg — die gespeicherte Kopie wird verwendet';
+  String get chainNodeMissing => 'Server gibt es nicht mehr, die gespeicherte Kopie wird verwendet';
 
   @override
   String get chainSave => 'Kette speichern';
@@ -2207,13 +2207,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsCoreMihomoSubtitle => 'Clash-kompatibler Kern. Ketten und fertige Xray-Konfigurationen bleiben bei Xray.';
 
   @override
-  String get settingsCoreHint => 'Gilt ab der nächsten Verbindung — die laufende Sitzung wird nicht neu gestartet.';
+  String get settingsCoreHint => 'Gilt ab der nächsten Verbindung – die laufende Sitzung wird nicht neu gestartet.';
 
   @override
   String get settingsProxyAuthTitle => 'Passwort für den lokalen Proxy';
 
   @override
-  String get settingsProxyAuthSubtitle => 'Ausschalten, wo es kein Feld dafür gibt — etwa beim WLAN-Proxy';
+  String get settingsProxyAuthSubtitle => 'Ausschalten, wo es kein Feld dafür gibt – etwa beim WLAN-Proxy';
 
   @override
   String get settingsProxyAuthUser => 'Benutzername';
@@ -2237,7 +2237,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsTunnelModeProxySubtitle => 'Nur lokaler Proxy, kein System-VPN';
 
   @override
-  String get settingsTunnelModeHint => 'Proxy-Modus startet SOCKS und HTTP auf 127.0.0.1 — richte eine App oder das WLAN darauf. Der Proxy steht jeder App auf dem Gerät offen. Per-App-Routing und DNS-Abfang gibt es nur im VPN-Modus.';
+  String get settingsTunnelModeHint => 'Der Proxy-Modus startet SOCKS und HTTP auf 127.0.0.1, richte eine App oder das WLAN darauf. Der Proxy steht jeder App auf dem Gerät offen. Routing pro App und das Abfangen von DNS gibt es nur im VPN-Modus.';
 
   @override
   String get settingsCoreAuto => 'Automatisch';
@@ -2246,25 +2246,25 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsCoreAutoSubtitle => 'Links gehen an Xray, fertige Konfigurationen an ihren eigenen Kern';
 
   @override
-  String get settingsCoreSkipClash => 'Der aktive Server ist eine fertige Clash-Konfiguration — sie läuft unabhängig von der Kernauswahl nur auf mihomo.';
+  String get settingsCoreSkipClash => 'Der aktive Server ist eine fertige Clash-Konfiguration – sie läuft unabhängig von der Kernauswahl nur auf mihomo.';
 
   @override
-  String get settingsCoreSkipCustom => 'Der aktive Server ist eine fertige Xray-JSON-Konfiguration und läuft daher unabhängig vom gewählten Kern über libxray. mihomo braucht ein Abo mit normalen Links.';
+  String get settingsCoreSkipCustom => 'Der aktive Server ist eine fertige Xray-JSON-Konfiguration und läuft daher unabhängig vom gewählten Kern über libxray. mihomo braucht ein Abonnement mit normalen Links.';
 
   @override
-  String get settingsCoreSkipChain => 'Der aktive Server ist eine Proxy-Kette: Ihre Knoten hängen an Xrays dialerProxy, sie läuft deshalb unabhängig von der Kernauswahl über libxray.';
+  String get settingsCoreSkipChain => 'Der aktive Server ist eine Proxy-Kette, deren Knoten über Xrays dialerProxy verbunden sind. Deshalb läuft sie unabhängig von der Kernauswahl über libxray.';
 
   @override
-  String get settingsCoreSkipAwg => 'Der aktive Server ist ein AmneziaWG-Profil — er läuft unabhängig von der Kernauswahl auf mihomo.';
+  String get settingsCoreSkipAwg => 'Der aktive Server ist ein AmneziaWG-Profil – er läuft unabhängig von der Kernauswahl auf mihomo.';
 
   @override
-  String get settingsCoreSkipPlatform => 'Der mihomo-Kern wird für diese Plattform nicht mitgeliefert — die Verbindung läuft über den Xray-Kern.';
+  String get settingsCoreSkipPlatform => 'Der mihomo-Kern wird für diese Plattform nicht mitgeliefert – die Verbindung läuft über den Xray-Kern.';
 
   @override
-  String get settingsCoreSkipLinkXrayOnly => 'Der Link des aktiven Servers nutzt einen Transport, für den mihomo bei diesem Protokoll keine Felder hat — er läuft unabhängig von der Kernauswahl auf Xray.';
+  String get settingsCoreSkipLinkXrayOnly => 'Der Link des aktiven Servers nutzt einen Transport, für den mihomo bei diesem Protokoll keine Felder hat – er läuft unabhängig von der Kernauswahl auf Xray.';
 
   @override
-  String get settingsCoreSkipLinkMihomoOnly => 'Der Link des aktiven Servers nutzt einen Transport, den Xray 26 entfernt hat — er läuft unabhängig von der Kernauswahl auf mihomo.';
+  String get settingsCoreSkipLinkMihomoOnly => 'Der Link des aktiven Servers nutzt einen Transport, den Xray 26 entfernt hat – er läuft unabhängig von der Kernauswahl auf mihomo.';
 
   @override
   String get settingsInternalsCores => 'Kerne';
@@ -2279,7 +2279,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsInternalsExits => 'Warum die App beendet wurde';
 
   @override
-  String get settingsInternalsExitsHint => 'Diese Einträge führt das System selbst. Wenn sich das VPN im Hintergrund abgeschaltet hat, kopiere sie mit der Schaltfläche oben und schick sie weiter.';
+  String get settingsInternalsExitsHint => 'Diese Einträge führt das System selbst. Wenn sich das VPN im Hintergrund abgeschaltet hat, kopiere sie mit der Schaltfläche oben und schicke sie uns.';
 
   @override
   String get settingsInternalsExitSystem => 'Vom System oder der Firmware beendet';
@@ -2315,13 +2315,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get appLogSourceApp => 'App';
 
   @override
-  String get appLogSourceAppDesc => 'Oberfläche, Abos, Verbindungsaufbau';
+  String get appLogSourceAppDesc => 'Oberfläche, Abonnements, Verbindungsaufbau';
 
   @override
   String get appLogSourceNative => 'Nativer Teil';
 
   @override
-  String get appLogSourceNativeDesc => 'VPN-Dienst, Schnelleinstellungs-Kachel, Verbindungsfenster';
+  String get appLogSourceNativeDesc => 'VPN-Dienst, Kachel in den Schnelleinstellungen, Verbindungsfenster';
 
   @override
   String get appLogSourceExitsDesc => 'Systemeinträge: wann und warum die App beendet wurde';
@@ -2363,7 +2363,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsInternalsCoreMissing => 'nicht gefunden';
 
   @override
-  String get settingsInternalsVersionFromEngines => 'aus Quellen gebaut';
+  String get settingsInternalsVersionFromEngines => 'aus dem Quellcode gebaut';
 
   @override
   String get settingsInternalsRoleCore => 'Proxy-Engine und TUN';
@@ -2380,10 +2380,10 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get settingsInternalsGeoTrimmed => 'Länderdatenbank ist die gekürzte';
+  String get settingsInternalsGeoTrimmed => 'Gekürzte Länderdatenbank';
 
   @override
-  String get settingsInternalsGeoTrimmedHint => 'Nur die Codes, die die Presets der App brauchen; eine Regel mit anderem Land wird verworfen.';
+  String get settingsInternalsGeoTrimmedHint => 'Nur die Codes, die die Vorlagen der App brauchen; eine Regel mit einem anderen Land wird verworfen.';
 
   @override
   String get settingsInternalsGeoDownload => 'Vollständige Datenbank laden';
@@ -2484,7 +2484,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get appearanceCustomColorVariantExact => 'Exakt';
 
   @override
-  String get appearanceCustomColorVariantHint => 'Sättigung und Helligkeit wirken nur bei „Exakt“ — die anderen beiden wählen sie selbst.';
+  String get appearanceCustomColorVariantHint => 'Sättigung und Helligkeit wirken nur bei „Exakt“ – die anderen beiden wählen sie selbst.';
 
   @override
   String get appearanceUiScaleTitle => 'Oberflächengröße';
@@ -2529,7 +2529,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get subscriptionCardAutoSelect => 'Auto-Schalter in der Serverliste';
 
   @override
-  String get subscriptionCardAutoSelectHint => 'Fugt der Gruppenkopfzeile einen Schalter hinzu. Eingeschaltet wahlt die App den Server selbst und wechselt, sobald der aktuelle nicht mehr funktioniert.';
+  String get subscriptionCardAutoSelectHint => 'Fügt der Gruppenkopfzeile einen Schalter „Auto“ hinzu. Ist er an, wählt die App den Server selbst und wechselt, sobald der aktuelle nicht mehr funktioniert.';
 
   @override
   String get subscriptionCardContentTitle => 'Was angezeigt wird';
@@ -2559,7 +2559,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get subscriptionCardElementActions => 'Schaltflächen';
 
   @override
-  String get subscriptionCardContentHint => 'Warnungen werden immer angezeigt: abgelaufenes Abo, unsichere Adresse, fehlgeschlagene Aktualisierung.';
+  String get subscriptionCardContentHint => 'Warnungen werden immer angezeigt: abgelaufenes Abonnement, unsicherer Link, fehlgeschlagene Aktualisierung.';
 
   @override
   String get appearanceIconShapeSquare => 'Quadrat';
@@ -2571,7 +2571,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get appearanceSectionServers => 'Serverliste';
 
   @override
-  String get appearanceSectionUnderButton => 'Unter dem Verbinden-Button';
+  String get appearanceSectionUnderButton => 'Unter der Verbinden-Schaltfläche';
 
   @override
   String get appearanceSectionFeel => 'Touch-Feedback';
@@ -2604,7 +2604,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get appearanceIconShapePebble => 'Kiesel';
 
   @override
-  String get cardImageRejectAspect => 'Das Bild ist zu hoch für eine Karte. Nimm ein breites — etwa 3:2 bis 5:1.';
+  String get cardImageRejectAspect => 'Das Bild ist zu hoch für eine Karte. Nimm ein breites, etwa 3:2 bis 5:1.';
 
   @override
   String cardImageRejectSmall(int width) {
