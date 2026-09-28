@@ -45,11 +45,12 @@
 ## Download
 
 Pre-built binaries are on [Releases](https://github.com/Lemonochka/keqdroid/releases).  
-One `SHA256SUMS` holds the hash of every file in the release. The built-in updater looks its own asset up there and refuses to install when the line is missing or the hash does not match.
+`SHA256SUMS` lists the hash of every file in the release; the built-in updater checks it before installing.
 
 | Platform | Files in release |
 |----------|------------------|
-| **Android** 7.0+ | `keqdroid-<version>-android.apk` · `keqdroid-<version>-armeabi-v7a-android.apk` — only for phones with a 32-bit firmware (Redmi 9A/9C and the like), where the main one fails with "App not installed" |
+| **Android** 7.0+ | `keqdroid-<version>-android.apk` |
+| **Android** 7.0+, 32-bit firmware | `keqdroid-<version>-armeabi-v7a-android.apk` |
 | **Windows** x64 | `keqdroid-windows-x64-<version>.zip` (portable) |
 | **Linux** x64 | `keqdroid-<version>-x86_64.AppImage` · `keqdroid_<version>_amd64.deb` · `keqdroid-<version>-1.x86_64.rpm` · `keqdroid-<version>-linux-x64.tar.gz` · Arch: `keqdroid-bin` on the AUR |
 
@@ -63,13 +64,13 @@ The app **does not provide servers**. Bring your own subscription or configs. Co
 - subscription URLs with scheduled auto-update; `keqdroid://` and `keqdis://` deep links from provider panels
 - manual entry, config import, QR code scan (Android)
 - proxy chains: traffic passes through several servers in the order you set
-- device identity per subscription — what the panel sees when the app fetches it
+- per-subscription device identity sent to the provider's panel
 - checks: TCP, HTTP, ICMP, speed test; sorting by ping, name or speed
 
 **Routing and tunnel**
-- three lists — direct, through the VPN, blocked — plus ready-made presets to start from
+- routing lists (direct, through the VPN, blocked) and ready-made presets
 - split tunnel: per-app on Android, per-program on Windows and Linux (TUN mode)
-- **Connections** — a live list of where traffic is going and which rule sent it there
+- **Connections**: active connections and the rule that matched each one
 
 **Appearance and data**
 - color presets, dark and light, Material You palette on Android
@@ -79,7 +80,7 @@ The app **does not provide servers**. Bring your own subscription or configs. Co
 - **About**: core versions, geo databases and the current session, copied as one report
 - backup and restore: settings, servers, subscriptions with their images, split-tunnel lists
 - share the local proxy over LAN
-- hotkeys for connect/disconnect, TUN mode, best-ping server, show/hide window — system-wide on Windows, while the window is focused on Linux
+- hotkeys for connect/disconnect, TUN mode, best-ping server, show/hide window (system-wide on Windows, while the window is focused on Linux)
 - English, Русский, Deutsch, 中文, فارسی
 - updates from GitHub Releases
 
@@ -87,11 +88,11 @@ The app **does not provide servers**. Bring your own subscription or configs. Co
 
 ## Cores
 
-Servers run on two cores, on every platform: **Xray** and **mihomo**. On Windows and Linux Xray ships inside `keqrnel` together with **sing-box**, which carries its TUN mode. Which core runs a given server is decided by the server itself, not by preference — a ready-made config only makes sense to the core it was written for, and not every link can be carried by both:
+Two cores run servers on every platform: **Xray** and **mihomo**. On Windows and Linux, Xray ships inside `keqrnel` together with **sing-box**, which provides TUN mode. The core depends on the server:
 
 | Server | Runs on |
 |--------|---------|
-| Links `vless://` `vmess://` `trojan://` `ss://` `hy2://` | Xray or mihomo — your pick |
+| Links `vless://` `vmess://` `trojan://` `ss://` `hy2://` | Xray or mihomo, your choice |
 | `tuic://` `anytls://` `ssr://` `mierus://`, and links with a transport only mihomo has (for example HTTP/2 or a Shadowsocks plugin) | mihomo |
 | Links with a transport only Xray has (for example mKCP, XHTTP for VMess and Trojan, finalmask) | Xray |
 | Ready-made Xray config (`.json`) | Xray |
@@ -99,7 +100,7 @@ Servers run on two cores, on every platform: **Xray** and **mihomo**. On Windows
 | Proxy chain | Xray |
 | WireGuard / AmneziaWG profile | mihomo |
 
-The choice lives in **Settings → About** and applies to links both cores can run; **Automatic** runs them on Xray. When a server cannot run on the core you picked, the app says so on the spot instead of quietly switching — a silent fallback is exactly what makes "I selected mihomo and it says Xray" impossible to debug.
+For links both cores support, pick the core in **Settings → About**; **Automatic** means Xray. If a server can't run on the selected core, the app shows an error.
 
 ---
 
@@ -122,9 +123,9 @@ The choice lives in **Settings → About** and applies to links both cores can r
 
 Hysteria v1 is not supported.
 
-A Clash or sing-box subscription is taken apart into servers, one per node. A Clash config stays whole only when its nodes cannot be taken apart (`proxy-providers`, node types the app does not know) — then mihomo runs it exactly as written.
+Clash and sing-box subscriptions are split into servers, one per node. A Clash config that can't be split (`proxy-providers`, unknown node types) is imported as one server and runs on mihomo as is.
 
-A ready-made config runs as its author wrote it — routing, DNS and outbound chains included; only the inbounds are replaced with the app's own. The name comes from the config's root `remarks`. The author's rules decide first, and your own direct / proxy / block lists only see what those rules did not already match — if the config ends with a catch-all, and most do, they never come into play at all.
+A ready-made config keeps its own routing, DNS and outbound chains; only the inbounds are replaced. The server name comes from the root `remarks`. The app's routing lists apply only to traffic the config's own rules don't match.
 
 ---
 
@@ -135,24 +136,24 @@ A ready-made config runs as its author wrote it — routing, DNS and outbound ch
 | Mode | What it does |
 |------|--------------|
 | **VPN** | Everything on the device goes through the tunnel. VPN permission on first connect. |
-| **Proxy** | SOCKS and HTTP on `127.0.0.1`, nothing captured on its own — point an app or the Wi-Fi proxy settings at it. |
+| **Proxy** | SOCKS and HTTP on `127.0.0.1`. Set it as the proxy in an app or in the Wi-Fi settings. |
 
-Per-app routing and DNS interception belong to VPN mode. Notification shade icon, a Quick Settings tile and launcher shortcuts to connect and disconnect; subscriptions update in the background.
+Per-app routing and DNS interception work in VPN mode only. Connect and disconnect from the notification, the Quick Settings tile or launcher shortcuts. Subscriptions update in the background.
 
 ### Windows
 
 | Mode | What it does |
 |------|--------------|
-| **Proxy** | System proxy — browsers and most apps. No administrator rights. |
-| **TUN** | All traffic through a VPN adapter. Needs administrator rights — the app offers to restart with them. |
+| **Proxy** | System proxy for browsers and most apps. No administrator rights. |
+| **TUN** | All traffic through a VPN adapter. Needs administrator rights; the app offers to restart with them. |
 
 The window minimizes to the tray and remembers its size and position. Launch at system startup with optional auto-connect. Global hotkeys are in Settings → Advanced → Hotkeys. Subscriptions refresh while the app is open.
 
-**Settings location:** `%APPDATA%\com.keqdroid\keqdroid\` — not next to the exe. To move to another PC, use backup and restore in settings.
+**Settings location:** `%APPDATA%\com.keqdroid\keqdroid\`, not next to the exe. To move to another PC, use backup and restore.
 
 ### Linux
 
-Debian/Fedora/Arch, x86_64. Releases ship AppImage, deb, rpm and tar.gz. On Arch the package lives on the AUR — `yay -S keqdroid-bin` — and the same `PKGBUILD` is among the release assets, for a manual `makepkg -si`.
+Debian/Fedora/Arch, x86_64. Releases ship AppImage, deb, rpm and tar.gz. On Arch: `yay -S keqdroid-bin` from the AUR, or `makepkg -si` with the `PKGBUILD` from the release.
 
 | Mode | What it does |
 |------|--------------|
@@ -184,9 +185,9 @@ flutter build apk --release      # Android
 flutter build windows --release  # Windows
 ```
 
-The Windows plugin list (`windows/flutter/app_plugins.cmake`) is checked in with Firebase (Android-only) already stripped, so a normal build just works. Re-run `powershell -File tool/sync_windows_plugins.ps1` only after adding or removing plugins.
+The Windows plugin list (`windows/flutter/app_plugins.cmake`) is committed without Firebase, which is Android-only. After adding or removing plugins, run `powershell -File tool/sync_windows_plugins.ps1`.
 
-**Linux** — build on Linux or WSL only, the Windows SDK cannot target Linux:
+**Linux** builds on Linux or in WSL:
 
 ```bash
 wsl -e bash /mnt/c/.../keqdroid/tool/build_linux_wsl.sh
@@ -205,13 +206,13 @@ powershell -ExecutionPolicy Bypass -File tool\make_release.ps1
 powershell -ExecutionPolicy Bypass -File tool\make_release.ps1 -Publish -NotesFile notes.md
 ```
 
-The AUR package goes out separately, once the GitHub release exists — its `PKGBUILD` downloads the tarball from there:
+Publish the AUR package after the GitHub release, since its `PKGBUILD` downloads the tarball from it:
 
 ```bash
 wsl -e bash /mnt/c/.../keqdroid/tool/publish_aur.sh
 ```
 
-Version and tag `vX.Y.Z` come from `pubspec.yaml`. When uploading manually, upload `SHA256SUMS` along with the assets — a hash the updater cannot find is a reason to refuse.
+Version and tag `vX.Y.Z` come from `pubspec.yaml`. When uploading manually, include `SHA256SUMS`, otherwise the updater won't install the update.
 
 ---
 
@@ -258,11 +259,12 @@ Version and tag `vX.Y.Z` come from `pubspec.yaml`. When uploading manually, uplo
 Скриншоты — [выше](#screenshots).
 
 Готовые сборки — в [Releases](https://github.com/Lemonochka/keqdroid/releases).  
-Хеши всего релиза лежат в одном `SHA256SUMS`: встроенный апдейтер находит там свой файл и не ставит обновление, если строки нет или хеш не сошёлся.
+Хеши всех файлов релиза лежат в `SHA256SUMS`, встроенный апдейтер сверяет их перед установкой.
 
 | Платформа | Файлы в релизе |
 |-----------|----------------|
-| **Android** 7.0+ | `keqdroid-<версия>-android.apk` · `keqdroid-<версия>-armeabi-v7a-android.apk` — только для телефонов с 32-битной прошивкой (Redmi 9A/9C и похожие), где основной не ставится с «Приложение не установлено» |
+| **Android** 7.0+ | `keqdroid-<версия>-android.apk` |
+| **Android** 7.0+, 32-битная прошивка | `keqdroid-<версия>-armeabi-v7a-android.apk` |
 | **Windows** x64 | `keqdroid-windows-x64-<версия>.zip` (portable) |
 | **Linux** x64 | `keqdroid-<версия>-x86_64.AppImage` · `keqdroid_<версия>_amd64.deb` · `keqdroid-<версия>-1.x86_64.rpm` · `keqdroid-<версия>-linux-x64.tar.gz` · Arch: `keqdroid-bin` на AUR |
 
@@ -276,17 +278,17 @@ Version and tag `vX.Y.Z` come from `pubspec.yaml`. When uploading manually, uplo
 - подписки по URL с автообновлением по расписанию; deep-ссылки `keqdroid://` и `keqdis://` из панелей провайдеров
 - ручное добавление, импорт конфигов, сканирование QR-кодов (Android)
 - цепочки прокси: трафик проходит через несколько серверов в заданном порядке
-- идентичность устройства для каждой подписки — то, каким приложение представляется панели при загрузке
+- отдельные данные устройства для каждой подписки (их видит панель провайдера)
 - проверки: TCP, HTTP, ICMP, тест скорости; сортировка по пингу, имени или скорости
 
 **Маршрутизация и туннель**
-- три списка — напрямую, через VPN, блокировать — и готовые пресеты, чтобы начать
+- списки «напрямую», «через VPN», «блокировать» и готовые пресеты
 - split tunnel: на Android по приложениям, на Windows и Linux по программам (режим TUN)
-- **Соединения** — живой список того, куда идёт трафик и какое правило его туда отправило
+- **Соединения**: активные соединения и правило, которое сработало для каждого
 
 **Оформление и данные**
 - цветовые пресеты, тёмная и светлая тема, палитра Material You на Android
-- карточки подписок с палитрой или своей картинкой, которая переходит и в список их серверов
+- карточки подписок с палитрой или своей картинкой, оформление переносится на их серверы
 - размер интерфейса, поверх системного размера текста
 - на телефоне боком и на планшете — навигационная рейка и экран серверов в две панели
 - **О приложении**: версии ядер, geo-базы и текущая сессия одним отчётом
@@ -300,7 +302,7 @@ Version and tag `vX.Y.Z` come from `pubspec.yaml`. When uploading manually, uplo
 
 ## Ядра
 
-Серверы исполняют два ядра, на всех платформах: **Xray** и **mihomo**. На Windows и Linux Xray едет внутри `keqrnel` вместе с **sing-box**, на котором держится его режим TUN. Какое ядро исполняет конкретный сервер, решает сам сервер, а не предпочтение: готовый конфиг понятен только тому ядру, для которого он написан, и не всякую ссылку берут оба.
+На всех платформах серверы работают на двух ядрах: **Xray** и **mihomo**. На Windows и Linux Xray входит в `keqrnel` вместе с **sing-box**, который отвечает за режим TUN. Ядро зависит от сервера:
 
 | Сервер | Исполняет |
 |--------|-----------|
@@ -312,7 +314,7 @@ Version and tag `vX.Y.Z` come from `pubspec.yaml`. When uploading manually, uplo
 | Цепочка прокси | Xray |
 | Профиль WireGuard / AmneziaWG | mihomo |
 
-Выбор живёт в **Настройки → О приложении** и касается ссылок, которые берут оба ядра; **Автоматически** отдаёт их Xray. Если сервер не может поехать на выбранном ядре, приложение скажет об этом сразу, а не переключится молча: именно тихий откат превращает «включила mihomo, а пишет Xray» в неразрешимую загадку.
+Для ссылок, которые поддерживают оба ядра, ядро выбирается в **Настройки → О приложении**; **Автоматически** — это Xray. Если сервер не работает на выбранном ядре, приложение покажет ошибку.
 
 ---
 
@@ -335,9 +337,9 @@ Version and tag `vX.Y.Z` come from `pubspec.yaml`. When uploading manually, uplo
 
 Hysteria v1 не поддерживается.
 
-Подписка Clash или sing-box раскладывается на серверы, по одному на узел. Конфиг Clash остаётся целиком, только если узлы разобрать не вышло (`proxy-providers`, незнакомые приложению типы узлов), — тогда его исполняет mihomo ровно так, как написал автор.
+Подписки Clash и sing-box раскладываются на серверы, по одному на узел. Конфиг Clash, который разложить нельзя (`proxy-providers`, неизвестные типы узлов), импортируется одним сервером и работает на mihomo как есть.
 
-Готовый конфиг исполняется так, как его написал автор: роутинг, DNS и цепочки аутбаундов остаются его, подменяются только инбаунды на собственные. Имя берётся из корневого `remarks`. Первыми решают авторские правила, и до списков обход / прокси / блок доходит только то, что они не поймали, — а если конфиг кончается catch-all-правилом, как бывает почти всегда, не доходит вовсе.
+Готовый конфиг сохраняет свою маршрутизацию, DNS и цепочки аутбаундов, заменяются только инбаунды. Имя сервера берётся из корневого `remarks`. Списки маршрутизации приложения применяются только к трафику, который не поймали правила самого конфига.
 
 ---
 
@@ -348,9 +350,9 @@ Hysteria v1 не поддерживается.
 | Режим | Что делает |
 |-------|------------|
 | **VPN** | Через туннель идёт всё устройство. При первом подключении — разрешение VPN. |
-| **Proxy** | SOCKS и HTTP на `127.0.0.1`, сам по себе не перехватывает ничего — на него нужно направить программу или настройки прокси в Wi-Fi. |
+| **Proxy** | SOCKS и HTTP на `127.0.0.1`. Прокси нужно указать в программе или в настройках Wi-Fi. |
 
-Маршрутизация по приложениям и перехват DNS живут в режиме VPN. Значок в шторке, плитка в быстрых настройках и ярлыки «подключить» и «отключить» на значке приложения; подписки обновляются в фоне.
+Маршрутизация по приложениям и перехват DNS работают только в режиме VPN. Подключаться и отключаться можно из уведомления, плитки в быстрых настройках и ярлыков на значке приложения. Подписки обновляются в фоне.
 
 ### Windows
 
@@ -361,11 +363,11 @@ Hysteria v1 не поддерживается.
 
 Окно сворачивается в трей и запоминает свой размер и позицию. Автозапуск вместе с системой, при желании с автоподключением. Глобальные хоткеи — в Настройки → Дополнительно → Горячие клавиши. Подписки обновляются, пока приложение открыто.
 
-**Где лежат настройки:** `%APPDATA%\com.keqdroid\keqdroid\` — не в папке с exe. Перенос на другой ПК: резервная копия и восстановление в настройках.
+**Где лежат настройки:** `%APPDATA%\com.keqdroid\keqdroid\`, не в папке с exe. Для переноса на другой ПК есть резервная копия и восстановление.
 
 ### Linux
 
-Debian/Fedora/Arch, x86_64. В релизе — AppImage, deb, rpm и tar.gz. Для Arch пакет лежит на AUR — `yay -S keqdroid-bin`; тот же `PKGBUILD` есть и среди файлов релиза — для ручного `makepkg -si`.
+Debian/Fedora/Arch, x86_64. В релизе есть AppImage, deb, rpm и tar.gz. Для Arch: `yay -S keqdroid-bin` из AUR или `makepkg -si` с `PKGBUILD` из релиза.
 
 | Режим | Что делает |
 |-------|------------|
@@ -397,9 +399,9 @@ flutter build apk --release      # Android
 flutter build windows --release  # Windows
 ```
 
-Список Windows-плагинов (`windows/flutter/app_plugins.cmake`) лежит в репозитории уже без Firebase (он только для Android), так что обычная сборка работает сразу. Перезапускать `powershell -File tool/sync_windows_plugins.ps1` нужно только после добавления или удаления плагинов.
+Список Windows-плагинов (`windows/flutter/app_plugins.cmake`) лежит в репозитории без Firebase, который нужен только на Android. После добавления или удаления плагинов запустите `powershell -File tool/sync_windows_plugins.ps1`.
 
-**Linux** — только на Linux или в WSL, Windows SDK для Linux не подходит:
+**Linux** собирается только на Linux или в WSL:
 
 ```bash
 wsl -e bash /mnt/c/.../keqdroid/tool/build_linux_wsl.sh
@@ -418,13 +420,13 @@ powershell -ExecutionPolicy Bypass -File tool\make_release.ps1
 powershell -ExecutionPolicy Bypass -File tool\make_release.ps1 -Publish -NotesFile notes.md
 ```
 
-Пакет для AUR уезжает отдельно и после того, как релиз на GitHub уже есть: его `PKGBUILD` качает архив оттуда.
+Пакет AUR публикуется после релиза на GitHub: его `PKGBUILD` скачивает архив оттуда.
 
 ```bash
 wsl -e bash /mnt/c/.../keqdroid/tool/publish_aur.sh
 ```
 
-Версия и тег `vX.Y.Z` берутся из `pubspec.yaml`. При ручной заливке рядом с файлами нужен `SHA256SUMS` — хеш, которого апдейтер не нашёл, для него повод отказаться.
+Версия и тег `vX.Y.Z` берутся из `pubspec.yaml`. При ручной загрузке добавьте `SHA256SUMS`, иначе апдейтер не установит обновление.
 
 ---
 
