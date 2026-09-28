@@ -17,10 +17,10 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get vpnConnecting => '正在连接...';
+  String get vpnConnecting => '正在连接…';
 
   @override
-  String get vpnDisconnecting => '正在断开...';
+  String get vpnDisconnecting => '正在断开…';
 
   @override
   String vpnTapToConnect(Object serverName) {
@@ -46,7 +46,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get updateActionNow => '更新';
 
   @override
-  String get updateApplying => '正在安装更新...';
+  String get updateApplying => '正在安装更新…';
 
   @override
   String get errorSubscriptionTitle => '订阅错误';
@@ -67,13 +67,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get errorConnectionGeneric => '连接错误';
 
   @override
-  String get errorProviderConfigTitle => '需要配置提供商';
+  String get errorProviderConfigTitle => '需要服务商进行配置';
 
   @override
-  String get errorProviderNoHostsMessage => '提供商未为此订阅分配主机。';
+  String get errorProviderNoHostsMessage => '服务商未给此订阅分配主机。';
 
   @override
-  String get errorProviderNoHostsAction => '打开提供商面板，添加或分配主机，然后刷新订阅。';
+  String get errorProviderNoHostsAction => '请打开服务商面板，添加或分配主机，然后刷新订阅。';
 
   @override
   String errorActionLabel(Object action) {
@@ -93,7 +93,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get splitModeAllExceptSelected => '除所选之外的全部';
 
   @override
-  String get splitSearchHint => '搜索应用...';
+  String get splitSearchHint => '搜索应用…';
 
   @override
   String get splitNoAppsFound => '未找到应用';
@@ -185,13 +185,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsRoutingResetDone => '路由规则已重置';
 
   @override
-  String get settingsRoutingHeaderDesc => '哪些站点绕过 VPN、哪些经过 VPN、哪些被阻止';
+  String get settingsRoutingHeaderDesc => '哪些网站绕过 VPN、哪些经过 VPN、哪些被阻止';
 
   @override
   String get settingsRoutingPresetsTitle => '快速预设';
 
   @override
-  String get settingsRoutingPresetsHint => '精选列表，添加到下方对应字段';
+  String get settingsRoutingPresetsHint => '现成的列表，会添加到下方对应的字段';
 
   @override
   String get settingsRoutingPresetChoose => '选择预设…';
@@ -200,55 +200,55 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsRoutingPresetAdd => '添加';
 
   @override
-  String get settingsRoutingPresetRuTitle => '俄罗斯站点 — 直连';
+  String get settingsRoutingPresetRuTitle => '俄罗斯网站走直连';
 
   @override
   String get settingsRoutingPresetRuDesc => '所有 .ru / .рф 域名及主要俄罗斯服务绕过 VPN（向“直连”添加域名）';
 
   @override
-  String get settingsRoutingPresetRuGeoipTitle => '俄罗斯 IP（GeoIP）— 直连';
+  String get settingsRoutingPresetRuGeoipTitle => '俄罗斯 IP（GeoIP）走直连';
 
   @override
-  String get settingsRoutingPresetRuGeoipDesc => '通过 GeoIP 让所有俄罗斯 IP 段绕过 VPN — 仅代理模式有效';
+  String get settingsRoutingPresetRuGeoipDesc => '通过 GeoIP 让所有俄罗斯 IP 段绕过 VPN。代理模式下同样有效。';
 
   @override
-  String get settingsRoutingPresetRuGeositeTitle => '俄罗斯网站 (GeoSite) — 直连';
+  String get settingsRoutingPresetRuGeositeTitle => '俄罗斯网站（GeoSite）走直连';
 
   @override
   String get settingsRoutingPresetRuGeositeDesc => 'GeoSite 数据库中的俄罗斯域名绕过 VPN';
 
   @override
-  String get settingsRoutingPresetBanksTitle => '银行和政务 — 直连';
+  String get settingsRoutingPresetBanksTitle => '银行和政务网站走直连';
 
   @override
   String get settingsRoutingPresetBanksDesc => '银行、支付和政务门户绕过 VPN';
 
   @override
-  String get settingsRoutingPresetLanIpsTitle => '本地网络 — 直连';
+  String get settingsRoutingPresetLanIpsTitle => '局域网走直连';
 
   @override
-  String get settingsRoutingPresetLanIpsDesc => '私有局域网 IP 段（192.168.x、10.x …）绕过 VPN';
+  String get settingsRoutingPresetLanIpsDesc => '局域网私有 IP 段（192.168.x、10.x 等）绕过 VPN';
 
   @override
-  String get settingsRoutingPresetAdsTitle => '广告和跟踪器 — 阻止';
+  String get settingsRoutingPresetAdsTitle => '阻止广告和跟踪器';
 
   @override
-  String get settingsRoutingPresetAdsDesc => '丢弃常见的广告 / 分析主机';
+  String get settingsRoutingPresetAdsDesc => '阻止常见的广告和统计分析主机';
 
   @override
-  String get settingsRoutingPresetAdsGeositeTitle => '广告 (GeoSite) — 拦截';
+  String get settingsRoutingPresetAdsGeositeTitle => '阻止广告（GeoSite）';
 
   @override
-  String get settingsRoutingPresetAdsGeositeDesc => '拦截 GeoSite 数据库中的大量广告 / 跟踪器';
+  String get settingsRoutingPresetAdsGeositeDesc => '阻止 GeoSite 数据库中的完整广告和跟踪器列表';
 
   @override
-  String get settingsRoutingPresetStreamingTitle => '流媒体 — 代理';
+  String get settingsRoutingPresetStreamingTitle => '流媒体走 VPN';
 
   @override
   String get settingsRoutingPresetStreamingDesc => '强制 YouTube、Netflix、Twitch 经过 VPN';
 
   @override
-  String get settingsRoutingPresetMessengersTitle => '即时通讯 — 代理';
+  String get settingsRoutingPresetMessengersTitle => '即时通讯走 VPN';
 
   @override
   String get settingsRoutingPresetMessengersDesc => '强制 Telegram、Discord、WhatsApp 经过 VPN';
@@ -262,10 +262,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsRoutingDirectTitle => '直连（绕过 VPN）';
 
   @override
-  String get settingsRoutingProxyTitle => '代理（强制 VPN）';
+  String get settingsRoutingProxyTitle => '代理（走 VPN）';
 
   @override
-  String get settingsRoutingBlockTitle => '已阻止';
+  String get settingsRoutingBlockTitle => '阻止';
 
   @override
   String get settingsRoutingValuesHint => '每行一个，或用逗号分隔';
@@ -277,7 +277,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsRoutingFinalProxy => '代理';
 
   @override
-  String get settingsRoutingFinalDirect => '绕过';
+  String get settingsRoutingFinalDirect => '直连';
 
   @override
   String get settingsRoutingFinalBlock => '阻止';
@@ -340,7 +340,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get routingCheatSheetTitle => '怎么写规则';
 
   @override
-  String get routingCheatSheetBody => '规则就是一张清单：什么走哪里。每一行是一个域名、一个 IP 或一个地理标签，旁边写上动作：直连（绕过）、走 VPN（代理），或者屏蔽。\n\n## 域名\nvk.com — 这个域名本身和它所有子域名\nru — 所有以 .ru 结尾的（直接写个词，不带点）\n.example.com — 只匹配子域名，不含域名本身\nfull:example.com — 就这一个主机，不含子域名\nregexp:… — 实在需要花活儿时，用正则\n\n## IP 地址\n1.2.3.4 — 单个地址\n10.0.0.0/8 — 一整段（CIDR）\n\n## GeoIP — 按国家\ngeoip:ru — 所有俄罗斯 IP。把 ru 换成任意国家：us、de、cn、ua、kz……\n还有现成的包：geoip:private（局域网）、geoip:telegram、geoip:google。\n想按国家就用它——geoip 全都认得。\n\n## GeoSite — 现成清单\ngeosite:google、geosite:netflix、geosite:telegram、geosite:category-ads-all……\n这些不是国家，而是别人已经整理好的服务分类。\n这里几乎没有国家（只有 geolocation-cn 和 geolocation-!cn），所以按国家还得靠 geoip。\n\n## 在电脑上（keqrnel 内核）\n地理规则和手机上一样：由 keqrnel 内置的 xray 来匹配。只要 geoip.dat 和 geosite.dat 和 keqdroid.exe 放在一起就行——正式版里本来就有。要是地理规则好像没生效，先检查这两个文件。\n\n## 顺序\n从上到下：先屏蔽，再是你的服务器（始终直连，否则会成环），然后绕过，然后代理。剩下的都走上面「其余流量」那个开关。';
+  String get routingCheatSheetBody => '规则就是一张清单：什么流量走哪里。每一行写一个域名、IP 或地理标签，旁边是动作：直连（不走 VPN）、走 VPN（代理）或阻止。\n\n## 域名\nvk.com — 这个域名本身及其所有子域名\nru — 所有以 .ru 结尾的域名（只写这个词，不带点）\n.example.com — 只匹配子域名，不含域名本身\nfull:example.com — 只匹配这一个主机，不含子域名\nregexp:… — 正则表达式，确实需要复杂匹配时再用\n\n## IP 地址\n1.2.3.4 — 单个地址\n10.0.0.0/8 — 一整段地址（CIDR）\n\n## GeoIP：按国家\ngeoip:ru — 所有俄罗斯 IP。把 ru 换成任意国家代码：us、de、cn、ua、kz……\n另有现成的集合：geoip:private（局域网）、geoip:telegram、geoip:google。\n要按国家分流？就用它，geoip 认得所有国家。\n\n## GeoSite：现成的列表\ngeosite:google、geosite:netflix、geosite:telegram、geosite:category-ads-all……\n这些不是国家，而是别人已经整理好的服务分类。\n这里几乎没有国家（只有 geolocation-cn 和 geolocation-!cn），所以按国家还是要用 geoip。\n\n## 在电脑上（keqrnel 内核）\n地理规则和手机上一样生效：由 keqrnel 内置的 xray 负责匹配。只需让 geoip.dat 和 geosite.dat 与 keqdroid.exe 放在同一目录，正式版里已经放好了。如果地理规则似乎没有生效，请先检查这两个文件。\n\n## 顺序\n从上到下：先阻止，再是您的服务器（始终直连，否则会形成回环），然后直连，最后代理。其余的流量按上方“其余流量”开关处理。';
 
   @override
   String settingsRoutingItemCount(int count) {
@@ -389,10 +389,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get serversTwoColumnsTitle => '两列显示';
 
   @override
-  String get appearanceServerIconThemeColors => '无国旗的服务器图标使用主题配色';
+  String get appearanceServerIconThemeColors => '无国旗的图标使用主题色';
 
   @override
-  String get settingsLanProxyTitle => 'LAN 代理';
+  String get settingsLanProxyTitle => '局域网代理';
 
   @override
   String get settingsOff => '关闭';
@@ -424,7 +424,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsLanPasswordLabel => '密码';
 
   @override
-  String get settingsLanAuthHint => '两项都填写 — 设备需用其登录代理。留空 — 无密码（局域网内任何人都可使用）。';
+  String get settingsLanAuthHint => '两项都填写时，设备需用它们登录代理。留空则没有密码，局域网内任何人都能使用。';
 
   @override
   String get settingsLocalPortsTitle => '本地代理端口';
@@ -510,7 +510,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsXrayMuxConcurrency => 'TCP 子连接';
 
   @override
-  String get settingsXrayMuxXudpConcurrency => 'UDP 子连接 (XUDP)';
+  String get settingsXrayMuxXudpConcurrency => 'UDP 子连接（XUDP）';
 
   @override
   String get settingsXrayMuxUdp443Title => 'QUIC (UDP/443)';
@@ -600,7 +600,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsXrayNoiseEnable => 'UDP 前发送噪声';
 
   @override
-  String get settingsXrayNoiseEnableHint => '在第一个真实数据包之前先向服务器发一个垃圾包。用于 hysteria 和 mkcp——它们没有可切分的 ClientHello。';
+  String get settingsXrayNoiseEnableHint => '在第一个真实数据包之前先向服务器发送一个垃圾包。适用于 hysteria 和 mkcp，它们没有可切分的 ClientHello。';
 
   @override
   String get settingsXrayNoiseKindTitle => '发送什么';
@@ -624,7 +624,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsXrayNoiseRandLength => '长度（字节）';
 
   @override
-  String get settingsXrayNoiseRandBytes => '字节取值 (0-255)';
+  String get settingsXrayNoiseRandBytes => '字节取值（0-255）';
 
   @override
   String get settingsXrayNoiseDelay => '延迟（毫秒）';
@@ -690,10 +690,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsTunUdpTimeoutHint => '空闲 UDP 会话的 NAT 存活时间，默认 300';
 
   @override
-  String get settingsTunStrictRouteTitle => '严格路由 (strict route)';
+  String get settingsTunStrictRouteTitle => '严格路由';
 
   @override
-  String get settingsTunStrictRouteHint => '防止流量绕过 TUN。在 Windows 上，若有其他 VPN（如 Tailscale）处于活动状态，可能破坏路由';
+  String get settingsTunStrictRouteHint => '防止流量绕过 TUN。在 Windows 上，如有其他 VPN（如 Tailscale）处于活动状态，可能会破坏路由';
 
   @override
   String get settingsTunStrictRouteAuto => '自动';
@@ -711,10 +711,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsTunEin => 'Endpoint-independent NAT';
 
   @override
-  String get settingsTunEinHint => 'UDP 的全锥形 NAT — 有助于 P2P 和游戏。仅 gVisor/mixed 栈';
+  String get settingsTunEinHint => '为 UDP 提供全锥形 NAT，有助于 P2P 和游戏。仅适用于 gVisor/mixed 协议栈';
 
   @override
-  String get settingsTunAutoRoute => '自动路由 (auto route)';
+  String get settingsTunAutoRoute => '自动路由';
 
   @override
   String get settingsTunAutoRouteHint => '把系统路由加入隧道。关闭后流量不会进入 TUN。';
@@ -732,10 +732,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsFakeIpHint => '用假地址即时解析。代理模式下不生效。';
 
   @override
-  String get settingsPingTitle => '服务器 Ping';
+  String get settingsPingTitle => '延迟测试';
 
   @override
-  String get settingsPingMethodTitle => 'Ping 方式';
+  String get settingsPingMethodTitle => '测试方式';
 
   @override
   String get settingsPingMethodTcp => 'TCP Ping';
@@ -753,7 +753,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsPingMethodUrl => '通过代理的 HTTP';
 
   @override
-  String get settingsPingMethodUrlHint => '测量通过服务器的 GET 延迟';
+  String get settingsPingMethodUrlHint => '通过服务器发送 GET 请求并测量延迟';
 
   @override
   String get settingsPingKeepAliveTitle => '测量方式';
@@ -762,13 +762,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsPingKeepAlive => '在已建立的连接上测量';
 
   @override
-  String get settingsPingKeepAliveHint => '请求发两次，计入第二次——不含握手。关闭时只发一次，连预热一起算，就像第一次打开网页。';
+  String get settingsPingKeepAliveHint => '请求发送两次，只计第二次，不含握手时间。关闭时只发一次，连同预热一起计算，就像第一次打开网页。';
 
   @override
-  String get settingsPingMethodSpeed => '速度测试';
+  String get settingsPingMethodSpeed => '测速';
 
   @override
-  String get settingsPingMethodSpeedHint => '通过服务器下载固定大小的数据并以 Mbps 显示吞吐量（无需 VPN 即可工作）';
+  String get settingsPingMethodSpeedHint => '通过服务器下载固定大小的数据，并以 Mbps 显示吞吐量（无需连接 VPN）';
 
   @override
   String get settingsPingTargetTitle => 'HTTP 测试 URL';
@@ -789,7 +789,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsPingCustomUrl => 'URL';
 
   @override
-  String get settingsPingCustomUrlHint => '用于 GET 请求的 https:// 或 http:// 地址';
+  String get settingsPingCustomUrlHint => '用于 GET 请求的地址（https:// 或 http://）';
 
   @override
   String get settingsPingCustomUrlInvalid => '无效或不安全的 URL（不允许 localhost 或私有网络）';
@@ -851,7 +851,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get subscriptionIdentityHwid => 'HWID';
 
   @override
-  String get subscriptionIdentityHwidOff => '高级设置中已关闭「共享设备 HWID」，因此不会发送任何 HWID，自定义的也不会。';
+  String get subscriptionIdentityHwidOff => '高级设置中已关闭“发送设备 HWID”，因此不会发送任何 HWID，包括自定义的。';
 
   @override
   String get subscriptionIdentityUserAgent => 'User-Agent';
@@ -890,16 +890,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get subscriptionIdentitySectionDesktop => '桌面';
 
   @override
-  String get subscriptionIdentitySectionAndroidRelease => 'Android — 版本';
+  String get subscriptionIdentitySectionAndroidRelease => 'Android 版本';
 
   @override
-  String get subscriptionIdentitySectionAndroidBuild => 'Android — 构建号';
+  String get subscriptionIdentitySectionAndroidBuild => 'Android 构建号';
 
   @override
-  String get subscriptionIdentitySectionIosRelease => 'iOS — 版本';
+  String get subscriptionIdentitySectionIosRelease => 'iOS 版本';
 
   @override
-  String get subscriptionIdentitySectionIosBuild => 'iOS — 构建号';
+  String get subscriptionIdentitySectionIosBuild => 'iOS 构建号';
 
   @override
   String get subscriptionIdentitySearchOrEnter => '搜索或自行输入';
@@ -918,7 +918,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String subscriptionsDeleteConfirm(Object name) {
-    return '确定要删除“$name”吗？\n\n这还会移除所有关联的服务器。';
+    return '确定要删除“$name”吗？\n\n该订阅中的服务器也会一并删除。';
   }
 
   @override
@@ -1030,13 +1030,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get serversRefreshSubscription => '刷新订阅';
 
   @override
-  String get serversPingAll => '全部 Ping';
+  String get serversPingAll => '测试全部延迟';
 
   @override
   String get settingsAdvanced => '高级';
 
   @override
-  String get settingsAdvancedSubtitle => '内核设置、Ping、路由、HWID 和调试';
+  String get settingsAdvancedSubtitle => '内核设置、延迟测试、路由、HWID 和调试';
 
   @override
   String get serverEditorJsonValid => '有效的 Xray 配置';
@@ -1054,7 +1054,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get subscriptionsProviderPage => '订阅页面';
 
   @override
-  String get subscriptionsSupport => '客服支持';
+  String get subscriptionsSupport => '客服';
 
   @override
   String get subscriptionsLinkOpenFailed => '无法打开链接';
@@ -1120,7 +1120,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsPickExportedFile => '选好文件后再挑要恢复的部分';
 
   @override
-  String get settingsWorking => '处理中...';
+  String get settingsWorking => '处理中…';
 
   @override
   String settingsImportedSections(int count) {
@@ -1128,7 +1128,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get settingsShareHwidTitle => '分享设备 HWID';
+  String get settingsShareHwidTitle => '发送设备 HWID';
 
   @override
   String get settingsShareHwidOn => '随订阅请求发送';
@@ -1146,10 +1146,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsDebugModeOff => '关闭';
 
   @override
-  String get settingsOpenXrayLogs => '打开 Xray 日志';
+  String get settingsOpenXrayLogs => '打开内核日志';
 
   @override
-  String get settingsXrayCoreLogs => 'Xray 内核日志';
+  String get settingsXrayCoreLogs => '内核日志';
 
   @override
   String get settingsRefresh => '刷新';
@@ -1161,7 +1161,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsAppVersion => '应用版本';
 
   @override
-  String get settingsChecking => '正在检查...';
+  String get settingsChecking => '正在检查…';
 
   @override
   String get settingsCheckFailed => '检查失败';
@@ -1176,7 +1176,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsNewVersionAvailable => '有新版本可用';
 
   @override
-  String get settingsDownloading => '正在下载...';
+  String get settingsDownloading => '正在下载…';
 
   @override
   String get settingsCheckForUpdates => '检查更新';
@@ -1251,13 +1251,13 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get splitProxyModeWarning => '在 Proxy 模式下不会应用分应用代理 — 所有流量都经过系统代理。请将连接模式切换为 TUN（在侧边栏中），这样按进程的规则才会生效。';
+  String get splitProxyModeWarning => '代理模式下不会应用分应用代理，所有流量都经过系统代理。请在侧边栏中把连接模式切换为 TUN，按进程的规则才会生效。';
 
   @override
-  String get settingsLatestVersionInstalled => '你已是最新版本';
+  String get settingsLatestVersionInstalled => '已是最新版本';
 
   @override
-  String get serversPingServer => 'Ping 服务器';
+  String get serversPingServer => '测试延迟';
 
   @override
   String get serversCopyAddress => '复制服务器地址';
@@ -1275,10 +1275,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get serversDeleteServer => '删除服务器';
 
   @override
-  String get settingsDebugHintDesktop => '显示 Xray 会话日志。实时 VPN 指标显示在连接按钮下方。';
+  String get settingsDebugHintDesktop => '显示内核的会话日志。实时 VPN 指标显示在连接按钮下方。';
 
   @override
-  String get settingsDebugHintMobile => '在服务器卡片中显示实时 VPN 指标和 Xray 日志。';
+  String get settingsDebugHintMobile => '在服务器卡片中显示实时 VPN 指标，并显示内核日志。';
 
   @override
   String get desktopConnectionMode => '连接模式';
@@ -1308,7 +1308,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsAutoConnectOnAutostart => '启动时自动连接';
 
   @override
-  String get settingsAutoConnectRequiresAutostart => '请先启用「随 Windows 启动」';
+  String get settingsAutoConnectRequiresAutostart => '请先启用“随 Windows 启动”';
 
   @override
   String get desktopTunAdminTitle => '需要管理员权限';
@@ -1341,7 +1341,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get trayPickServer => '选择服务器…';
 
   @override
-  String get trayModeProxy => 'Proxy';
+  String get trayModeProxy => '代理';
 
   @override
   String get trayModeTun => 'TUN';
@@ -1362,7 +1362,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get serversSortDefault => '默认顺序';
 
   @override
-  String get serversSortPing => 'Ping（从低到高）';
+  String get serversSortPing => '延迟（从低到高）';
 
   @override
   String get serversSortSpeed => '速度（从高到低）';
@@ -1414,7 +1414,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get serversEmptyGroupHint => '此订阅中没有服务器';
 
   @override
-  String get statsInLabel => '下载';
+  String get statsInLabel => '已下载';
 
   @override
   String get statsTimeLabel => '时长';
@@ -1432,7 +1432,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get statsSplitDirectTag => '直连';
 
   @override
-  String get statsSplitVpnLabel => '经由代理';
+  String get statsSplitVpnLabel => '经由 VPN';
 
   @override
   String get statsSplitDirectLabel => '直连';
@@ -1476,7 +1476,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get hotkeyActionToggleConnection => '连接 / 断开';
 
   @override
-  String get hotkeyActionToggleTun => '切换 TUN / Proxy';
+  String get hotkeyActionToggleTun => '切换 TUN / 代理';
 
   @override
   String get hotkeyActionBestPing => '切换到延迟最低的服务器';
@@ -1505,7 +1505,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get hotkeyClearTooltip => '清除快捷键';
 
   @override
-  String get hotkeyNoPingData => '暂无延迟数据 — 请先运行延迟测试';
+  String get hotkeyNoPingData => '暂无延迟数据，请先进行延迟测试';
 
   @override
   String get clipboardNoSubscriptionLink => '剪贴板中没有订阅链接（http/https）';
@@ -1540,7 +1540,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get errorPolkitNoAgentMessage => '请求 root 权限没有得到响应：没有运行 polkit 认证代理。';
 
   @override
-  String get errorPolkitNoAgentAction => '请启动适合你桌面环境的 polkit 代理（polkit-gnome、lxqt-policykit 等），或在设置中切换到代理模式。';
+  String get errorPolkitNoAgentAction => '请启动适合您桌面环境的 polkit 代理（polkit-gnome、lxqt-policykit 等），或在设置中切换到代理模式。';
 
   @override
   String get errorVpnPermissionMessage => '未授予 VPN 权限。';
@@ -1549,16 +1549,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get errorVpnPermissionAction => '请在系统对话框中允许 VPN 权限，然后重试。';
 
   @override
-  String get errorHwidBindMessage => '提供商要求绑定此设备的 HWID。';
+  String get errorHwidBindMessage => '服务商要求绑定此设备的 HWID。';
 
   @override
-  String get errorHwidBindAction => '请在提供商面板中绑定此设备，然后刷新订阅。';
+  String get errorHwidBindAction => '请在服务商面板中绑定此设备，然后刷新订阅。';
 
   @override
-  String get errorDeviceLimitMessage => '由于设备数量限制，提供商拒绝了订阅。';
+  String get errorDeviceLimitMessage => '由于设备数量限制，服务商拒绝了订阅。';
 
   @override
-  String get errorDeviceLimitAction => '请在提供商面板中移除旧设备或提高设备上限。';
+  String get errorDeviceLimitAction => '请在服务商面板中移除旧设备或提高设备上限。';
 
   @override
   String get errorConfigInvalidMessage => '订阅或服务器配置无效。';
@@ -1567,7 +1567,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get errorConfigInvalidAction => '请检查链接/配置格式，并导入有效的订阅链接。';
 
   @override
-  String get errorAuthDeniedMessage => '提供商拒绝了对订阅的访问。';
+  String get errorAuthDeniedMessage => '服务商拒绝了对订阅的访问。';
 
   @override
   String get errorAuthDeniedAction => '请检查令牌/凭据，并确认订阅未过期。';
@@ -1576,7 +1576,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get errorSubUrlInvalidMessage => '订阅链接缺失或已过期。';
 
   @override
-  String get errorSubUrlInvalidAction => '请向提供商索取新链接并在应用中更新。';
+  String get errorSubUrlInvalidAction => '请向服务商索取新链接并在应用中更新。';
 
   @override
   String get errorSubInsecureHttpMessage => '订阅链接使用明文 http，更新已被阻止。';
@@ -1585,7 +1585,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get errorSubInsecureHttpAction => '请将链接替换为 https 版本。';
 
   @override
-  String get subInsecureHttpWarning => 'http 链接 — 更新已被阻止';
+  String get subInsecureHttpWarning => 'http 链接，更新已被阻止';
 
   @override
   String get subSwitchToHttps => '改用 https';
@@ -1618,7 +1618,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get errorDeviceLimitTitle => '已达设备上限';
 
   @override
-  String get errorProviderNoHostsTitle => '需要服务商配置';
+  String get errorProviderNoHostsTitle => '需要服务商进行配置';
 
   @override
   String get errorConfigInvalidTitle => '配置错误';
@@ -1701,16 +1701,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get serverEditorSecurityMode => '安全模式';
 
   @override
-  String get serverEditorFingerprint => '指纹 (uTLS)';
+  String get serverEditorFingerprint => '指纹（uTLS）';
 
   @override
   String get serverEditorAlpn => 'ALPN（逗号分隔）';
 
   @override
-  String get serverEditorAllowInsecure => '允许不安全证书 (insecure)';
+  String get serverEditorAllowInsecure => '允许不安全证书（insecure）';
 
   @override
-  String get serverEditorPbk => '公钥 (pbk)';
+  String get serverEditorPbk => '公钥（pbk）';
 
   @override
   String get serverEditorSid => 'Short ID (sid)';
@@ -1782,7 +1782,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get serverEditorAuth => '认证密码';
 
   @override
-  String get serverEditorObfs => '混淆 (obfs)';
+  String get serverEditorObfs => '混淆（obfs）';
 
   @override
   String get serverEditorObfsPassword => '混淆密码';
@@ -1794,13 +1794,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get serverEditorDown => '下行 Mbps';
 
   @override
-  String get serverEditorMport => '端口跳跃 (mport)';
+  String get serverEditorMport => '端口跳跃（mport）';
 
   @override
   String get serverEditorHopInterval => '跳跃间隔（秒）';
 
   @override
-  String get serverEditorPinSha256 => '证书固定 (SHA-256)';
+  String get serverEditorPinSha256 => '证书固定（SHA-256）';
 
   @override
   String get serverEditorRawConfig => '原始配置';
@@ -1815,7 +1815,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get serverEditorPreview => '最终链接';
 
   @override
-  String get serverEditorSubscriptionNote => '该服务器来自订阅：更新订阅时将保留你的修改。';
+  String get serverEditorSubscriptionNote => '该服务器来自订阅：更新订阅时将保留您的修改。';
 
   @override
   String get serverEditorOverriddenNote => '配置已手动修改，订阅更新不再覆盖它。';
@@ -1842,7 +1842,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appearanceTabThemes => '主题';
 
   @override
-  String get appearanceAmoled => '纯黑 (AMOLED)';
+  String get appearanceAmoled => '纯黑（AMOLED）';
 
   @override
   String get appearanceAmoledNeedsDark => '需要开启深色主题';
@@ -1857,10 +1857,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appearanceShowTime => '连接时长';
 
   @override
-  String get appearanceShowTrafficSplit => '代理与直连流量分开';
+  String get appearanceShowTrafficSplit => '分别统计 VPN 与直连流量';
 
   @override
-  String get appearanceWaveLatencyColor => '波形颜色按延迟';
+  String get appearanceWaveLatencyColor => '按延迟为波形着色';
 
   @override
   String get appearanceFontTitle => '字体';
@@ -1875,7 +1875,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsResetConfirmAction => '重置';
 
   @override
-  String get settingsResetRoutingConfirm => '将恢复内置路由规则并清除你的直连/代理/屏蔽列表。此操作无法撤销。';
+  String get settingsResetRoutingConfirm => '将恢复内置路由规则并清除您的直连/代理/阻止列表。此操作无法撤销。';
 
   @override
   String get settingsXrayResetConfirm => '将恢复 Xray 内核、TUN 和本地端口的默认设置。此操作无法撤销。';
@@ -1896,13 +1896,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsPermBatteryTitle => '不受限制的后台运行';
 
   @override
-  String get settingsPermBatteryDesc => '否则系统可能阻止从快捷设置磁贴启动 VPN';
+  String get settingsPermBatteryDesc => '不开启时，系统可能不允许从快捷设置功能块启动 VPN';
 
   @override
   String get settingsPermAutostartTitle => '自启动';
 
   @override
-  String get settingsPermAutostartDesc => '厂商系统设置：未开启时，VPN 可能无法从快捷设置磁贴启动，并可能在后台被关闭';
+  String get settingsPermAutostartDesc => '厂商系统设置：未开启时，VPN 可能无法从快捷设置功能块启动，并可能在后台被关闭';
 
   @override
   String get settingsPermAutostartHint => '找到自启动和后台运行（通常在电池相关设置中）并允许';
@@ -1959,7 +1959,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get tunRememberMessage => 'TUN 模式需要 root 并且每次都会要求输入密码。是否安装 polkit 规则，使其今后无需密码即可启动？安装时需要输入一次密码。';
 
   @override
-  String get tunRememberWarning => '此后，以你的用户身份运行的任何程序都能以 root 免密码启动 VPN 内核。可随时在“高级 → 权限”中撤销。';
+  String get tunRememberWarning => '此后，以您的用户身份运行的任何程序都能以 root 免密码启动 VPN 内核。可随时在“高级 → 权限”中撤销。';
 
   @override
   String get tunRememberEnable => '启用';
@@ -1974,19 +1974,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get tunRememberFailed => '无法更改 TUN 授权';
 
   @override
-  String get settingsRoutingPresetTelegramGeoTitle => 'Telegram（GeoIP+GeoSite）— 代理';
+  String get settingsRoutingPresetTelegramGeoTitle => 'Telegram（GeoIP+GeoSite）走 VPN';
 
   @override
   String get settingsRoutingPresetTelegramGeoDesc => '按域名和 IP 段匹配 Telegram（MTProto 直接使用 IP）';
 
   @override
-  String get settingsRoutingPresetRefilterTitle => '俄罗斯被封锁（Re-filter）— 代理';
+  String get settingsRoutingPresetRefilterTitle => '俄罗斯封锁的网站（Re-filter）走 VPN';
 
   @override
   String get settingsRoutingPresetRefilterDesc => '在俄罗斯被封锁的域名和 IP 走 VPN，其余直连';
 
   @override
-  String get settingsRoutingGeoUnknownTitle => '地理数据库中不存在 — 将被忽略';
+  String get settingsRoutingGeoUnknownTitle => '地理数据库中不存在，将被忽略';
 
   @override
   String get settingsRoutingGeoUnknownHint => '遇到未知的地理代码，内核会拒绝整个配置，因此这些条目会在连接前被丢弃。请用上面的地球按钮选择已有代码。';
@@ -2060,7 +2060,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get connectionsRuleHintAction => '设为 Info';
 
   @override
-  String get connectionsRuleHintApplied => '内核日志级别已设为 Info — 重新连接后生效';
+  String get connectionsRuleHintApplied => '内核日志级别已设为 Info，重新连接后生效';
 
   @override
   String get connectionsRuleDefault => '无规则（默认动作）';
@@ -2084,7 +2084,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get connectionsClosed => '已关闭';
 
   @override
-  String get connectionsAppNamesHint => '应用名称由系统提供，而系统只知道仍在进行的连接——已关闭的连接不会显示名称。';
+  String get connectionsAppNamesHint => '应用名称由系统提供，而系统只知道仍在进行的连接，已关闭的连接不会显示名称。';
 
   @override
   String get connectionsSplitTunnelNote => '被排除在隧道之外的应用不会列出：Android 让它们绕过隧道，其流量根本不会到达内核。';
@@ -2102,7 +2102,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String subscriptionsExpiredNotifBody(String name, String date) {
-    return '“$name”已于 $date 到期。服务商已停止更新服务器列表 — 请续订以保持服务器可用。';
+    return '“$name”已于 $date 到期。服务商已停止更新服务器列表，请续订以保持服务器可用。';
   }
 
   @override
@@ -2142,10 +2142,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chainRemoveNode => '移除节点';
 
   @override
-  String get chainExitNodeHint => '出口节点 — 网站看到的就是它的地址';
+  String get chainExitNodeHint => '出口节点，网站看到的是它的地址';
 
   @override
-  String get chainNodeMissing => '服务器已不存在 — 使用已保存的副本';
+  String get chainNodeMissing => '服务器已不存在，正在使用保存的副本';
 
   @override
   String get chainSave => '保存代理链';
@@ -2205,7 +2205,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsCoreMihomoSubtitle => '兼容 Clash 的内核。链式代理和现成的 xray 配置仍由 Xray 处理。';
 
   @override
-  String get settingsCoreHint => '下次连接时生效 — 当前会话不会重启。';
+  String get settingsCoreHint => '下次连接时生效，当前会话不会重启。';
 
   @override
   String get settingsProxyAuthTitle => '本地代理的密码';
@@ -2244,7 +2244,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsCoreAutoSubtitle => '链接交给 Xray，现成配置交给各自的内核';
 
   @override
-  String get settingsCoreSkipClash => '当前服务器是现成的 Clash 配置 —— 无论选择哪个内核，都只能由 mihomo 运行。';
+  String get settingsCoreSkipClash => '当前服务器是现成的 Clash 配置，无论选择哪个内核，都只能由 mihomo 运行。';
 
   @override
   String get settingsCoreSkipCustom => '当前服务器是现成的 Xray JSON 配置，因此无论选择哪个内核都由 libxray 运行。mihomo 需要普通链接的订阅。';
@@ -2253,16 +2253,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsCoreSkipChain => '当前服务器是代理链：各节点通过 Xray 的 dialerProxy 串联，因此无论选择哪个内核都由 libxray 运行。';
 
   @override
-  String get settingsCoreSkipAwg => '当前服务器是 AmneziaWG 配置 — 无论选择哪个内核，都由 mihomo 运行。';
+  String get settingsCoreSkipAwg => '当前服务器是 AmneziaWG 配置，无论选择哪个内核，都由 mihomo 运行。';
 
   @override
   String get settingsCoreSkipPlatform => '此平台未附带 mihomo 内核，连接将改用 Xray 内核。';
 
   @override
-  String get settingsCoreSkipLinkXrayOnly => '当前服务器的链接使用了 mihomo 在该协议下没有的传输方式 —— 无论选择哪个内核，都由 Xray 运行。';
+  String get settingsCoreSkipLinkXrayOnly => '当前服务器的链接使用了 mihomo 在该协议下不支持的传输方式，无论选择哪个内核，都由 Xray 运行。';
 
   @override
-  String get settingsCoreSkipLinkMihomoOnly => '当前服务器的链接使用了 Xray 26 已移除的传输方式 —— 无论选择哪个内核，都由 mihomo 运行。';
+  String get settingsCoreSkipLinkMihomoOnly => '当前服务器的链接使用了 Xray 26 已移除的传输方式，无论选择哪个内核，都由 mihomo 运行。';
 
   @override
   String get settingsInternalsCores => '内核';
@@ -2307,7 +2307,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appLogTitle => '应用日志';
 
   @override
-  String get appLogSubtitle => '按应用各部分查看发生了什么、哪里出错';
+  String get appLogSubtitle => '按应用各部分查看发生了什么、哪里出了错';
 
   @override
   String get appLogSourceApp => '应用';
@@ -2319,7 +2319,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appLogSourceNative => '原生部分';
 
   @override
-  String get appLogSourceNativeDesc => 'VPN 服务、快捷设置磁贴、连接窗口';
+  String get appLogSourceNativeDesc => 'VPN 服务、快捷设置功能块、连接窗口';
 
   @override
   String get appLogSourceExitsDesc => '系统记录：应用何时、为何被关闭';
@@ -2373,7 +2373,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String settingsInternalsGeoCodes(int count) {
-    return '条目：$count';
+    return '代码数：$count';
   }
 
   @override
@@ -2523,10 +2523,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get subscriptionCardVeilStrong => '重';
 
   @override
-  String get subscriptionCardAutoSelect => '服务器列表中的「自动」开关';
+  String get subscriptionCardAutoSelect => '服务器列表中的“自动”开关';
 
   @override
-  String get subscriptionCardAutoSelectHint => '在分组标题中加入开关。开启后由应用选择服务器，并在当前服务器不可用时自动切换。';
+  String get subscriptionCardAutoSelectHint => '在分组标题中加入“自动”开关。开启后由应用选择服务器，并在当前服务器不可用时自动切换。';
 
   @override
   String get subscriptionCardContentTitle => '显示内容';

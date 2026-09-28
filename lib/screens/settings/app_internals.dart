@@ -569,6 +569,7 @@ class _KeqtrisBestRow extends ConsumerWidget {
       label: switch (Localizations.localeOf(context).languageCode) {
         'ru' => 'Рекорд',
         'de' => 'Rekord',
+        'zh' => '最高分',
         'fa' => 'بهترین امتیاز',
         _ => 'Best score',
       },
