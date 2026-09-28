@@ -53,6 +53,10 @@
       "https://1.1.1.1/dns-query",
       "https://8.8.8.8/dns-query"
     ],
+    "direct-nameserver": [
+      "https://1.1.1.1/dns-query",
+      "https://8.8.8.8/dns-query"
+    ],
     "respect-rules": true
   },
   "proxies": [

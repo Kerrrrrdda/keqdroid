@@ -642,10 +642,19 @@ class MihomoConfigGen {
   }) {
     final core = settings.xrayCore;
     final servers = dnsServers(core);
+    final policy = buildNameserverPolicy(core);
     // Тот же смысл, что у `proxiedDoh` в xray-генераторе: перехват провайдером
     // имеет значение только там, где «всё остальное» и так идёт в туннель.
     final globalProxy =
         settings.finalOutbound == AppSettings.finalOutboundProxy;
+    // Через туннель DNS спрашивает от имени сервера, и CDN отдаёт узлы рядом с
+    // ним. Прямому соединению нужен ближний к дому узел, поэтому ему те же
+    // серверы, но из дома: этот список ядро читает без respect-rules
+    // (`parseNameServer(…, false)` в config.go) и набирает по нему прямые
+    // соединения, что бы до того ни нарезолвили правила.
+    final viaTunnel = globalProxy &&
+        servers.any((s) =>
+            !s.endsWith('#DIRECT') && s != 'system' && !s.startsWith('dhcp://'));
 
     return <String, dynamic>{
       'enable': true,
@@ -667,14 +676,19 @@ class MihomoConfigGen {
         // туннеле.
         'fake-ip-filter': fakeIpFilter,
       },
-      if (buildNameserverPolicy(core).isNotEmpty)
-        'nameserver-policy': buildNameserverPolicy(core),
+      if (policy.isNotEmpty) 'nameserver-policy': policy,
       'default-nameserver': bootstrapNameservers(core),
       // Адрес прокси-сервера — отдельной записью и всегда мимо туннеля (у xray
       // это `bootstrapDomains` со `skipFallback`): запрос по нему через прокси
       // означал бы круг.
       'proxy-server-nameserver': servers,
       'nameserver': servers,
+      if (viaTunnel) ...{
+        'direct-nameserver': servers,
+        // Иначе домен со своим резолвером (корпоративный) напрямую не открылся
+        // бы: своей политики у резолвера прямых соединений нет.
+        if (policy.isNotEmpty) 'direct-nameserver-follow-policy': true,
+      },
       // `respect-rules` гоняет DNS ядра по тем же правилам, что и трафик, то
       // есть в туннель. Ровно то, что делает схема `https://` вместо
       // `https+local://` у xray.

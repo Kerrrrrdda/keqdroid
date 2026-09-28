@@ -929,6 +929,59 @@ void main() {
       );
     });
 
+    // DNS через туннель спрашивает от имени сервера, и CDN отдаёт узлы у
+    // сервера, а не у дома. Прямому соединению нужен ближний узел, поэтому
+    // его адрес — из дома, теми же серверами. `direct-nameserver` ядро читает
+    // без respect-rules, так что `#DIRECT` к ним дописывать не нужно.
+    group('прямые соединения', () {
+      Map<String, dynamic> dnsOf(AppSettings s) => MihomoConfigGen.buildDns(s);
+
+      test('резолвятся из дома, когда DNS идёт через туннель', () {
+        final dns = dnsOf(const AppSettings());
+        expect(dns['respect-rules'], isTrue);
+        expect(dns['direct-nameserver'], dns['nameserver']);
+      });
+
+      test('лишнего не пишем, когда DNS и так из дома', () {
+        final local = dnsOf(const AppSettings(
+          xrayCore: XrayCoreSettings(
+            dnsUseCustom: true,
+            dnsServers: 'https+local://8.8.8.8/dns-query',
+          ),
+        ));
+        expect(local.containsKey('direct-nameserver'), isFalse);
+
+        // Без глобал-прокси respect-rules нет, и DNS идёт напрямую сам.
+        final direct = dnsOf(const AppSettings(
+          finalOutbound: AppSettings.finalOutboundDirect,
+        ));
+        expect(direct.containsKey('direct-nameserver'), isFalse);
+      });
+
+      test('системный резолвер переносится как есть', () {
+        final dns = dnsOf(const AppSettings(
+          xrayCore: XrayCoreSettings(
+            dnsUseCustom: true,
+            dnsServers: 'localhost\nhttps://9.9.9.9/dns-query',
+          ),
+        ));
+        expect(dns['direct-nameserver'], [
+          'system',
+          'https://9.9.9.9/dns-query',
+        ]);
+      });
+
+      // Иначе домен со своим резолвером (корпоративный) напрямую не открылся бы:
+      // у резолвера прямых соединений своей политики нет.
+      test('резолверы для отдельных доменов действуют и на прямые', () {
+        final dns = dnsOf(const AppSettings(
+          xrayCore: XrayCoreSettings(dnsPolicy: 'corp.example: 10.0.0.53'),
+        ));
+        expect(dns['nameserver-policy'], isNotEmpty);
+        expect(dns['direct-nameserver-follow-policy'], isTrue);
+      });
+    });
+
     test('+local переживает respect-rules', () {
       // При глобал-прокси ядро подставляет `RULES` каждому серверу с пустым
       // фрагментом, и «мимо туннеля» превращалось в «через туннель». Явное имя
