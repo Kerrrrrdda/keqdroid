@@ -2,23 +2,20 @@
 
 <strong>English</strong> · <a href="#русский">Русский</a>
 
-The only developer document: how to get the project running locally, build it for every
-platform, run the tests and cut a release. Everything else lives in the code and its
-comments.
+How to set up the project, build it for every platform, run the tests and make a release.
 
 ## 1. Prerequisites
 
 | Tool | Version | Notes |
 |------|---------|-------|
-| **Flutter SDK** | stable, 3.44+ (Dart `^3.11.3` — see `pubspec.yaml`) | the main toolchain |
+| **Flutter SDK** | stable, 3.44+ (Dart `^3.11.3`, see `pubspec.yaml`) | the main toolchain |
 | **Android Studio** + Android SDK | compileSdk 36 | minSdk = 24 (the Flutter default; `android/app/build.gradle.kts` does not override it) |
 | **JDK** | 17+ | Gradle's jvmTarget is 17; the JDK shipped with Android Studio (21) works too |
 | **Visual Studio** + "Desktop development with C++" | 2022 or newer | VS 2026 (18.x) builds fine: `windows/CMakeLists.txt` already sets `_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS` for the newer STL |
 | **WSL + Ubuntu** | — | to build the Linux target (the Windows SDK cannot do it) |
 | **gh CLI** | — | only for publishing releases |
 
-`flutter doctor` tells you what is missing. Complaints about a GitHub handshake while an
-HTTP proxy is active are a known quirk of the environment and do not affect the build.
+`flutter doctor` shows what is missing.
 
 ## 2. First run
 
@@ -26,8 +23,8 @@ HTTP proxy is active are a known quirk of the environment and do not affect the 
 flutter pub get
 ```
 
-`pub get` also generates the localizations (`flutter: generate: true` in pubspec) —
-`lib/l10n/app_localizations*.dart` appear on their own.
+`pub get` also generates the localizations into `lib/l10n/app_localizations*.dart`
+(`flutter: generate: true` in pubspec).
 
 ## 3. Build and run
 
@@ -39,13 +36,14 @@ flutter build apk --release
 ```
 
 - On the first connection the system asks for VPN permission.
+- Without a flag the APK is arm64-v8a; `--target-platform android-arm` builds the 32-bit
+  one (armeabi-v7a).
 - The native cores ship as `jniLibs` (`android/app/src/main/jniLibs/<abi>/*.so`), not as
-  Flutter assets — otherwise the desktop binaries bloated the APK.
-- Crashlytics only works on Android and only in release. Without `google-services.json`
-  the app still builds and runs, just without crash reporting.
-- After a Kotlin version bump in `android/settings.gradle.kts` the first build may fail
-  with a nonsensical "Unresolved reference" inside somebody else's plugin — that is a
-  stale incremental cache, cured by `flutter clean`.
+  Flutter assets, which go into every platform's bundle.
+- Crashlytics works only on Android and only in release builds. Without
+  `google-services.json` the app builds and runs without crash reporting.
+- After changing the Kotlin version in `android/settings.gradle.kts`, run `flutter clean`:
+  the stale incremental cache otherwise causes "Unresolved reference" errors in plugins.
 
 ### Windows
 
@@ -55,20 +53,19 @@ flutter build windows --release
 ```
 
 - The Windows plugin list (`windows/flutter/app_plugins.cmake` +
-  `app_plugin_registrant.cc`) is committed with Firebase already removed (it is
-  Android-only and breaks linking). A normal build works out of the box; re-run
-  `tool/sync_windows_plugins.ps1` **only after adding or removing plugins** in pubspec.
+  `app_plugin_registrant.cc`) is committed without Firebase, which is Android-only and
+  breaks linking. After adding or removing plugins in pubspec, run
+  `tool/sync_windows_plugins.ps1`.
 - CMake copies the cores from `assets/bin/windows/` next to the exe: `keqrnel.exe`,
   `mihomo.exe`, `wintun.dll`, `geoip.dat`, `geosite.dat`
-  ([`assets/bin/windows/README.md`](../assets/bin/windows/README.md)). Separate
-  `xray.exe` / `sing-box.exe` are not needed — keqrnel carries both engines inside.
-- TUN mode requires administrator rights (keqrnel and mihomo both create the wintun
-  adapter themselves); the app offers to restart elevated. Proxy mode works without
-  elevation.
+  ([`assets/bin/windows/README.md`](../assets/bin/windows/README.md)). keqrnel contains
+  both Xray and sing-box.
+- TUN mode needs administrator rights, since keqrnel and mihomo create the wintun adapter
+  themselves; the app offers to restart elevated. Proxy mode works without them.
 
 ### Linux (Debian/Fedora/Arch, x86_64)
 
-Native Linux or WSL only. There are two scripts with different jobs:
+Native Linux or WSL only. Two scripts:
 
 ```bash
 # build: installs the GTK toolchain and a native Linux Flutter (idempotent), then
@@ -79,17 +76,14 @@ wsl -e bash /mnt/c/Users/<you>/StudioProjects/keqdroid/tool/build_linux_wsl.sh
 wsl -e bash /mnt/c/Users/<you>/StudioProjects/keqdroid/tool/package_linux.sh
 ```
 
-- Do not launch these from Git Bash: it rewrites `/mnt/c/...` into a Windows path before
-  `wsl` ever sees it, and the script is not found. Use PowerShell (or set
-  `MSYS_NO_PATHCONV=1`).
-- Both scripts work directly in the repository on `/mnt/c` and make no copies on the Linux
-  filesystem — so a Linux build cannot run in parallel with a Windows or Android one.
+- Run them from PowerShell, not Git Bash: Git Bash turns `/mnt/c/...` into a Windows
+  path (or set `MSYS_NO_PATHCONV=1`).
+- Both scripts work in the repository on `/mnt/c` directly, so a Linux build cannot run in
+  parallel with a Windows or Android one.
 - The cores live in `assets/bin/linux/`: `keqrnel`, `mihomo` and the geo databases.
   CMake puts them next to the bundle binary, not into `flutter_assets`.
-- Proxy mode works without root; TUN asks for root through `pkexec` on connect.
-  polkit is optional for the package, so on a system without it TUN has one way out:
-  run the app itself as root (`sudo -E keqdroid`), and it starts the core directly
-  instead of going through pkexec.
+- Proxy mode works without root; TUN asks for root through `pkexec` on connect. Without
+  polkit, run the app as root (`sudo -E keqdroid`): it then starts the core directly.
 
 ## 4. Tests and analysis
 
@@ -99,28 +93,25 @@ flutter test                                   # the whole suite
 flutter test test/utils/config_gen_test.dart   # a single file
 ```
 
-The tests mirror `lib/`: `test/utils/` — config generators and parsers, `test/services/` —
-storage/subscriptions/updater/ping, plus `test/models/`, `test/tunnel/`, `test/widgets/`,
-`test/providers/`. Fixtures are in `test/fixtures/`, helpers in `test/helpers/`
+The tests mirror `lib/`: `test/utils/` (config generators and parsers), `test/services/`
+(storage, subscriptions, updater, ping), plus `test/models/`, `test/tunnel/`,
+`test/widgets/`, `test/providers/`. Fixtures are in `test/fixtures/`, helpers in `test/helpers/`
 (`pump_app.dart`, `test_storage.dart`).
 
-A clean analyze and green tests are a hard requirement for any PR: both catch real
-regressions rather than ticking a box.
+A clean analyze and green tests are required for every PR.
 
 ## 5. Rebuilding the native cores
 
-Usually unnecessary — the prebuilt cores are already in `assets/bin/` and `jniLibs/`. When
-you bump a core version:
+The prebuilt cores are already in `assets/bin/` and `jniLibs/`. To update a core:
 
 | Script | What it builds |
 |--------|----------------|
-| `tool/build_mihomo.ps1` | mihomo for all three platforms — `libmihomo.so`, `mihomo.exe`, `mihomo` — with the patches from `tool/patches/` |
+| `tool/build_mihomo.ps1` | mihomo with the patches from `tool/patches/`: `libmihomo.so` (arm64-v8a and armeabi-v7a), `mihomo.exe`, `mihomo` |
 | `tool/build_linux_native.sh` | the Linux bundle + cores on native Linux |
 | `tool/fetch_xray_geo.ps1` | fresh `geoip.dat` / `geosite.dat` |
 
-`keqrnel` has no script — it is built from [its own
-repository](https://github.com/Lemonochka/keqrnel) with a plain `go build`, one binary per
-platform, into `assets/bin/windows/` and `assets/bin/linux/`:
+`keqrnel` is built from [its own repository](https://github.com/Lemonochka/keqrnel) with
+`go build`, into `assets/bin/windows/` and `assets/bin/linux/`:
 
 ```bash
 go build -trimpath -buildvcs=false -tags with_gvisor -o keqrnel.exe ./cmd/keqrnel
@@ -128,15 +119,11 @@ GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -buildvcs=false -tags w
   -ldflags="-s -w" -o keqrnel ./cmd/keqrnel
 ```
 
-**`with_gvisor` is mandatory.** The TUN stack is a user setting, and without this tag the
-core has neither `gvisor` nor `mixed` — and with them goes full-cone NAT. A forgotten tag
-shows up in the size: the binary loses roughly 3 MB.
+**`with_gvisor` is required**: without it the core has no `gvisor` and `mixed` TUN stacks
+and no full-cone NAT. A build without the tag is about 3 MB smaller.
 
-`libxray.so` on Android is not an official release: it is built from the same xray-core
-revision that keqrnel pins, so every platform runs the same Xray (`go version -m` on both
-binaries shows one commit). Build it inside a keqrnel checkout, so the version and
-every dependency come from keqrnel's `go.mod`; the result is byte-identical to the
-committed one. With the NDK:
+`libxray.so` for Android is built from the xray-core revision pinned in keqrnel's `go.mod`,
+so every platform runs the same Xray. Build it inside a keqrnel checkout, with the NDK:
 
 ```bash
 CGO_ENABLED=1 GOOS=android GOARCH=arm64 GOARM64=v8.0 \
@@ -145,8 +132,8 @@ CGO_ENABLED=1 GOOS=android GOARCH=arm64 GOARM64=v8.0 \
   -ldflags="-s -w -checklinkname=0" -o libxray.so github.com/xtls/xray-core/main
 ```
 
-The same core goes into `jniLibs/armeabi-v7a/` for the 32-bit APK — rebuild both on
-every bump. Only the target changes:
+For the 32-bit APK (`jniLibs/armeabi-v7a/`) only the target changes. Rebuild both ABIs
+on every update:
 
 ```bash
 CGO_ENABLED=1 GOOS=android GOARCH=arm GOARM=7 \
@@ -155,46 +142,38 @@ CGO_ENABLED=1 GOOS=android GOARCH=arm GOARM=7 \
   -ldflags="-s -w -checklinkname=0" -o libxray.so github.com/xtls/xray-core/main
 ```
 
-`tool/build_mihomo.ps1 -Target android` builds both mihomo ABIs itself.
+`-checklinkname=0` is required: the `anet` dependency links into `net.zoneCache` in the
+standard library, which Go 1.26+ rejects without the flag.
 
-`-checklinkname=0` is not optional: the `anet` dependency (which fixes the broken
-`net.Interfaces()` on Android) reaches into stdlib's `net.zoneCache`, and go1.26 forbids
-such `go:linkname` — without the flag linking fails.
+Windows binaries (`keqrnel.exe`, `mihomo.exe`) are built unstripped and must not be run
+from `%TEMP%`, otherwise Defender flags them. Android and Linux binaries are stripped with
+`-s -w`.
 
-Build `keqrnel.exe`/`mihomo.exe` for **Windows** unstripped and never run them from
-`%TEMP%` — otherwise Defender treats them as a threat. That is a Windows rule and nothing
-more: the Android and Linux binaries are stripped (`-s -w`), which takes about 20 MB off
-each Linux core and 29 MB off what the user downloads, and costs nothing — Go prints
-stack traces with function names without the symbol table anyway.
-
-mihomo is the second core on every platform; for links both cores can run, the user picks
-one in Settings → About. It is built by a script, not by hand:
+mihomo, for all platforms and both Android ABIs, is built with a script:
 
 ```powershell
 powershell -File tool/build_mihomo.ps1
 ```
 
-**This is not stock upstream.** The script applies `tool/patches/mihomo-*.patch` and fails
-if a patch does not land — a silently unpatched core looks healthy and only falls apart on
-certain servers. What each patch fixes, and what has to stay in sync when updating, is
-written in the patch header. Three of them right now, and two share one symptom: mihomo
-hardcodes REALITY client version `1.8.2` into the ClientHello, and its firefox fingerprint
-stopped at Firefox 120, which sends no X25519MLKEM768 key share. A server with `minClient`
-set, and any server on Xray 26.9.9, answers either hello with the real certificate of the
-masquerade domain instead of its own — the client sees `REALITY authentication failed`
-even though the keys are correct. The third patch is Android-only: mihomo's tun listener
-reads `/data/system/packages.xml`, which SELinux does not hand to an app.
+The script applies `tool/patches/mihomo-*.patch` and stops if a patch does not apply. Each
+patch header says what it fixes and what to keep in sync on update:
 
-AmneziaWG has no core of its own any more: mihomo carries amneziawg-go and runs a `.conf`
-profile as `type: wireguard` with `amnezia-wg-option`. There is nothing to build for it
-separately.
+- `mihomo-reality-client-version.patch`: a current REALITY client version instead of the
+  hardcoded `1.8.2`, for servers with `minClient`;
+- `mihomo-firefox-148-hello.patch`: the Firefox ClientHello with the X25519MLKEM768 key
+  share that servers on Xray 26.9.9+ require;
+- `mihomo-android-package-manager.patch`: the Android TUN listener reads
+  `/data/system/packages.xml`, which SELinux blocks for apps, only when something needs it.
+
+AmneziaWG runs on mihomo: amneziawg-go is built in, and a `.conf` profile runs as
+`type: wireguard` with `amnezia-wg-option`. There is nothing separate to build.
 
 ## 6. Localization (en / ru / de / zh / fa)
 
 The source of truth is ARB: `lib/l10n/app_en.arb` (the base) plus `app_ru/de/zh/fa.arb`.
-Added a string — add it to **all five** files, otherwise the "forgotten" language gets an
-empty key. Generation runs on its own during `flutter pub get` / `flutter run` (or manually via
-`flutter gen-l10n`). `app_localizations*.dart` are never edited by hand.
+A new string goes into **all five** files; a language without it gets an empty key.
+Generation runs during `flutter pub get` / `flutter run` (or `flutter gen-l10n`).
+`app_localizations*.dart` are not edited by hand.
 
 ## 7. Release
 
@@ -209,27 +188,24 @@ powershell -ExecutionPolicy Bypass -File tool\make_release.ps1 -Publish -NotesFi
 wsl -e bash /mnt/c/Users/<you>/StudioProjects/keqdroid/tool/publish_aur.sh
 ```
 
-Rules that must not be broken:
+Rules:
 
-- the version and the `vX.Y.Z` tag come from `version:` in `pubspec.yaml` — that is the
-  single source;
-- the release carries one `SHA256SUMS` (ASCII, no BOM, LF, `sha256sum` format): the updater
-  is fail-closed and installs nothing without a matching hash. Every build since 0.5.0
-  reads it, which is why per-asset `.sha256` sidecars are gone; 0.4.x knows only the
-  sidecar and has to be updated by hand. An asset name must appear in exactly **one** line
-  — the updater takes the first line containing it, so a name that is part of another one
-  would be handed the wrong hash. `tool/make_release.ps1` checks that before publishing;
-- `geoip.dat.sha256` is the one sidecar that stays: the full geo base download in
-  0.15.0 - 0.18.0 asks the latest release for exactly that name;
+- the version and the `vX.Y.Z` tag come from `version:` in `pubspec.yaml`;
+- the release has one `SHA256SUMS` (ASCII, no BOM, LF, `sha256sum` format), and the updater
+  installs nothing without a matching hash. Versions since 0.5.0 read it; 0.4.x reads only
+  per-file `.sha256` and is updated by hand. Each asset name must appear in exactly
+  **one** line, since the updater takes the first line containing the name;
+  `tool/make_release.ps1` checks this;
+- `geoip.dat.sha256` stays: the geo base download in 0.15.0 - 0.18.0 requests exactly that
+  file from the latest release;
 - asset names are fixed: `keqdroid-<version>-android.apk`,
-  `keqdroid-<version>-armeabi-v7a-android.apk` (it must sort after the main APK: every
-  updater before it takes the first `.apk`, and GitHub lists assets by name — so not
-  `-android-armeabi-v7a`, where `-` sorts before `.`),
+  `keqdroid-<version>-armeabi-v7a-android.apk` (must sort after the main APK: older
+  updaters take the first `.apk` in GitHub's name-sorted list),
   `keqdroid-windows-x64-<version>.zip` (exactly that word order),
   `keqdroid-<version>-linux-x64.tar.gz`, `keqdroid_<version>_amd64.deb`,
   `keqdroid-<version>-x86_64.AppImage`, `keqdroid-<version>-1.x86_64.rpm`;
-- check the APK with `aapt dump badging | grep versionName` before copying it — after a
-  failed build the **old** APK from the previous success is still sitting in `build/`.
+- when building by hand, check the APK version with `aapt dump badging | grep versionName`
+  before uploading: a failed build leaves the previous APK in `build/`.
 
 ---
 
@@ -237,9 +213,7 @@ Rules that must not be broken:
 
 <a href="#english">English</a> · <strong>Русский</strong>
 
-Единственный документ для разработчика: как поднять проект локально, собрать под
-каждую платформу, прогнать тесты и выпустить релиз. Всё остальное — в коде и его
-комментариях.
+Как поднять проект, собрать его под каждую платформу, прогнать тесты и выпустить релиз.
 
 ## 1. Что нужно установить
 
@@ -252,8 +226,7 @@ Rules that must not be broken:
 | **WSL + Ubuntu** | — | сборка Linux-таргета (из Windows-SDK её не сделать) |
 | **gh CLI** | — | только для публикации релизов |
 
-`flutter doctor` покажет, чего не хватает. Ругань на github handshake при активном
-HTTP-прокси — известная особенность окружения, сборке не мешает.
+`flutter doctor` покажет, чего не хватает.
 
 ## 2. Первый запуск
 
@@ -261,8 +234,8 @@ HTTP-прокси — известная особенность окружени
 flutter pub get
 ```
 
-`pub get` заодно генерирует локализации (`flutter: generate: true` в pubspec) —
-`lib/l10n/app_localizations*.dart` появятся сами.
+`pub get` заодно генерирует локализации в `lib/l10n/app_localizations*.dart`
+(`flutter: generate: true` в pubspec).
 
 ## 3. Сборка и запуск
 
@@ -274,13 +247,14 @@ flutter build apk --release
 ```
 
 - При первом подключении система спросит разрешение VPN.
+- Без флага APK собирается под arm64-v8a; `--target-platform android-arm` собирает
+  32-битный (armeabi-v7a).
 - Нативные ядра лежат как `jniLibs` (`android/app/src/main/jniLibs/<abi>/*.so`), а не как
-  Flutter-ассеты — иначе десктопные бинарники раздували APK.
+  Flutter-ассеты, которые попадают в сборку каждой платформы.
 - Crashlytics работает только на Android и только в release. Без `google-services.json`
-  приложение собирается и работает, просто без репортинга крэшей.
-- После обновления версии Kotlin в `android/settings.gradle.kts` первая сборка может упасть
-  с бессмысленным «Unresolved reference» внутри чужого плагина — это протухший
-  инкрементальный кэш, лечится `flutter clean`.
+  приложение собирается и работает, но без отчётов о падениях.
+- После смены версии Kotlin в `android/settings.gradle.kts` выполни `flutter clean`:
+  иначе устаревший инкрементальный кэш даёт ошибки «Unresolved reference» в плагинах.
 
 ### Windows
 
@@ -290,19 +264,19 @@ flutter build windows --release
 ```
 
 - Список Windows-плагинов (`windows/flutter/app_plugins.cmake` +
-  `app_plugin_registrant.cc`) закоммичен уже без Firebase (он Android-only и ломает
-  линковку). Обычная сборка работает сразу; `tool/sync_windows_plugins.ps1` перезапускай
-  **только после добавления/удаления плагинов** в pubspec.
+  `app_plugin_registrant.cc`) закоммичен без Firebase: он нужен только на Android и ломает
+  линковку. После добавления или удаления плагинов в pubspec запусти
+  `tool/sync_windows_plugins.ps1`.
 - Ядра из `assets/bin/windows/` CMake кладёт рядом с exe: `keqrnel.exe`,
   `mihomo.exe`, `wintun.dll`, `geoip.dat`, `geosite.dat`
-  ([`assets/bin/windows/README.md`](../assets/bin/windows/README.md)). Отдельные
-  `xray.exe` / `sing-box.exe` не нужны — keqrnel несёт оба движка внутри.
-- TUN-режим требует прав администратора (wintun-адаптер создают сами keqrnel и
-  mihomo); приложение предлагает перезапуститься с ними. Proxy работает без прав.
+  ([`assets/bin/windows/README.md`](../assets/bin/windows/README.md)). В keqrnel входят
+  и Xray, и sing-box.
+- Для TUN нужны права администратора: wintun-адаптер создают сами keqrnel и mihomo.
+  Приложение предлагает перезапуститься с ними. Proxy работает без прав.
 
 ### Linux (Debian/Fedora/Arch, x86_64)
 
-Только на нативном Linux или в WSL. Скриптов два, роли разные:
+Только на нативном Linux или в WSL. Скриптов два:
 
 ```bash
 # сборка: ставит GTK-тулчейн и нативный Linux-Flutter (идемпотентно), потом
@@ -313,15 +287,14 @@ wsl -e bash /mnt/c/Users/<ты>/StudioProjects/keqdroid/tool/build_linux_wsl.sh
 wsl -e bash /mnt/c/Users/<ты>/StudioProjects/keqdroid/tool/package_linux.sh
 ```
 
-- Из Git Bash так не запускай: он превратит `/mnt/c/...` в виндовый путь ещё до `wsl`,
-  и скрипт не найдётся. Запускай из PowerShell (или ставь `MSYS_NO_PATHCONV=1`).
-- Оба скрипта работают прямо в репозитории на `/mnt/c`, копий на Linux-ФС не делают —
-  поэтому Linux-сборку нельзя гонять параллельно с Windows или Android.
+- Запускай из PowerShell, не из Git Bash: Git Bash превращает `/mnt/c/...` в виндовый путь
+  (или поставь `MSYS_NO_PATHCONV=1`).
+- Оба скрипта работают прямо в репозитории на `/mnt/c`, поэтому Linux-сборку нельзя
+  запускать параллельно с Windows или Android.
 - Ядра — в `assets/bin/linux/`: `keqrnel`, `mihomo` и geo-базы. CMake кладёт их
   рядом с бинарём бандла, не в `flutter_assets`.
-- Proxy работает без root; TUN запрашивает root через `pkexec` при подключении.
-  polkit у пакета необязателен, и без него у TUN остаётся один путь: запустить само
-  приложение от root (`sudo -E keqdroid`) — тогда ядро стартует напрямую, минуя pkexec.
+- Proxy работает без root; TUN запрашивает root через `pkexec` при подключении. Без
+  polkit запусти приложение от root (`sudo -E keqdroid`): тогда ядро стартует напрямую.
 
 ## 4. Тесты и анализ
 
@@ -336,23 +309,20 @@ storage/подписки/апдейтер/пинг, `test/models/`, `test/tunnel
 `test/providers/`. Фикстуры — в `test/fixtures/`, помощники — в `test/helpers/`
 (`pump_app.dart`, `test_storage.dart`).
 
-Чистый analyze и зелёные тесты — обязательное условие любого PR: и то и другое ловит
-реальные регрессии, а не для галочки.
+Чистый analyze и зелёные тесты обязательны для любого PR.
 
 ## 5. Пересборка нативных ядер
 
-Обычно не нужна — собранные ядра уже лежат в `assets/bin/` и `jniLibs/`. Когда обновляешь
-версию ядра:
+Собранные ядра уже лежат в `assets/bin/` и `jniLibs/`. Чтобы обновить ядро:
 
 | Скрипт | Что собирает |
 |--------|--------------|
-| `tool/build_mihomo.ps1` | mihomo под все три платформы — `libmihomo.so`, `mihomo.exe`, `mihomo` — с патчами из `tool/patches/` |
+| `tool/build_mihomo.ps1` | mihomo с патчами из `tool/patches/`: `libmihomo.so` (arm64-v8a и armeabi-v7a), `mihomo.exe`, `mihomo` |
 | `tool/build_linux_native.sh` | Linux-бандл + ядра на нативном Linux |
 | `tool/fetch_xray_geo.ps1` | свежие `geoip.dat` / `geosite.dat` |
 
-`keqrnel` скрипта не имеет — собирается из [своего
-репозитория](https://github.com/Lemonochka/keqrnel) обычным `go build`, по бинарю на
-платформу, в `assets/bin/windows/` и `assets/bin/linux/`:
+`keqrnel` собирается из [своего репозитория](https://github.com/Lemonochka/keqrnel)
+через `go build` в `assets/bin/windows/` и `assets/bin/linux/`:
 
 ```bash
 go build -trimpath -buildvcs=false -tags with_gvisor -o keqrnel.exe ./cmd/keqrnel
@@ -360,15 +330,11 @@ GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -buildvcs=false -tags w
   -ldflags="-s -w" -o keqrnel ./cmd/keqrnel
 ```
 
-**`with_gvisor` обязателен.** Стек TUN — пользовательская настройка, и без этого тега
-в ядре нет ни `gvisor`, ни `mixed`, а с ними и full-cone NAT. Забытый тег виден по
-размеру: бинарь худеет примерно на 3 МБ.
+**`with_gvisor` обязателен**: без него в ядре нет стеков TUN `gvisor` и `mixed`, а с ними
+и full-cone NAT. Сборка без тега примерно на 3 МБ меньше.
 
-`libxray.so` под Android — не официальный релиз: он собран из той же ревизии xray-core,
-что закреплена в keqrnel, и на всех платформах едет один и тот же Xray (`go version -m`
-на обоих бинарях показывает один коммит). Собирать внутри checkout'а keqrnel: версия и
-все зависимости тогда берутся из его `go.mod`, и результат совпадает с лежащим в
-репозитории байт в байт. С NDK:
+`libxray.so` для Android собирается из ревизии xray-core, закреплённой в `go.mod` keqrnel,
+поэтому на всех платформах один и тот же Xray. Собирать внутри checkout'а keqrnel, с NDK:
 
 ```bash
 CGO_ENABLED=1 GOOS=android GOARCH=arm64 GOARM64=v8.0 \
@@ -377,8 +343,8 @@ CGO_ENABLED=1 GOOS=android GOARCH=arm64 GOARM64=v8.0 \
   -ldflags="-s -w -checklinkname=0" -o libxray.so github.com/xtls/xray-core/main
 ```
 
-То же ядро лежит в `jniLibs/armeabi-v7a/` для 32-битного APK — при каждом обновлении
-пересобирать оба. Меняется только цель:
+Для 32-битного APK (`jniLibs/armeabi-v7a/`) меняется только цель. При каждом обновлении
+пересобираются обе ABI:
 
 ```bash
 CGO_ENABLED=1 GOOS=android GOARCH=arm GOARM=7 \
@@ -387,45 +353,38 @@ CGO_ENABLED=1 GOOS=android GOARCH=arm GOARM=7 \
   -ldflags="-s -w -checklinkname=0" -o libxray.so github.com/xtls/xray-core/main
 ```
 
-mihomo под обе ABI собирает сам `tool/build_mihomo.ps1 -Target android`.
+`-checklinkname=0` обязателен: зависимость `anet` ссылается на `net.zoneCache` из
+стандартной библиотеки, а Go 1.26+ без флага такое не линкует.
 
-`-checklinkname=0` без вариантов: зависимость `anet` (чинит сломанный
-`net.Interfaces()` на Android) лезет в `net.zoneCache` из stdlib, а go1.26 такие
-`go:linkname` запрещает — без флага падает линковка.
+Windows-бинари (`keqrnel.exe`, `mihomo.exe`) собираются без стрипа, и запускать их из
+`%TEMP%` нельзя: иначе их блокирует Defender. Android- и Linux-бинари стрипаются
+(`-s -w`).
 
-`keqrnel.exe`/`mihomo.exe` под **Windows** собирай unstripped и не запускай из
-`%TEMP%` — иначе Defender считает их угрозой. Это правило только про Windows:
-android- и linux-бинари стрипаются (`-s -w`), и это снимает около 20 МБ с каждого
-linux-ядра и 29 МБ с того, что качает пользователь. Платы нет — стек-трейсы Go
-печатает с именами функций и без таблицы символов.
-
-mihomo — второе ядро на всех платформах; для ссылок, которые берут оба ядра, его
-выбирают в Настройки → О приложении. Собирается скриптом, а не руками:
+mihomo под все платформы и обе Android-ABI собирается скриптом:
 
 ```powershell
 powershell -File tool/build_mihomo.ps1
 ```
 
-**Это не сток апстрима.** Скрипт накатывает `tool/patches/mihomo-*.patch` и падает,
-если патч не лёг, — молча непропатченное ядро выглядит здоровым и отваливается
-только на отдельных серверах. Что чинит каждый патч и что при обновлении держать
-в согласии, написано в шапке самого патча. Сейчас их три, и у двух один симптом:
-mihomo зашивает в ClientHello версию REALITY-клиента `1.8.2`, а его отпечаток firefox
-остановился на Firefox 120, который не шлёт key share `X25519MLKEM768`. И сервер с
-поднятым `minClient`, и любой сервер на Xray 26.9.9 отдают такому приветствию настоящий
-сертификат маскировочного домена вместо своего — клиент видит
-`REALITY authentication failed`, хотя ключи верные. Третий патч нужен только Android:
-tun-листенер mihomo читает `/data/system/packages.xml`, который SELinux приложению не
-отдаёт.
+Скрипт накатывает `tool/patches/mihomo-*.patch` и останавливается, если патч не лёг. Что
+чинит патч и что держать в согласии при обновлении, написано в его шапке:
 
-Своего ядра у AmneziaWG больше нет: amneziawg-go живёт внутри mihomo, и профиль `.conf`
-исполняется как `type: wireguard` с `amnezia-wg-option`. Отдельно собирать нечего.
+- `mihomo-reality-client-version.patch`: актуальная версия REALITY-клиента вместо
+  зашитой `1.8.2`, для серверов с `minClient`;
+- `mihomo-firefox-148-hello.patch`: ClientHello Firefox с key share `X25519MLKEM768`,
+  которого требуют серверы на Xray 26.9.9+;
+- `mihomo-android-package-manager.patch`: TUN-листенер на Android читает
+  `/data/system/packages.xml`, который SELinux закрывает от приложений, только когда он
+  действительно нужен.
+
+AmneziaWG работает на mihomo: amneziawg-go встроен, профиль `.conf` исполняется как
+`type: wireguard` с `amnezia-wg-option`. Отдельно собирать нечего.
 
 ## 6. Локализация (en / ru / de / zh / fa)
 
-Источник истины — ARB: `lib/l10n/app_en.arb` (база) и `app_ru/de/zh/fa.arb`. Добавил
-строку — добавь её **во все пять** файлов, иначе на «забытом» языке будет пустой ключ. Генерация
-подтягивается сама при `flutter pub get` / `flutter run` (или вручную `flutter gen-l10n`).
+Источник строк — ARB: `lib/l10n/app_en.arb` (база) и `app_ru/de/zh/fa.arb`. Новая строка
+добавляется **во все пять** файлов, иначе в пропущенном языке будет пустой ключ. Генерация
+идёт при `flutter pub get` / `flutter run` (или `flutter gen-l10n`).
 `app_localizations*.dart` руками не редактируются.
 
 ## 7. Релиз
@@ -441,23 +400,21 @@ powershell -ExecutionPolicy Bypass -File tool\make_release.ps1 -Publish -NotesFi
 wsl -e bash /mnt/c/Users/<ты>/StudioProjects/keqdroid/tool/publish_aur.sh
 ```
 
-Правила, которые нельзя нарушать:
+Правила:
 
-- версия и тег `vX.Y.Z` берутся из `version:` в `pubspec.yaml` — это единственный источник;
-- на весь релиз один `SHA256SUMS` (ASCII без BOM, LF, формат `sha256sum`): апдейтер
-  fail-closed и без совпавшего хеша обновление не поставит. Его читают все сборки с 0.5.0 —
-  поэтому сайдкаров `.sha256` у каждого ассета больше нет; 0.4.x знает только сайдкар,
-  оттуда обновляются руками. Имя ассета обязано встречаться ровно в **одной** строке:
-  апдейтер берёт первую строку, содержащую имя, и имя, оказавшееся частью чужой строки,
-  получило бы чужой хеш. `tool/make_release.ps1` проверяет это перед публикацией;
-- `geoip.dat.sha256` — единственный сайдкар, который остаётся: загрузчик полной geo-базы
-  в 0.15.0 - 0.18.0 просит у последнего релиза именно это имя;
+- версия и тег `vX.Y.Z` берутся из `version:` в `pubspec.yaml`;
+- на весь релиз один `SHA256SUMS` (ASCII без BOM, LF, формат `sha256sum`), и без
+  совпавшего хеша апдейтер ничего не установит. Его читают версии с 0.5.0; 0.4.x читает
+  только `.sha256` рядом с файлом и обновляется вручную. Имя ассета должно встречаться
+  ровно в **одной** строке, потому что апдейтер берёт первую строку, где есть имя;
+  `tool/make_release.ps1` это проверяет;
+- `geoip.dat.sha256` остаётся: загрузчик geo-базы в 0.15.0 - 0.18.0 просит у последнего
+  релиза именно этот файл;
 - имена ассетов фиксированные: `keqdroid-<версия>-android.apk`,
-  `keqdroid-<версия>-armeabi-v7a-android.apk` (обязан стоять в списке после основного:
-  все апдейтеры до него берут первый `.apk`, а GitHub сортирует ассеты по имени — поэтому
-  не `-android-armeabi-v7a`, там `-` раньше `.`),
+  `keqdroid-<версия>-armeabi-v7a-android.apk` (обязан стоять после основного: старые
+  апдейтеры берут первый `.apk` в списке GitHub, отсортированном по имени),
   `keqdroid-windows-x64-<версия>.zip` (именно такой порядок слов),
   `keqdroid-<версия>-linux-x64.tar.gz`, `keqdroid_<версия>_amd64.deb`,
   `keqdroid-<версия>-x86_64.AppImage`, `keqdroid-<версия>-1.x86_64.rpm`;
-- APK перед копированием проверяй через `aapt dump badging | grep versionName` — после
-  упавшей сборки в `build/` остаётся **старый** APK от прошлого успеха.
+- при ручной сборке проверяй версию APK через `aapt dump badging | grep versionName`
+  перед загрузкой: после упавшей сборки в `build/` остаётся прошлый APK.
