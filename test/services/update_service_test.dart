@@ -1,7 +1,109 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:keqdroid/services/update_service.dart';
 
+/// Сетевой слой по сценарию: каждый ответ — либо исключение, которое бросил бы
+/// dart:io, либо HTTP-ответ.
+class _ScriptedAdapter implements HttpClientAdapter {
+  _ScriptedAdapter(this.script);
+
+  final List<Object> script;
+  int calls = 0;
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<List<int>>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    final step = script[calls++];
+    if (step is ResponseBody) return step;
+    throw step;
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
+// Текст с жалобы: рукопожатие с GitHub прошло, начало ответа — не TLS.
+// Dio получает его от dart:io как HttpException и заворачивает в unknown.
+final _brokenTls = HttpException(
+  '\n\tWRONG_VERSION_NUMBER(tls_record.cc:127) error 268435703',
+  uri: Uri.parse('https://api.github.com/repos/Lemonochka/keqdroid/releases'),
+);
+
+ResponseBody _releases() => ResponseBody.fromString(
+      jsonEncode([
+        {
+          'tag_name': 'v0.23.0',
+          'published_at': '2026-09-27T10:00:00Z',
+          'prerelease': false,
+          'draft': false,
+          'assets': <Object>[],
+        },
+      ]),
+      200,
+      headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      },
+    );
+
 void main() {
+  group('загрузка списка релизов', () {
+    test('испорченное начало ответа — один повтор, и проверка проходит',
+        () async {
+      final adapter = _ScriptedAdapter([_brokenTls, _releases()]);
+      final dio = Dio()..httpClientAdapter = adapter;
+
+      final releases = await UpdateService.fetchReleases(dio);
+
+      expect(adapter.calls, 2);
+      expect(releases.single['tag_name'], 'v0.23.0');
+    });
+
+    test('сломалось и при повторе — ошибка доходит до экрана', () async {
+      final adapter = _ScriptedAdapter([_brokenTls, _brokenTls]);
+      final dio = Dio()..httpClientAdapter = adapter;
+
+      await expectLater(
+        UpdateService.fetchReleases(dio),
+        throwsA(isA<DioException>()),
+      );
+      expect(adapter.calls, 2);
+    });
+
+    test('лимит GitHub повтором не лечится', () async {
+      final adapter = _ScriptedAdapter([ResponseBody.fromString('{}', 403)]);
+      final dio = Dio()..httpClientAdapter = adapter;
+
+      await expectLater(
+        UpdateService.fetchReleases(dio),
+        throwsA(isA<StateError>()),
+      );
+      expect(adapter.calls, 1);
+    });
+
+    test('таймаут не повторяем: ручная проверка ждала бы вдвое дольше',
+        () async {
+      final adapter = _ScriptedAdapter([
+        DioException(
+          requestOptions: RequestOptions(),
+          type: DioExceptionType.connectionTimeout,
+        ),
+      ]);
+      final dio = Dio()..httpClientAdapter = adapter;
+
+      await expectLater(
+        UpdateService.fetchReleases(dio),
+        throwsA(isA<DioException>()),
+      );
+      expect(adapter.calls, 1);
+    });
+  });
+
   group('UpdateService.compareVersions', () {
     test('v0.2.10 is newer than v0.2.9', () {
       expect(UpdateService.compareVersions('v0.2.10', 'v0.2.9'), 1);

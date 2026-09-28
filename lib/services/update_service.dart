@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:open_filex/open_filex.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
@@ -10,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'linux_appimage_updater.dart';
 import 'windows_zip_updater.dart';
+import '../core/app_logger.dart';
 import '../utils/local_vpn_proxy.dart';
 
 /// инфа о доступном обновлении
@@ -130,7 +132,7 @@ class UpdateService {
     final dio = _buildDio(viaLocalProxy: viaLocalProxy, httpPort: httpPort);
     try {
       final currentVersion = await _getCurrentVersion();
-      final releases = await _fetchReleases(dio);
+      final releases = await fetchReleases(dio);
       if (releases.isEmpty) {
         if (force) {
           throw StateError('Could not fetch releases from GitHub');
@@ -156,6 +158,13 @@ class UpdateService {
       }
       return result;
     } catch (e) {
+      // Текст ошибки без маршрута ничего не говорит: одна и та же поломка TLS
+      // значит разное, если запрос шёл через ядро или мимо него.
+      AppLogger.instance.warn(
+        'Update check failed '
+        '(${viaLocalProxy ? 'via local proxy 127.0.0.1:$httpPort' : 'direct'}, '
+        '${force ? 'manual' : 'auto'}): $e',
+      );
       if (force) rethrow;
       // транзиентная ошибка не должна ни закрывать гейт, ни стирать бейдж
       _lastAutoCheckAt = null;
@@ -219,7 +228,8 @@ class UpdateService {
     return info.version;
   }
 
-  static Future<List<Map<String, dynamic>>> _fetchReleases(Dio dio) async {
+  @visibleForTesting
+  static Future<List<Map<String, dynamic>>> fetchReleases(Dio dio) async {
     final filtered = <Map<String, dynamic>>[];
 
     // Two pages (200 releases) is plenty; the endpoint returns newest-first.
@@ -227,11 +237,7 @@ class UpdateService {
     for (var page = 1; page <= 2; page++) {
       final Response response;
       try {
-        response = await dio.get(
-          'https://api.github.com/repos/$_owner/$_repo/releases',
-          queryParameters: {'per_page': 100, 'page': page},
-          options: Options(headers: {'Accept': 'application/vnd.github+json'}),
-        );
+        response = await _getReleasesPage(dio, page);
       } on DioException catch (e) {
         final status = e.response?.statusCode;
         if (status == 403 || status == 429) {
@@ -272,6 +278,38 @@ class UpdateService {
 
     return filtered;
   }
+
+  /// Страница релизов с одним повтором, если соединение сломалось, не дойдя
+  /// до ответа.
+  ///
+  /// Такие сбои разовые: люди ловили `WRONG_VERSION_NUMBER` (рукопожатие с
+  /// GitHub прошло, а начало ответа приехало испорченным), и повторное
+  /// нажатие тут же проходило. Таймауты не повторяем — ручная проверка ждала
+  /// бы вдвое дольше, — а ответ сервера вроде 403/429 повтор не исправит.
+  static Future<Response> _getReleasesPage(Dio dio, int page) async {
+    for (var attempt = 0;; attempt++) {
+      try {
+        return await dio.get(
+          'https://api.github.com/repos/$_owner/$_repo/releases',
+          queryParameters: {'per_page': 100, 'page': page},
+          options: Options(headers: {'Accept': 'application/vnd.github+json'}),
+        );
+      } on DioException catch (e) {
+        if (attempt > 0 || !isBrokenConnection(e)) rethrow;
+        AppLogger.instance.warn(
+          'Releases page $page: connection broke before the response, '
+          'retrying once: ${e.error ?? e.type}',
+        );
+      }
+    }
+  }
+
+  @visibleForTesting
+  static bool isBrokenConnection(DioException e) =>
+      e.response == null &&
+      (e.type == DioExceptionType.connectionError ||
+          // Так Dio заворачивает сбой сокета или TLS посреди обмена.
+          (e.type == DioExceptionType.unknown && e.error is IOException));
 
   static DateTime? _releaseDate(Map<String, dynamic> release) {
     return DateTime.tryParse(release['published_at']?.toString() ?? '');
