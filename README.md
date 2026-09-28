@@ -216,6 +216,18 @@ Version and tag `vX.Y.Z` come from `pubspec.yaml`. When uploading manually, incl
 
 ---
 
+## Star history
+
+<a href="https://www.star-history.com/#Lemonochka/keqdroid&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=Lemonochka/keqdroid&type=Date&theme=dark">
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=Lemonochka/keqdroid&type=Date">
+    <img alt="Star history" src="https://api.star-history.com/svg?repos=Lemonochka/keqdroid&type=Date">
+  </picture>
+</a>
+
+---
+
 ## License
 
 [GPL-3.0](LICENSE). The bundled cores keep their upstream licenses: Xray-core (MPL-2.0), mihomo (GPL-3.0), sing-box (GPL-3.0).
@@ -427,6 +439,18 @@ wsl -e bash /mnt/c/.../keqdroid/tool/publish_aur.sh
 ```
 
 Версия и тег `vX.Y.Z` берутся из `pubspec.yaml`. При ручной загрузке добавьте `SHA256SUMS`, иначе апдейтер не установит обновление.
+
+---
+
+## История звёзд
+
+<a href="https://www.star-history.com/#Lemonochka/keqdroid&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=Lemonochka/keqdroid&type=Date&theme=dark">
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=Lemonochka/keqdroid&type=Date">
+    <img alt="История звёзд" src="https://api.star-history.com/svg?repos=Lemonochka/keqdroid&type=Date">
+  </picture>
+</a>
 
 ---
 
