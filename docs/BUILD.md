@@ -134,7 +134,9 @@ shows up in the size: the binary loses roughly 3 MB.
 
 `libxray.so` on Android is not an official release: it is built from the same xray-core
 revision that keqrnel pins, so every platform runs the same Xray (`go version -m` on both
-binaries shows one commit). With the NDK:
+binaries shows one commit). Build it inside a keqrnel checkout, so the version and
+every dependency come from keqrnel's `go.mod`; the result is byte-identical to the
+committed one. With the NDK:
 
 ```bash
 CGO_ENABLED=1 GOOS=android GOARCH=arm64 GOARM64=v8.0 \
@@ -142,6 +144,18 @@ CGO_ENABLED=1 GOOS=android GOARCH=arm64 GOARM64=v8.0 \
   go build -trimpath -buildvcs=false -gcflags=all=-l=4 \
   -ldflags="-s -w -checklinkname=0" -o libxray.so github.com/xtls/xray-core/main
 ```
+
+The same core goes into `jniLibs/armeabi-v7a/` for the 32-bit APK — rebuild both on
+every bump. Only the target changes:
+
+```bash
+CGO_ENABLED=1 GOOS=android GOARCH=arm GOARM=7 \
+  CC=$NDK/toolchains/llvm/prebuilt/windows-x86_64/bin/armv7a-linux-androideabi21-clang.cmd \
+  go build -trimpath -buildvcs=false -gcflags=all=-l=4 \
+  -ldflags="-s -w -checklinkname=0" -o libxray.so github.com/xtls/xray-core/main
+```
+
+`tool/build_mihomo.ps1 -Target android` builds both mihomo ABIs itself.
 
 `-checklinkname=0` is not optional: the `anet` dependency (which fixes the broken
 `net.Interfaces()` on Android) reaches into stdlib's `net.zoneCache`, and go1.26 forbids
@@ -208,6 +222,9 @@ Rules that must not be broken:
 - `geoip.dat.sha256` is the one sidecar that stays: the full geo base download in
   0.15.0 - 0.18.0 asks the latest release for exactly that name;
 - asset names are fixed: `keqdroid-<version>-android.apk`,
+  `keqdroid-<version>-armeabi-v7a-android.apk` (it must sort after the main APK: every
+  updater before it takes the first `.apk`, and GitHub lists assets by name — so not
+  `-android-armeabi-v7a`, where `-` sorts before `.`),
   `keqdroid-windows-x64-<version>.zip` (exactly that word order),
   `keqdroid-<version>-linux-x64.tar.gz`, `keqdroid_<version>_amd64.deb`,
   `keqdroid-<version>-x86_64.AppImage`, `keqdroid-<version>-1.x86_64.rpm`;
@@ -349,7 +366,9 @@ GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -buildvcs=false -tags w
 
 `libxray.so` под Android — не официальный релиз: он собран из той же ревизии xray-core,
 что закреплена в keqrnel, и на всех платформах едет один и тот же Xray (`go version -m`
-на обоих бинарях показывает один коммит). Собирается с NDK:
+на обоих бинарях показывает один коммит). Собирать внутри checkout'а keqrnel: версия и
+все зависимости тогда берутся из его `go.mod`, и результат совпадает с лежащим в
+репозитории байт в байт. С NDK:
 
 ```bash
 CGO_ENABLED=1 GOOS=android GOARCH=arm64 GOARM64=v8.0 \
@@ -357,6 +376,18 @@ CGO_ENABLED=1 GOOS=android GOARCH=arm64 GOARM64=v8.0 \
   go build -trimpath -buildvcs=false -gcflags=all=-l=4 \
   -ldflags="-s -w -checklinkname=0" -o libxray.so github.com/xtls/xray-core/main
 ```
+
+То же ядро лежит в `jniLibs/armeabi-v7a/` для 32-битного APK — при каждом обновлении
+пересобирать оба. Меняется только цель:
+
+```bash
+CGO_ENABLED=1 GOOS=android GOARCH=arm GOARM=7 \
+  CC=$NDK/toolchains/llvm/prebuilt/windows-x86_64/bin/armv7a-linux-androideabi21-clang.cmd \
+  go build -trimpath -buildvcs=false -gcflags=all=-l=4 \
+  -ldflags="-s -w -checklinkname=0" -o libxray.so github.com/xtls/xray-core/main
+```
+
+mihomo под обе ABI собирает сам `tool/build_mihomo.ps1 -Target android`.
 
 `-checklinkname=0` без вариантов: зависимость `anet` (чинит сломанный
 `net.Interfaces()` на Android) лезет в `net.zoneCache` из stdlib, а go1.26 такие
@@ -422,6 +453,9 @@ wsl -e bash /mnt/c/Users/<ты>/StudioProjects/keqdroid/tool/publish_aur.sh
 - `geoip.dat.sha256` — единственный сайдкар, который остаётся: загрузчик полной geo-базы
   в 0.15.0 - 0.18.0 просит у последнего релиза именно это имя;
 - имена ассетов фиксированные: `keqdroid-<версия>-android.apk`,
+  `keqdroid-<версия>-armeabi-v7a-android.apk` (обязан стоять в списке после основного:
+  все апдейтеры до него берут первый `.apk`, а GitHub сортирует ассеты по имени — поэтому
+  не `-android-armeabi-v7a`, там `-` раньше `.`),
   `keqdroid-windows-x64-<версия>.zip` (именно такой порядок слов),
   `keqdroid-<версия>-linux-x64.tar.gz`, `keqdroid_<версия>_amd64.deb`,
   `keqdroid-<версия>-x86_64.AppImage`, `keqdroid-<версия>-1.x86_64.rpm`;

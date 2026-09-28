@@ -49,7 +49,7 @@ One `SHA256SUMS` holds the hash of every file in the release. The built-in updat
 
 | Platform | Files in release |
 |----------|------------------|
-| **Android** 7.0+ | `keqdroid-<version>-android.apk` |
+| **Android** 7.0+ | `keqdroid-<version>-android.apk` · `keqdroid-<version>-armeabi-v7a-android.apk` — only for phones with a 32-bit firmware (Redmi 9A/9C and the like), where the main one fails with "App not installed" |
 | **Windows** x64 | `keqdroid-windows-x64-<version>.zip` (portable) |
 | **Linux** x64 | `keqdroid-<version>-x86_64.AppImage` · `keqdroid_<version>_amd64.deb` · `keqdroid-<version>-1.x86_64.rpm` · `keqdroid-<version>-linux-x64.tar.gz` · Arch: `keqdroid-bin` on the AUR |
 
@@ -262,7 +262,7 @@ Version and tag `vX.Y.Z` come from `pubspec.yaml`. When uploading manually, uplo
 
 | Платформа | Файлы в релизе |
 |-----------|----------------|
-| **Android** 7.0+ | `keqdroid-<версия>-android.apk` |
+| **Android** 7.0+ | `keqdroid-<версия>-android.apk` · `keqdroid-<версия>-armeabi-v7a-android.apk` — только для телефонов с 32-битной прошивкой (Redmi 9A/9C и похожие), где основной не ставится с «Приложение не установлено» |
 | **Windows** x64 | `keqdroid-windows-x64-<версия>.zip` (portable) |
 | **Linux** x64 | `keqdroid-<версия>-x86_64.AppImage` · `keqdroid_<версия>_amd64.deb` · `keqdroid-<версия>-1.x86_64.rpm` · `keqdroid-<версия>-linux-x64.tar.gz` · Arch: `keqdroid-bin` на AUR |
 

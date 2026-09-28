@@ -1773,7 +1773,8 @@ class KeqdisVpnService : VpnService() {
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private fun getBinaryPath(name: String): String {
-        // Запускаем .so напрямую из nativeLibraryDir (/data/app/.../lib/arm64/).
+        // Запускаем .so напрямую из nativeLibraryDir (/data/app/.../lib/arm64/,
+        // у 32-битного APK — lib/arm/).
         // Файлы там имеют SELinux-метку apk_data_file — execv разрешён.
         // codeCacheDir и filesDir — app_data_file — execv заблокирован SELinux на Android 10+.
         val bin = File(applicationInfo.nativeLibraryDir, name)

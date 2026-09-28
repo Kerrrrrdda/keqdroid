@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ffi' show Abi;
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
@@ -329,11 +330,26 @@ class UpdateService {
     return null;
   }
 
-  static Map<String, dynamic>? _findApkAsset(List? assets) {
+  /// Метка 32-битного APK в имени: `keqdroid-<версия>-armeabi-v7a-android.apk`.
+  static const _arm32ApkMarker = 'armeabi-v7a';
+
+  /// APK той же архитектуры, в которой работает само приложение.
+  ///
+  /// В релизе их два: основной arm64 и armeabi-v7a для телефонов с 32-битной
+  /// прошивкой. Раз процесс уже запущен в своей ABI, APK этой ABI на телефон
+  /// встанет, а чужой может и не встать: arm64 на 32-битной прошивке не
+  /// ставится вовсе. Нужного в релизе нет (в старых релизах 32-битного не
+  /// было) — обновления для этого телефона нет. Брать просто первый .apk
+  /// нельзя: так выбирают все версии, вышедшие до 32-битного APK, и он стоит
+  /// в списке вторым ровно ради них (см. make_release.ps1).
+  static Map<String, dynamic>? _findApkAsset(
+    List? assets, {
+    required bool arm32,
+  }) {
     if (assets == null) return null;
     for (final asset in assets) {
       final name = (asset['name'] ?? '').toString().toLowerCase();
-      if (name.endsWith('.apk')) {
+      if (name.endsWith('.apk') && name.contains(_arm32ApkMarker) == arm32) {
         return asset;
       }
     }
@@ -343,14 +359,17 @@ class UpdateService {
   static Map<String, dynamic>? _findAssetForCurrentPlatform(List? assets) {
     if (Platform.isWindows) return _findWindowsAsset(assets);
     if (Platform.isLinux) return _findLinuxAsset(assets);
-    return _findApkAsset(assets);
+    return _findApkAsset(assets, arm32: Abi.current() == Abi.androidArm);
   }
 
+  /// [platform] — `android` (arm64), `android-arm` (armeabi-v7a), `windows`,
+  /// `linux`.
   static String? findAssetNameForPlatform(List? assets, String platform) {
     final asset = switch (platform) {
       'windows' => _findWindowsAsset(assets),
       'linux' => _findLinuxAsset(assets),
-      'android' => _findApkAsset(assets),
+      'android' => _findApkAsset(assets, arm32: false),
+      'android-arm' => _findApkAsset(assets, arm32: true),
       _ => null,
     };
     return asset?['name']?.toString();

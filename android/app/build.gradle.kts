@@ -29,6 +29,15 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(keystorePropertiesFile.inputStream())
 }
 
+// Архитектура APK. В релизе их две: основной arm64-v8a и armeabi-v7a для
+// телефонов, где производитель поставил 32-битный Android на 64-битный чип
+// (Redmi 9A/9C), — arm64-APK там не ставится вовсе. Какую собирать, Flutter
+// передаёт свойством target-platform из `flutter build apk --target-platform`.
+// Всё, что не ровно android-arm (flutter run, сборка без флага), — arm64, как
+// было до 32-битной сборки.
+val targetAbi =
+    if (project.findProperty("target-platform") == "android-arm") "armeabi-v7a" else "arm64-v8a"
+
 android {
     namespace = "com.keqdroid.keqdroid"
     compileSdk = flutter.compileSdkVersion
@@ -48,9 +57,9 @@ android {
         versionName = flutter.versionName
 
         ndk {
-            // Только arm64-v8a: реальные Android-устройства. x86_64 был нерабочим
-            // для VPN (в jniLibs не было ядер) — убран вместе с keqrnel.
-            abiFilters += listOf("arm64-v8a")
+            // Одна архитектура на APK (см. targetAbi). x86_64 не собирается:
+            // ядер под него нет, и VPN на нём был нерабочим.
+            abiFilters += listOf(targetAbi)
         }
     }
 
@@ -67,13 +76,13 @@ android {
             // `abiFilters` выше до чужих библиотек не достаёт: ML Kit из
             // mobile_scanner приносит libbarhopper_v3.so в AAR, и в APK
             // приезжали ВСЕ три её сборки — x86_64 на 5.9 МБ и armeabi-v7a на
-            // 3.2 МБ поверх нужной arm64. Работать на этих архитектурах
-            // приложению всё равно нечем: ядра собраны только под arm64.
-            excludes += listOf(
-                "**/x86/**",
-                "**/x86_64/**",
-                "**/armeabi-v7a/**",
-            )
+            // 3.2 МБ поверх нужной. С двумя наборами ядер в jniLibs то же
+            // самое стоило бы ещё ~80 МБ соседней архитектуры. Поэтому APK
+            // берёт только свою, а make_release.ps1 проверяет это по готовому
+            // файлу.
+            excludes += listOf("x86", "x86_64", "armeabi-v7a", "arm64-v8a")
+                .filter { it != targetAbi }
+                .map { "**/$it/**" }
         }
     }
 

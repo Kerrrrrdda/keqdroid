@@ -2,10 +2,14 @@
 #
 # Three targets, one source tree:
 #
-#   android - libmihomo.so (arm64-v8a), a plain executable rather than a
-#             library. It goes into jniLibs because that is the only directory
-#             Android extracts with the exec bit set; KeqdisVpnService
-#             fork+execv's it (see NativeHelper.startCore).
+#   android - libmihomo.so (arm64-v8a and armeabi-v7a), a plain executable
+#             rather than a library. It goes into jniLibs because that is the
+#             only directory Android extracts with the exec bit set;
+#             KeqdisVpnService fork+execv's it (see NativeHelper.startCore).
+#             armeabi-v7a is for phones whose vendor ships a 32-bit Android on
+#             a 64-bit chip (Redmi 9A/9C): they cannot install an arm64 APK at
+#             all, and the release carries a separate APK for them. Each APK
+#             takes only its own ABI - see packaging in app/build.gradle.kts.
 #   windows - assets/bin/windows/mihomo.exe
 #   linux   - assets/bin/linux/mihomo
 #
@@ -61,8 +65,9 @@ $wantWindows = ($Target -eq "all") -or ($Target -eq "windows")
 $wantLinux = ($Target -eq "all") -or ($Target -eq "linux")
 
 # ---- NDK -------------------------------------------------------------------
-# Only android needs it, and even there only for the C toolchain path; the
-# build itself is CGO_ENABLED=0. Desktop-only runs must not require an NDK.
+# Only android needs it: arm64 builds with CGO_ENABLED=0 and merely carries
+# the toolchain path, armeabi-v7a actually links through it (see Build-Mihomo).
+# Desktop-only runs must not require an NDK.
 $tc = $null
 if ($wantAndroid) {
     $ndk = $env:ANDROID_NDK_HOME
@@ -172,24 +177,35 @@ function Build-Mihomo {
     param(
         [string]$Goos,
         [string]$Goarch,
+        [string]$Goarm,
         [string]$OutPath,
         [string]$Ldflags,
         [string]$Cc,
-        [string]$Label
+        [string]$Label,
+        [switch]$Cgo
     )
 
     $outDir = Split-Path -Parent $OutPath
     New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
+    # android/arm cannot be linked without cgo ("requires external (cgo)
+    # linking"), unlike arm64. With cgo on, Go's net package switches Android
+    # to the libc resolver; netgo keeps the pure Go one, so both ABIs resolve
+    # names the same way. The one other cgo-only piece is android_tz.go: logs
+    # of the 32-bit core carry local time instead of UTC.
+    $tags = $BuildTags
+    if ($Cgo) { $tags = "$BuildTags,netgo" }
+
     Push-Location $src
     try {
-        $env:CGO_ENABLED = "0"
+        $env:CGO_ENABLED = if ($Cgo) { "1" } else { "0" }
         $env:GOOS = $Goos
         $env:GOARCH = $Goarch
+        if ($Goarm) { $env:GOARM = $Goarm }
         if ($Cc) { $env:CC = $Cc }
 
         Write-Host "Building $Label ..."
-        & $go.Source build -trimpath -buildvcs=false -tags $BuildTags `
+        & $go.Source build -trimpath -buildvcs=false -tags $tags `
             -ldflags $Ldflags `
             -o $OutPath .
         if ($LASTEXITCODE -ne 0) { Write-Error "go build failed for $Label" }
@@ -197,6 +213,7 @@ function Build-Mihomo {
     finally {
         Pop-Location
         Remove-Item Env:CGO_ENABLED, Env:GOOS, Env:GOARCH -ErrorAction SilentlyContinue
+        if ($Goarm) { Remove-Item Env:GOARM -ErrorAction SilentlyContinue }
         if ($Cc) { Remove-Item Env:CC -ErrorAction SilentlyContinue }
     }
 
@@ -211,6 +228,12 @@ if ($wantAndroid) {
         -Ldflags ("-s -w -checklinkname=0 {0}" -f $versionFlag) `
         -Cc (Join-Path $tc "aarch64-linux-android24-clang.cmd") `
         -Label "libmihomo.so for arm64-v8a"
+    Build-Mihomo `
+        -Goos "android" -Goarch "arm" -Goarm "7" `
+        -OutPath (Join-Path $repoRoot "android\app\src\main\jniLibs\armeabi-v7a\libmihomo.so") `
+        -Ldflags ("-s -w -checklinkname=0 {0}" -f $versionFlag) `
+        -Cc (Join-Path $tc "armv7a-linux-androideabi24-clang.cmd") `
+        -Label "libmihomo.so for armeabi-v7a" -Cgo
 }
 
 if ($wantWindows) {

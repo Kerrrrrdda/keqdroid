@@ -5,7 +5,8 @@
 
 .DESCRIPTION
   Produces, under release\<version>\:
-    keqdroid-<version>-android.apk              (Android)
+    keqdroid-<version>-android.apk              (Android, arm64-v8a)
+    keqdroid-<version>-armeabi-v7a-android.apk  (Android on a 32-bit firmware)
     keqdroid-windows-x64-<version>.zip          (Windows portable)
     keqdroid-<version>-x86_64.AppImage          (Linux)
     keqdroid_<version>_amd64.deb                (Debian / Ubuntu)
@@ -106,6 +107,27 @@ function Get-Sha256([string]$path) {
   (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLower()
 }
 
+# An APK carries native code for exactly one ABI, and all of it. A second ABI
+# is dead weight (the other set of cores alone is ~80 MB); a missing core
+# installs fine and never brings the tunnel up.
+function Assert-ApkAbi([string]$apk, [string]$abi) {
+  Add-Type -AssemblyName System.IO.Compression.FileSystem
+  $zip = [System.IO.Compression.ZipFile]::OpenRead($apk)
+  try {
+    $libs = @($zip.Entries | Where-Object { $_.FullName -like 'lib/*/*' } | ForEach-Object { $_.FullName })
+  } finally {
+    $zip.Dispose()
+  }
+  $abis = @($libs | ForEach-Object { $_.Split('/')[1] } | Sort-Object -Unique)
+  if ($abis.Count -ne 1 -or $abis[0] -ne $abi) {
+    throw "APK for $abi must carry only lib/$abi, found: $($abis -join ', ')"
+  }
+  foreach ($so in @('libflutter.so', 'libapp.so', 'libxray.so', 'libmihomo.so', 'libkeqdis_native.so')) {
+    if ($libs -notcontains "lib/$abi/$so") { throw "APK for $abi lacks lib/$abi/$so" }
+  }
+  Write-Host "    lib/$abi only, all native code present"
+}
+
 # --- version from pubspec.yaml: "version: 0.4.9+1" -> "0.4.9", tag "v0.4.9" ---
 $pubspec = Get-Content (Join-Path $repoRoot 'pubspec.yaml') -Raw
 $m = [regex]::Match($pubspec, '(?m)^\s*version:\s*([0-9]+\.[0-9]+(?:\.[0-9]+)?)')
@@ -135,25 +157,44 @@ flutter pub get
 if ($LASTEXITCODE -ne 0) { throw "flutter pub get failed" }
 
 # --- Android ---------------------------------------------------------------
+# Two APKs, one ABI each. arm64-v8a is the main one; armeabi-v7a is for phones
+# whose vendor ships a 32-bit Android on a 64-bit chip (Redmi 9A/9C), where an
+# arm64 APK does not install at all.
+#
+# The 32-bit name must sort AFTER the main one. Every updater released before
+# it takes the first *.apk of the release, and GitHub lists assets by name,
+# case-insensitively, not by upload time. "android-armeabi-v7a" would sort
+# first ('-' < '.') and hand 32-bit cores to every arm64 phone on update;
+# "armeabi-v7a-android" parts from "android" at 'r' > 'n'. The new updater
+# picks by ABI and does not care.
+#
+# --target-platform is not an optimisation. Without it Flutter also compiles
+# its engine and the Dart AOT snapshot for the other ABIs (22.5 MB of 87.5 in
+# a published APK), and app/build.gradle.kts picks the APK's ABI from it.
 if (-not $SkipAndroid) {
-  Write-Step "Building Android APK"
-  # --target-platform android-arm64 — не «оптимизация на всякий случай».
-  # Без него Flutter компилирует свой движок и AOT-снимок Dart ещё под
-  # armeabi-v7a и x86_64: это 22.5 МБ из 87.5 в опубликованном APK. Работать там
-  # приложению всё равно нечем — все четыре ядра собраны только под arm64
-  # (`abiFilters` в android/app/build.gradle.kts), так что на этих архитектурах
-  # оно устанавливалось и не поднимало туннель.
-  flutter build apk --release --target-platform android-arm64
-  if ($LASTEXITCODE -ne 0) { throw "flutter build apk failed" }
+  $apks = @(
+    @{ Platform = 'android-arm64'; Abi = 'arm64-v8a';   Name = "keqdroid-$version-android.apk" },
+    @{ Platform = 'android-arm';   Abi = 'armeabi-v7a'; Name = "keqdroid-$version-armeabi-v7a-android.apk" }
+  )
+  if ([string]::Compare($apks[0].Name, $apks[1].Name, [StringComparison]::OrdinalIgnoreCase) -ge 0) {
+    throw "$($apks[1].Name) must sort after $($apks[0].Name): older updaters take the first APK"
+  }
 
   $apkSrc = Join-Path $repoRoot 'build\app\outputs\flutter-apk\app-release.apk'
-  if (-not (Test-Path -LiteralPath $apkSrc)) { throw "APK not found at $apkSrc" }
+  foreach ($apk in $apks) {
+    Write-Step "Building Android APK ($($apk.Abi))"
+    # Gone before the build, so a build that silently produced nothing cannot
+    # ship the previous ABI's APK under this name.
+    if (Test-Path -LiteralPath $apkSrc) { Remove-Item -LiteralPath $apkSrc -Force }
+    flutter build apk --release --target-platform $apk.Platform
+    if ($LASTEXITCODE -ne 0) { throw "flutter build apk failed for $($apk.Abi)" }
+    if (-not (Test-Path -LiteralPath $apkSrc)) { throw "APK not found at $apkSrc" }
+    Assert-ApkAbi $apkSrc $apk.Abi
 
-  # "-android" в имени — как во всех опубликованных релизах; апдейтер ищет
-  # просто *.apk, ему суффикс не важен.
-  $apkOut = Join-Path $outDir "keqdroid-$version-android.apk"
-  Copy-Item -LiteralPath $apkSrc -Destination $apkOut -Force
-  Write-Host "    $(Split-Path $apkOut -Leaf) ($([math]::Round((Get-Item -LiteralPath $apkOut).Length / 1MB, 1)) MB)"
+    $apkOut = Join-Path $outDir $apk.Name
+    Copy-Item -LiteralPath $apkSrc -Destination $apkOut -Force
+    Write-Host "    $($apk.Name) ($([math]::Round((Get-Item -LiteralPath $apkOut).Length / 1MB, 1)) MB)"
+  }
 }
 
 # --- Windows ---------------------------------------------------------------

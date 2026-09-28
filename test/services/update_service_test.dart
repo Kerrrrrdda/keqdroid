@@ -233,6 +233,78 @@ void main() {
     });
   });
 
+  group('два APK в релизе: arm64 и armeabi-v7a', () {
+    const main = 'keqdroid-0.30.0-android.apk';
+    const arm32 = 'keqdroid-0.30.0-armeabi-v7a-android.apk';
+    const names = [
+      'PKGBUILD',
+      'SHA256SUMS',
+      'geoip.dat',
+      'geoip.dat.sha256',
+      'keqdroid-0.30.0-1.x86_64.rpm',
+      main,
+      arm32,
+      'keqdroid-0.30.0-linux-x64.tar.gz',
+      'keqdroid-0.30.0-x86_64.AppImage',
+      'keqdroid-windows-x64-0.30.0.zip',
+      'keqdroid_0.30.0_amd64.deb',
+    ];
+    List<Map<String, dynamic>> assetsOf(List<String> order) => [
+          for (final n in order)
+            {'name': n, 'browser_download_url': 'https://example.invalid/$n'},
+        ];
+
+    // GitHub отдаёт ассеты по имени без учёта регистра (так в каждом
+    // опубликованном релизе), а не по времени загрузки.
+    List<String> githubOrder(List<String> names) => [...names]
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
+    test('версии до 32-битного APK по-прежнему получают основной', () {
+      // Все они берут первый .apk в списке.
+      final firstApk =
+          githubOrder(names).firstWhere((n) => n.toLowerCase().endsWith('.apk'));
+      expect(firstApk, main);
+    });
+
+    test('каждая архитектура получает свой APK при любом порядке', () {
+      for (final order in [names, names.reversed.toList()]) {
+        final assets = assetsOf(order);
+        expect(UpdateService.findAssetNameForPlatform(assets, 'android'), main);
+        expect(
+          UpdateService.findAssetNameForPlatform(assets, 'android-arm'),
+          arm32,
+        );
+      }
+    });
+
+    test('в старом релизе 32-битного нет — обновление ему не предлагается', () {
+      final assets = assetsOf(names.where((n) => n != arm32).toList());
+      expect(
+        UpdateService.findAssetNameForPlatform(assets, 'android-arm'),
+        isNull,
+      );
+      expect(UpdateService.findAssetNameForPlatform(assets, 'android'), main);
+    });
+
+    test('у каждого APK своя строка в SHA256SUMS', () {
+      final manifest = [
+        for (final n in names.where((n) => n != 'SHA256SUMS'))
+          '${'0' * 63}${names.indexOf(n) % 10}  $n',
+      ];
+      for (final apk in [main, arm32]) {
+        expect(
+          manifest.where((l) => l.toLowerCase().contains(apk.toLowerCase())),
+          hasLength(1),
+          reason: apk,
+        );
+        expect(
+          UpdateService.checksumAssetFor(assetsOf(names), apk)?['name'],
+          'SHA256SUMS',
+        );
+      }
+    });
+  });
+
   group('one SHA256SUMS for the whole release', () {
     // Так выглядит релиз с 0.19.0: рядом с ассетами нет ни одного .sha256,
     // кроме geoip.dat.sha256 для загрузчика geo-базы в 0.15–0.18.
