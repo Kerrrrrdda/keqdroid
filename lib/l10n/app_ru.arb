@@ -103,7 +103,7 @@
   "settingsRoutingPresetRuTitle": "Российские сайты напрямую",
   "settingsRoutingPresetRuDesc": "Все домены .ru / .рф и крупные сервисы РФ идут мимо VPN (добавляет домены в «Напрямую»)",
   "settingsRoutingPresetRuGeoipTitle": "IP России (GeoIP) напрямую",
-  "settingsRoutingPresetRuGeoipDesc": "Все российские диапазоны IP идут мимо VPN через GeoIP. Работает в режиме Proxy",
+  "settingsRoutingPresetRuGeoipDesc": "Российские диапазоны IP идут мимо VPN. Сайты, открытые по имени, ловятся только при стратегии IPIfNonMatch и DNS без +local в настройках ядра",
   "settingsRoutingPresetRuGeositeTitle": "Сайты РФ (GeoSite) напрямую",
   "settingsRoutingPresetRuGeositeDesc": "Российские домены из базы GeoSite идут мимо VPN",
   "settingsRoutingPresetBanksTitle": "Банки и госуслуги напрямую",

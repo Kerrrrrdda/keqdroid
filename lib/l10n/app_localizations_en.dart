@@ -209,7 +209,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsRoutingPresetRuGeoipTitle => 'Russia IPs (GeoIP) go direct';
 
   @override
-  String get settingsRoutingPresetRuGeoipDesc => 'All Russian IP ranges bypass the VPN via GeoIP. Works in Proxy mode.';
+  String get settingsRoutingPresetRuGeoipDesc => 'Russian IP ranges bypass the VPN. Sites opened by name are matched only with the IPIfNonMatch domain strategy and DNS without +local in Core settings.';
 
   @override
   String get settingsRoutingPresetRuGeositeTitle => 'Russia sites (GeoSite) go direct';

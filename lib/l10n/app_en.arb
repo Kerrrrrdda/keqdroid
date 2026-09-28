@@ -103,7 +103,7 @@
   "settingsRoutingPresetRuTitle": "Russian sites go direct",
   "settingsRoutingPresetRuDesc": "All .ru / .рф domains and major RU services bypass the VPN (adds domains to Direct)",
   "settingsRoutingPresetRuGeoipTitle": "Russia IPs (GeoIP) go direct",
-  "settingsRoutingPresetRuGeoipDesc": "All Russian IP ranges bypass the VPN via GeoIP. Works in Proxy mode.",
+  "settingsRoutingPresetRuGeoipDesc": "Russian IP ranges bypass the VPN. Sites opened by name are matched only with the IPIfNonMatch domain strategy and DNS without +local in Core settings.",
   "settingsRoutingPresetRuGeositeTitle": "Russia sites (GeoSite) go direct",
   "settingsRoutingPresetRuGeositeDesc": "Russian domains from the GeoSite database bypass the VPN",
   "settingsRoutingPresetBanksTitle": "Banks & gov go direct",

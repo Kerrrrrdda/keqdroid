@@ -209,7 +209,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsRoutingPresetRuGeoipTitle => 'آی‌پی‌های روسیه (GeoIP) — مستقیم';
 
   @override
-  String get settingsRoutingPresetRuGeoipDesc => 'همهٔ بازه‌های آی‌پی روسیه از طریق GeoIP بدون VPN می‌روند — در حالت پروکسی هم کار می‌کند';
+  String get settingsRoutingPresetRuGeoipDesc => 'بازه‌های آی‌پی روسیه بدون VPN می‌روند. سایت‌هایی که با نام باز می‌شوند فقط با استراتژی IPIfNonMatch و DNS بدون ‎+local‎ در تنظیمات هسته شناسایی می‌شوند';
 
   @override
   String get settingsRoutingPresetRuGeositeTitle => 'سایت‌های روسیه (GeoSite) — مستقیم';

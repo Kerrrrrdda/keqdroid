@@ -103,7 +103,7 @@
   "settingsRoutingPresetRuTitle": "俄罗斯网站走直连",
   "settingsRoutingPresetRuDesc": "所有 .ru / .рф 域名及主要俄罗斯服务绕过 VPN（向“直连”添加域名）",
   "settingsRoutingPresetRuGeoipTitle": "俄罗斯 IP（GeoIP）走直连",
-  "settingsRoutingPresetRuGeoipDesc": "通过 GeoIP 让所有俄罗斯 IP 段绕过 VPN。代理模式下同样有效。",
+  "settingsRoutingPresetRuGeoipDesc": "俄罗斯 IP 段绕过 VPN。按域名打开的网站，只有在内核设置中选用 IPIfNonMatch 策略、且 DNS 不带 +local 时才会匹配。",
   "settingsRoutingPresetRuGeositeTitle": "俄罗斯网站（GeoSite）走直连",
   "settingsRoutingPresetRuGeositeDesc": "GeoSite 数据库中的俄罗斯域名绕过 VPN",
   "settingsRoutingPresetBanksTitle": "银行和政务网站走直连",

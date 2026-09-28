@@ -209,7 +209,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsRoutingPresetRuGeoipTitle => '俄罗斯 IP（GeoIP）走直连';
 
   @override
-  String get settingsRoutingPresetRuGeoipDesc => '通过 GeoIP 让所有俄罗斯 IP 段绕过 VPN。代理模式下同样有效。';
+  String get settingsRoutingPresetRuGeoipDesc => '俄罗斯 IP 段绕过 VPN。按域名打开的网站，只有在内核设置中选用 IPIfNonMatch 策略、且 DNS 不带 +local 时才会匹配。';
 
   @override
   String get settingsRoutingPresetRuGeositeTitle => '俄罗斯网站（GeoSite）走直连';

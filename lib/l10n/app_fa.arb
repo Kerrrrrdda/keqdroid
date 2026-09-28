@@ -62,7 +62,7 @@
   "settingsRoutingPresetRuTitle": "سایت‌های روسی — مستقیم",
   "settingsRoutingPresetRuDesc": "همهٔ دامنه‌های \u200e.ru\u200e و \u200e.рф\u200e و سرویس‌های بزرگ روسیه بدون VPN باز می‌شوند (به فهرست «مستقیم» اضافه می‌شوند)",
   "settingsRoutingPresetRuGeoipTitle": "آی‌پی‌های روسیه (GeoIP) — مستقیم",
-  "settingsRoutingPresetRuGeoipDesc": "همهٔ بازه‌های آی‌پی روسیه از طریق GeoIP بدون VPN می‌روند — در حالت پروکسی هم کار می‌کند",
+  "settingsRoutingPresetRuGeoipDesc": "بازه‌های آی‌پی روسیه بدون VPN می‌روند. سایت‌هایی که با نام باز می‌شوند فقط با استراتژی IPIfNonMatch و DNS بدون \u200e+local\u200e در تنظیمات هسته شناسایی می‌شوند",
   "settingsRoutingPresetRuGeositeTitle": "سایت‌های روسیه (GeoSite) — مستقیم",
   "settingsRoutingPresetRuGeositeDesc": "دامنه‌های روسی از پایگاه دادهٔ GeoSite بدون VPN می‌روند",
   "settingsRoutingPresetBanksTitle": "بانک‌ها و دولتی — مستقیم",

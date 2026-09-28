@@ -476,7 +476,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsRoutingPresetRuGeoipDesc.
   ///
   /// In en, this message translates to:
-  /// **'All Russian IP ranges bypass the VPN via GeoIP. Works in Proxy mode.'**
+  /// **'Russian IP ranges bypass the VPN. Sites opened by name are matched only with the IPIfNonMatch domain strategy and DNS without +local in Core settings.'**
   String get settingsRoutingPresetRuGeoipDesc;
 
   /// No description provided for @settingsRoutingPresetRuGeositeTitle.
