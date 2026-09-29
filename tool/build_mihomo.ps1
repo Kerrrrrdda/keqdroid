@@ -27,12 +27,16 @@
 # network stacks the client can never reach - see $BuildTags below for the
 # numbers and the reasoning.
 #
-# The Windows binary is deliberately NOT stripped: a stripped, unsigned exe next
-# to the app is a Defender heuristic, and the core went to quarantine mid-build
-# over it. Nothing of the kind applies elsewhere, so Android and Linux are built
-# with -s -w: it takes 18 MB off this core on Linux, and 13 MB off what the
-# user downloads. Go still prints stack traces with function names without the
-# symbol table, so nothing is lost for debugging.
+# Android and Linux are built with -s -w: it takes 18 MB off this core on
+# Linux, and 13 MB off what the user downloads. Go still prints stack traces
+# with function names without either, so nothing is lost for debugging.
+#
+# Windows gets -w only. A fully stripped (-s -w), unsigned exe next to the app
+# is a Defender heuristic, and the core once went to quarantine mid-build over
+# it. -w drops just the DWARF (what a debugger reads, 12 MB of this exe and
+# 12 MB of the release zip) and keeps the symbol table; a build like that
+# passed a Defender scan and real-time protection on 2026-09-29. If Defender
+# starts flagging it after all, drop the -w below first.
 #
 # The build is NOT stock upstream: tool/patches/*.patch are applied first and
 # the script fails if any of them does not apply. Read the patch headers before
@@ -240,7 +244,7 @@ if ($wantWindows) {
     Build-Mihomo `
         -Goos "windows" -Goarch "amd64" `
         -OutPath (Join-Path $repoRoot "assets\bin\windows\mihomo.exe") `
-        -Ldflags ("-checklinkname=0 {0}" -f $versionFlag) `
+        -Ldflags ("-w -checklinkname=0 {0}" -f $versionFlag) `
         -Label "mihomo.exe for windows/amd64"
 }
 

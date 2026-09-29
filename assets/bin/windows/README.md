@@ -20,19 +20,23 @@ it; TUN mode runs keqrnel with a TUN inbound and needs the app as administrator
 Build `keqrnel.exe` from [Lemonochka/keqrnel](https://github.com/Lemonochka/keqrnel):
 
 ```sh
-go build -trimpath -buildvcs=false -tags with_gvisor -o keqrnel.exe ./cmd/keqrnel
+go build -trimpath -buildvcs=false -tags with_gvisor -ldflags=-w -o keqrnel.exe ./cmd/keqrnel
 ```
 
 `with_gvisor` is not optional — the TUN stack is a user setting, and `gvisor` /
 `mixed` (plus full-cone NAT) are missing from a build without that tag.
+
+`-ldflags=-w` drops the debugger data (DWARF, 14 MB of this exe) and keeps the
+symbol table, so crash traces still name functions. Not `-s -w`: a fully
+stripped unsigned exe is what Defender once quarantined.
 
 `mihomo.exe` is the second core, not a wrapper: which one runs a server is decided
 by the server's **format** (Clash YAML and AmneziaWG `.conf` → mihomo, Xray JSON →
 keqrnel, a plain link → whichever the user picked). In TUN mode mihomo creates the
 adapter itself, so it needs the same two things as keqrnel: administrator rights
 and `wintun.dll` next to the binary. Build it with `tool/build_mihomo.ps1 -Target
-windows` — a patched build, see `tool/patches/`; it is deliberately left
-unstripped to keep Defender calm.
+windows` — a patched build, see `tool/patches/`; like keqrnel it loses only the
+DWARF (`-w`), not the symbol table, to keep Defender calm.
 
 AmneziaWG has no binary of its own any more: mihomo carries amneziawg-go and runs
 the profile as `type: wireguard` with `amnezia-wg-option`.
