@@ -105,8 +105,9 @@ flutter:
     - assets/icon.png
     # Иконка трея: .ico, а не .png — Windows берёт из него кадр нужного размера.
     - assets/tray_icon.ico
-    - assets/icon_foreground.png
-    - assets/icon_windows_launcher.png
+    # icon_foreground.png и icon_windows_launcher.png сюда не входят: их с
+    # диска читают только генераторы значков (flutter_launcher_icons,
+    # tool/prepare_windows_icon.dart), а в пакете они были 300 КБ мёртвого веса.
     # OFL-лицензии шрифтов обязаны ехать вместе со шрифтами в дистрибутиве.
     - assets/fonts/Comfortaa-OFL.txt
     - assets/fonts/Montserrat-OFL.txt
