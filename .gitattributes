@@ -12,3 +12,9 @@ test/fixtures/** text eol=lf
 # LF, и сборка встанет на «patch does not apply». На машине, где патч писали,
 # этого не увидеть — ломается свежий клон под Windows.
 tool/patches/** text eol=lf
+
+# Shell-скрипты исполняет bash в WSL или на Linux, и с CRLF он падает на первой
+# же строке (`set: pipefail\r: invalid option name`). С core.autocrlf=true
+# скрипт получал CRLF, как только git перезаписывал его в рабочей копии, —
+# релиз 0.25.0 так и встал на сборке Linux.
+*.sh text eol=lf
