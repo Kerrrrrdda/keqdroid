@@ -130,6 +130,10 @@ class ExpressiveNotice extends StatelessWidget {
   /// фоне — первое, что проваливается по контрасту на светлой теме.
   final Color? textColor;
 
+  /// Кнопка справа, когда у подсказки есть прямое действие («Переподключить»):
+  /// иначе человеку пришлось бы искать его на другом экране.
+  final Widget? action;
+
   static const double _fillOpacity = 0.12;
   static const double _outlineOpacity = 0.32;
 
@@ -140,6 +144,7 @@ class ExpressiveNotice extends StatelessWidget {
     this.icon,
     this.outlined = false,
     this.textColor,
+    this.action,
   });
 
   @override
@@ -155,7 +160,11 @@ class ExpressiveNotice extends StatelessWidget {
             : null,
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        // С кнопкой строка выше текста, и текст встаёт по её середине, а не
+        // прилипает к верху.
+        crossAxisAlignment: action == null
+            ? CrossAxisAlignment.start
+            : CrossAxisAlignment.center,
         children: [
           if (icon != null) ...[
             Icon(icon, size: ExpressiveIconSize.inline, color: color),
@@ -170,6 +179,10 @@ class ExpressiveNotice extends StatelessWidget {
               ),
             ),
           ),
+          if (action != null) ...[
+            const SizedBox(width: ExpressiveSpacing.small),
+            action!,
+          ],
         ],
       ),
     );

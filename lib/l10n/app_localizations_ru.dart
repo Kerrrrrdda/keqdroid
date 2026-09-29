@@ -185,19 +185,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settingsRoutingResetDone => 'Правила маршрутизации сброшены';
 
   @override
-  String get settingsRoutingHeaderDesc => 'Какие сайты идут мимо VPN, какие через него, а какие блокируются';
-
-  @override
-  String get settingsRoutingPresetsTitle => 'Быстрые пресеты';
-
-  @override
-  String get settingsRoutingPresetsHint => 'Готовый список, добавится в поле ниже';
-
-  @override
-  String get settingsRoutingPresetChoose => 'Выберите пресет…';
-
-  @override
-  String get settingsRoutingPresetAdd => 'Добавить';
+  String get settingsRoutingPresetsTitle => 'Готовые списки';
 
   @override
   String get settingsRoutingPresetRuTitle => 'Российские сайты напрямую';
@@ -259,37 +247,31 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get settingsRoutingDirectTitle => 'Напрямую (мимо VPN)';
+  String get settingsRoutingDirectTitle => 'Напрямую';
 
   @override
   String get settingsRoutingProxyTitle => 'Через VPN';
 
   @override
-  String get settingsRoutingBlockTitle => 'Заблокировано';
+  String get settingsRoutingBlockTitle => 'Блокировать';
 
   @override
-  String get settingsRoutingValuesHint => 'По одному в строке или через запятую';
+  String get settingsRoutingFinalTitle => 'Всё остальное';
 
   @override
-  String get settingsRoutingFinalTitle => 'Остальной трафик';
+  String get settingsRoutingFinalSubtitle => 'Нет в списках';
 
   @override
-  String get settingsRoutingFinalProxy => 'Прокси';
+  String get settingsRoutingListsTitle => 'Куда идут сайты';
 
   @override
-  String get settingsRoutingFinalDirect => 'Обход';
-
-  @override
-  String get settingsRoutingFinalBlock => 'Блок';
+  String get settingsRoutingReconnect => 'Переподключить';
 
   @override
   String get settingsRoutingAdvancedTitle => 'Свои правила';
 
   @override
-  String get settingsRoutingAdvancedHint => 'Отдельные правила с собственным переключателем. Применяются поверх списков выше.';
-
-  @override
-  String get settingsRoutingAdvancedEmpty => 'Пока нет своих правил';
+  String get settingsRoutingAdvancedHint => 'Отдельные правила со своим переключателем. Добавляются к спискам выше.';
 
   @override
   String get settingsRoutingAdvancedAdd => 'Добавить правило';
@@ -350,7 +332,7 @@ class AppLocalizationsRu extends AppLocalizations {
       other: '$count записи',
       many: '$count записей',
       few: '$count записи',
-      one: '1 запись',
+      one: '$count запись',
       zero: 'пусто',
     );
     return '$_temp0';

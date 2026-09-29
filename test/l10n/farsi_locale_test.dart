@@ -31,11 +31,12 @@ void main() {
       expect(l10n.navSubscriptions, 'اشتراک‌ها');
       expect(l10n.settingsRoutingTitle, 'قوانین مسیریابی');
       // Термины сверены с Hiddify, v2rayNG, v2rayN и NekoBox, а не переведены
-      // дословно. «Мимо VPN» — «مستقیم», как и список на том же экране: «دور
-      // زدن» в Иране читается как обход блокировок, то есть наоборот, через VPN.
-      expect(l10n.settingsRoutingFinalProxy, 'پروکسی');
-      expect(l10n.settingsRoutingFinalDirect, 'مستقیم');
-      expect(l10n.settingsRoutingFinalBlock, 'مسدود');
+      // дословно. «Мимо VPN» — «مستقیم»: «دور زدن» в Иране читается как обход
+      // блокировок, то есть наоборот, через VPN. Те же слова и у списков, и у
+      // «всего остального», и у своих правил.
+      expect(l10n.settingsRoutingProxyTitle, 'پروکسی');
+      expect(l10n.settingsRoutingDirectTitle, 'مستقیم');
+      expect(l10n.settingsRoutingBlockTitle, 'مسدود');
     });
 
     testWidgets('layout flips to right-to-left', (tester) async {

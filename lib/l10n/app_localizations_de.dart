@@ -185,19 +185,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsRoutingResetDone => 'Routing-Regeln zurückgesetzt';
 
   @override
-  String get settingsRoutingHeaderDesc => 'Welche Websites am VPN vorbeigehen, welche hindurch und welche blockiert werden';
-
-  @override
-  String get settingsRoutingPresetsTitle => 'Schnelle Vorlagen';
-
-  @override
-  String get settingsRoutingPresetsHint => 'Eine fertige Liste, sie wird dem Feld unten hinzugefügt';
-
-  @override
-  String get settingsRoutingPresetChoose => 'Vorlage wählen…';
-
-  @override
-  String get settingsRoutingPresetAdd => 'Hinzufügen';
+  String get settingsRoutingPresetsTitle => 'Fertige Listen';
 
   @override
   String get settingsRoutingPresetRuTitle => 'Russische Websites direkt';
@@ -259,37 +247,31 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get settingsRoutingDirectTitle => 'Direkt (am VPN vorbei)';
+  String get settingsRoutingDirectTitle => 'Direkt';
 
   @override
-  String get settingsRoutingProxyTitle => 'Proxy (über das VPN)';
+  String get settingsRoutingProxyTitle => 'Über das VPN';
 
   @override
-  String get settingsRoutingBlockTitle => 'Blockiert';
+  String get settingsRoutingBlockTitle => 'Blockieren';
 
   @override
-  String get settingsRoutingValuesHint => 'Ein Eintrag pro Zeile oder durch Kommas getrennt';
+  String get settingsRoutingFinalTitle => 'Alles andere';
 
   @override
-  String get settingsRoutingFinalTitle => 'Übriger Datenverkehr';
+  String get settingsRoutingFinalSubtitle => 'Nicht in den Listen';
 
   @override
-  String get settingsRoutingFinalProxy => 'Proxy';
+  String get settingsRoutingListsTitle => 'Wohin Websites gehen';
 
   @override
-  String get settingsRoutingFinalDirect => 'Direkt';
-
-  @override
-  String get settingsRoutingFinalBlock => 'Blockieren';
+  String get settingsRoutingReconnect => 'Neu verbinden';
 
   @override
   String get settingsRoutingAdvancedTitle => 'Eigene Regeln';
 
   @override
-  String get settingsRoutingAdvancedHint => 'Einzelne Regeln mit eigenem Ein/Aus-Schalter. Werden zusätzlich zu den Listen oben angewendet.';
-
-  @override
-  String get settingsRoutingAdvancedEmpty => 'Noch keine eigenen Regeln';
+  String get settingsRoutingAdvancedHint => 'Einzelne Regeln mit eigenem Schalter. Werden zu den Listen oben hinzugefügt.';
 
   @override
   String get settingsRoutingAdvancedAdd => 'Regel hinzufügen';

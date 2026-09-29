@@ -185,19 +185,7 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsRoutingResetDone => 'قوانین مسیریابی بازنشانی شد';
 
   @override
-  String get settingsRoutingHeaderDesc => 'کدام سایت‌ها مستقیم بروند، کدام از VPN رد شوند و کدام مسدود باشند';
-
-  @override
-  String get settingsRoutingPresetsTitle => 'قالب‌های آماده';
-
-  @override
-  String get settingsRoutingPresetsHint => 'فهرست آماده — به کادر پایین اضافه می‌شود';
-
-  @override
-  String get settingsRoutingPresetChoose => 'انتخاب قالب…';
-
-  @override
-  String get settingsRoutingPresetAdd => 'افزودن';
+  String get settingsRoutingPresetsTitle => 'فهرست‌های آماده';
 
   @override
   String get settingsRoutingPresetRuTitle => 'سایت‌های روسی — مستقیم';
@@ -259,37 +247,31 @@ class AppLocalizationsFa extends AppLocalizations {
   }
 
   @override
-  String get settingsRoutingDirectTitle => 'مستقیم (بدون VPN)';
+  String get settingsRoutingDirectTitle => 'مستقیم';
 
   @override
-  String get settingsRoutingProxyTitle => 'پروکسی (از طریق VPN)';
+  String get settingsRoutingProxyTitle => 'پروکسی';
 
   @override
   String get settingsRoutingBlockTitle => 'مسدود';
 
   @override
-  String get settingsRoutingValuesHint => 'هر مورد در یک خط، یا جدا شده با ویرگول';
+  String get settingsRoutingFinalTitle => 'بقیهٔ ترافیک';
 
   @override
-  String get settingsRoutingFinalTitle => 'ترافیک بدون قانون';
+  String get settingsRoutingFinalSubtitle => 'در فهرست‌ها نیست';
 
   @override
-  String get settingsRoutingFinalProxy => 'پروکسی';
+  String get settingsRoutingListsTitle => 'مسیر سایت‌ها';
 
   @override
-  String get settingsRoutingFinalDirect => 'مستقیم';
-
-  @override
-  String get settingsRoutingFinalBlock => 'مسدود';
+  String get settingsRoutingReconnect => 'اتصال دوباره';
 
   @override
   String get settingsRoutingAdvancedTitle => 'قوانین دلخواه';
 
   @override
-  String get settingsRoutingAdvancedHint => 'قوانین تکی با کلید روشن/خاموش جداگانه. بعد از فهرست‌های بالا اعمال می‌شوند.';
-
-  @override
-  String get settingsRoutingAdvancedEmpty => 'هنوز قانون دلخواهی ندارید';
+  String get settingsRoutingAdvancedHint => 'قوانین تکی با کلید جداگانه. به فهرست‌های بالا اضافه می‌شوند.';
 
   @override
   String get settingsRoutingAdvancedAdd => 'افزودن قانون';

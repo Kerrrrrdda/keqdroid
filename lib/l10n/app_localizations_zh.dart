@@ -185,19 +185,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsRoutingResetDone => '路由规则已重置';
 
   @override
-  String get settingsRoutingHeaderDesc => '哪些网站绕过 VPN、哪些经过 VPN、哪些被阻止';
-
-  @override
-  String get settingsRoutingPresetsTitle => '快速预设';
-
-  @override
-  String get settingsRoutingPresetsHint => '现成的列表，会添加到下方对应的字段';
-
-  @override
-  String get settingsRoutingPresetChoose => '选择预设…';
-
-  @override
-  String get settingsRoutingPresetAdd => '添加';
+  String get settingsRoutingPresetsTitle => '现成列表';
 
   @override
   String get settingsRoutingPresetRuTitle => '俄罗斯网站走直连';
@@ -259,37 +247,31 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get settingsRoutingDirectTitle => '直连（绕过 VPN）';
+  String get settingsRoutingDirectTitle => '直连';
 
   @override
-  String get settingsRoutingProxyTitle => '代理（走 VPN）';
+  String get settingsRoutingProxyTitle => '代理';
 
   @override
   String get settingsRoutingBlockTitle => '阻止';
 
   @override
-  String get settingsRoutingValuesHint => '每行一个，或用逗号分隔';
+  String get settingsRoutingFinalTitle => '其他所有';
 
   @override
-  String get settingsRoutingFinalTitle => '其余流量';
+  String get settingsRoutingFinalSubtitle => '不在列表中';
 
   @override
-  String get settingsRoutingFinalProxy => '代理';
+  String get settingsRoutingListsTitle => '网站去向';
 
   @override
-  String get settingsRoutingFinalDirect => '直连';
-
-  @override
-  String get settingsRoutingFinalBlock => '阻止';
+  String get settingsRoutingReconnect => '重新连接';
 
   @override
   String get settingsRoutingAdvancedTitle => '自定义规则';
 
   @override
-  String get settingsRoutingAdvancedHint => '带有独立开关的单条规则。在上述列表之上应用。';
-
-  @override
-  String get settingsRoutingAdvancedEmpty => '暂无自定义规则';
+  String get settingsRoutingAdvancedHint => '带独立开关的单条规则，会并入上面的列表。';
 
   @override
   String get settingsRoutingAdvancedAdd => '添加规则';

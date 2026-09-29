@@ -102,7 +102,16 @@ class ExpressiveSectionHeader extends StatelessWidget {
   final String title;
   final IconData? icon;
 
-  const ExpressiveSectionHeader(this.title, {super.key, this.icon});
+  /// Действие над всей секцией («Готовые списки») — справа от подписи, а не
+  /// отдельной карточкой: оно относится к группе целиком, а не к одной строке.
+  final Widget? trailing;
+
+  const ExpressiveSectionHeader(
+    this.title, {
+    super.key,
+    this.icon,
+    this.trailing,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -115,14 +124,9 @@ class ExpressiveSectionHeader extends StatelessWidget {
           ?.copyWith(color: scheme.primary),
     );
 
-    return Padding(
-      // По горизонтали почти вровень с карточками: экраны настроек уже дают
-      // списку свои 16 px, и ещё 16 сверху уводили подпись на 32 — она висела
-      // в стороне от группы, к которой относится.
-      padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
-      child: icon == null
-          ? label
-          : Row(
+    final heading = icon == null
+        ? label
+        : Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(6),
@@ -138,6 +142,20 @@ class ExpressiveSectionHeader extends StatelessWidget {
                 ),
                 const SizedBox(width: 10),
                 Flexible(child: label),
+              ],
+            );
+
+    return Padding(
+      // По горизонтали почти вровень с карточками: экраны настроек уже дают
+      // списку свои 16 px, и ещё 16 сверху уводили подпись на 32 — она висела
+      // в стороне от группы, к которой относится.
+      padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
+      child: trailing == null
+          ? heading
+          : Row(
+              children: [
+                Expanded(child: heading),
+                trailing!,
               ],
             ),
     );

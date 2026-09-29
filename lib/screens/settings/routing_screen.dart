@@ -11,10 +11,12 @@ String _ruleTypeLabel(AppLocalizations l10n, RuleType t) => switch (t) {
       RuleType.processName => l10n.settingsRoutingRuleTypeDomain,
     };
 
+// Те же слова, что у строк списков и у «Всё остальное»: одно действие на
+// экране называется одинаково, где бы его ни выбирали.
 String _ruleActionLabel(AppLocalizations l10n, RuleAction a) => switch (a) {
-      RuleAction.direct => l10n.settingsRoutingFinalDirect,
-      RuleAction.proxy => l10n.settingsRoutingFinalProxy,
-      RuleAction.block => l10n.settingsRoutingFinalBlock,
+      RuleAction.direct => l10n.settingsRoutingDirectTitle,
+      RuleAction.proxy => l10n.settingsRoutingProxyTitle,
+      RuleAction.block => l10n.settingsRoutingBlockTitle,
     };
 
 Color _ruleActionColor(BuildContext context, RuleAction a) => switch (a) {
@@ -25,9 +27,14 @@ Color _ruleActionColor(BuildContext context, RuleAction a) => switch (a) {
 
 IconData _ruleActionIcon(RuleAction a) => switch (a) {
       RuleAction.direct => Icons.call_made_rounded,
-      RuleAction.proxy => Icons.public_rounded,
+      RuleAction.proxy => Icons.vpn_lock_rounded,
       RuleAction.block => Icons.block_rounded,
     };
+
+/// Вход в экран для виджет-теста: сам экран приватный, а путь к нему через
+/// «Дополнительно» тесту не нужен.
+@visibleForTesting
+Widget routingScreenForTest() => const _RoutingScreen();
 
 class _RoutingScreen extends ConsumerStatefulWidget {
   const _RoutingScreen();
@@ -41,7 +48,6 @@ class _RoutingScreenState extends ConsumerState<_RoutingScreen> {
   late final TextEditingController _proxyRules;
   late final TextEditingController _blockedRules;
   Timer? _debounce;
-  String? _selectedPresetId;
 
   @override
   void initState() {
@@ -99,6 +105,18 @@ class _RoutingScreenState extends ConsumerState<_RoutingScreen> {
             finalOutbound: value,
           ),
         );
+  }
+
+  /// Сперва дописывает несохранённый ввод: нажатие сразу после правки иначе
+  /// переподключило бы со старыми списками — сохранение ждёт паузы в наборе.
+  Future<void> _reconnect() async {
+    _debounce?.cancel();
+    await _persist();
+    try {
+      await ref.read(vpnStateProvider.notifier).reconnectToActiveServer();
+    } catch (_) {
+      // Исход подключения показывает сам экран VPN, здесь его не дублируем.
+    }
   }
 
   TextEditingController _controllerFor(RoutingField f) => switch (f) {
@@ -235,125 +253,189 @@ class _RoutingScreenState extends ConsumerState<_RoutingScreen> {
         ),
       ],
       children: [
-          if (tunnelActive) ...[
-            _reconnectHintBanner(context, l10n),
-            const SizedBox(height: 12),
+        if (tunnelActive)
+          ExpressiveNotice(
+            color: AppTheme.orange(context),
+            icon: Icons.info_outline_rounded,
+            text: l10n.splitTunnelingReconnectHint,
+            action: TextButton(
+              // Пока туннель поднимается, второе нажатие ничего бы не дало:
+              // переподключение само дождётся текущего.
+              onPressed: vpnStatus == VpnStatus.connected ? _reconnect : null,
+              child: Text(l10n.settingsRoutingReconnect),
+            ),
+          ),
+        ExpressiveSectionHeader(
+          l10n.settingsRoutingListsTitle,
+          trailing: TextButton.icon(
+            onPressed: () => unawaited(_showPresetSheet(context, l10n)),
+            icon: const Icon(Icons.playlist_add_rounded),
+            label: Text(l10n.settingsRoutingPresetsTitle),
+          ),
+        ),
+        // Три списка и «всё остальное» — одна группа: вместе они и есть ответ
+        // на вопрос «куда пойдёт сайт», а «всё остальное» решает судьбу того,
+        // что не попало ни в один список выше.
+        ExpressiveGroup(
+          children: [
+            _listRow(
+              color: AppTheme.green(context),
+              icon: Icons.call_made_rounded,
+              title: l10n.settingsRoutingDirectTitle,
+              controller: _directRules,
+              hint: 'ru, vk.com, .example.com, 10.0.0.0/8',
+              l10n: l10n,
+              field: RoutingField.direct,
+              geoIndex: geoIndex,
+            ),
+            _listRow(
+              color: AppTheme.accent(context),
+              icon: Icons.vpn_lock_rounded,
+              title: l10n.settingsRoutingProxyTitle,
+              controller: _proxyRules,
+              hint: 'youtube.com, discord.com, 1.1.1.1',
+              l10n: l10n,
+              field: RoutingField.proxy,
+              geoIndex: geoIndex,
+            ),
+            _listRow(
+              color: AppTheme.red(context),
+              icon: Icons.block_rounded,
+              title: l10n.settingsRoutingBlockTitle,
+              controller: _blockedRules,
+              hint: 'doubleclick.net, 0.0.0.0/8',
+              l10n: l10n,
+              field: RoutingField.blocked,
+              geoIndex: geoIndex,
+            ),
+            _finalRow(l10n, finalOutbound),
           ],
-          _intro(context, l10n),
-          const SizedBox(height: 16),
-          _finalOutboundCard(context, l10n, finalOutbound),
-          const SizedBox(height: 16),
-          _presetsCard(context, l10n),
-          const SizedBox(height: 16),
-          _section(
-            context: context,
-            color: AppTheme.green(context),
-            icon: Icons.call_made_rounded,
-            title: l10n.settingsRoutingDirectTitle,
-            controller: _directRules,
-            hint: 'ru, vk.com, .example.com, 10.0.0.0/8',
-            l10n: l10n,
-            field: RoutingField.direct,
-            geoIndex: geoIndex,
-          ),
-          const SizedBox(height: 12),
-          _section(
-            context: context,
-            color: AppTheme.accent(context),
-            icon: Icons.vpn_lock_rounded,
-            title: l10n.settingsRoutingProxyTitle,
-            controller: _proxyRules,
-            hint: 'youtube.com, discord.com, 1.1.1.1',
-            l10n: l10n,
-            field: RoutingField.proxy,
-            geoIndex: geoIndex,
-          ),
-          const SizedBox(height: 12),
-          _section(
-            context: context,
-            color: AppTheme.red(context),
-            icon: Icons.block_rounded,
-            title: l10n.settingsRoutingBlockTitle,
-            controller: _blockedRules,
-            hint: 'doubleclick.net, 0.0.0.0/8',
-            l10n: l10n,
-            field: RoutingField.blocked,
-            geoIndex: geoIndex,
-          ),
-          const SizedBox(height: 16),
-          _advancedRulesCard(context, l10n),
-        ],
+        ),
+        ExpressiveSectionHeader(l10n.settingsRoutingAdvancedTitle),
+        _advancedRulesCard(context, l10n),
+      ],
     );
   }
 
-  Widget _reconnectHintBanner(BuildContext context, AppLocalizations l10n) {
-    return ExpressiveNotice(
-      color: AppTheme.orange(context),
-      icon: Icons.info_outline_rounded,
-      text: l10n.splitTunnelingReconnectHint,
-    );
-  }
+  // ── Строки группы «Куда идут сайты» ────────────────────────────────────────
 
-  // ── Финальное действие (глобал-прокси / обход / блок) ──────────────────────
+  /// На строке меньше этой ширины подпись встаёт над полем: рядом полю
+  /// осталось бы меньше половины телефона, и список читался бы по слову.
+  static const double _sideBySideWidth = 560;
 
-  String _finalLabel(AppLocalizations l10n, String value) => switch (value) {
-        AppSettings.finalOutboundDirect => l10n.settingsRoutingFinalDirect,
-        AppSettings.finalOutboundBlock => l10n.settingsRoutingFinalBlock,
-        _ => l10n.settingsRoutingFinalProxy,
-      };
+  /// Колонка подписи: вмещает самое длинное название строки с иконкой.
+  static const double _labelWidth = 188;
 
-  IconData _finalIcon(String value) => switch (value) {
-        AppSettings.finalOutboundDirect => Icons.call_made_rounded,
-        AppSettings.finalOutboundBlock => Icons.block_rounded,
-        _ => Icons.vpn_lock_rounded,
-      };
-
-  Color _finalColor(BuildContext context, String value) => switch (value) {
-        AppSettings.finalOutboundDirect => AppTheme.green(context),
-        AppSettings.finalOutboundBlock => AppTheme.red(context),
-        _ => AppTheme.accent(context),
-      };
-
-  Widget _finalOutboundCard(
-      BuildContext context, AppLocalizations l10n, String current) {
-    return ExpressiveCard(
-      child:Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+  Widget _row({
+    required Widget label,
+    required Widget body,
+    bool centerLabel = false,
+  }) {
+    return ExpressiveGroupTile(
+      padding: const EdgeInsets.all(ExpressiveSpacing.medium),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth < _sideBySideWidth) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                label,
+                const SizedBox(height: ExpressiveSpacing.medium),
+                body,
+              ],
+            );
+          }
+          return Row(
+            crossAxisAlignment: centerLabel
+                ? CrossAxisAlignment.center
+                : CrossAxisAlignment.start,
             children: [
-              Icon(Icons.alt_route_rounded, size: 18, color: AppTheme.accent(context)),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  l10n.settingsRoutingFinalTitle,
-                  style: Theme.of(context)
-                      .textTheme
-                      .emphasized(Theme.of(context).textTheme.titleMedium)
-                      ?.copyWith(color: AppTheme.text(context)),
-                ),
+              SizedBox(width: _labelWidth, child: label),
+              const SizedBox(width: ExpressiveSpacing.medium),
+              Expanded(child: body),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _rowLabel({
+    required IconData icon,
+    required Color background,
+    required Color foreground,
+    required String title,
+    required String subtitle,
+  }) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Row(
+      children: [
+        ExpressiveIconBadge(
+          icon: icon,
+          background: background,
+          foreground: foreground,
+        ),
+        const SizedBox(width: ExpressiveSpacing.medium),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                title,
+                style: theme.textTheme
+                    .emphasized(theme.textTheme.titleMedium)
+                    ?.copyWith(color: scheme.onSurface),
+              ),
+              Text(
+                subtitle,
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(color: scheme.onSurfaceVariant),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          // Связанная группа кнопок вместо трёх самодельных плиток с рамкой в
-          // 2px и заливкой на 14% альфы: выбор одного из взаимоисключающих
-          // вариантов — ровно её работа, а прежний вид был кнопкой-переключателем
-          // из M2. Смысловой цвет остаётся на иконках невыбранных.
-          ExpressiveConnectedButtons<String>(
-            segments: [
-              for (final value in AppSettings.finalOutbounds)
-                ExpressiveSegment(
-                  value: value,
-                  label: _finalLabel(l10n, value),
-                  icon: _finalIcon(value),
-                  iconColor: _finalColor(context, value),
-                ),
-            ],
-            selected: current,
-            onChanged: _saveFinalOutbound,
+        ),
+      ],
+    );
+  }
+
+  Widget _finalRow(AppLocalizations l10n, String current) {
+    final scheme = Theme.of(context).colorScheme;
+    return _row(
+      centerLabel: true,
+      label: _rowLabel(
+        icon: Icons.alt_route_rounded,
+        background: scheme.surfaceContainerHighest,
+        foreground: scheme.onSurfaceVariant,
+        title: l10n.settingsRoutingFinalTitle,
+        subtitle: l10n.settingsRoutingFinalSubtitle,
+      ),
+      // Варианты в том же порядке и с теми же словами, что строки над ними:
+      // «всё остальное» отправляется туда же, куда один из трёх списков.
+      body: ExpressiveConnectedButtons<String>(
+        segments: [
+          ExpressiveSegment(
+            value: AppSettings.finalOutboundDirect,
+            label: l10n.settingsRoutingDirectTitle,
+            icon: Icons.call_made_rounded,
+            iconColor: AppTheme.green(context),
+          ),
+          ExpressiveSegment(
+            value: AppSettings.finalOutboundProxy,
+            label: l10n.settingsRoutingProxyTitle,
+            icon: Icons.vpn_lock_rounded,
+            iconColor: AppTheme.accent(context),
+          ),
+          ExpressiveSegment(
+            value: AppSettings.finalOutboundBlock,
+            label: l10n.settingsRoutingBlockTitle,
+            icon: Icons.block_rounded,
+            iconColor: AppTheme.red(context),
           ),
         ],
+        selected: current,
+        onChanged: _saveFinalOutbound,
       ),
     );
   }
@@ -368,57 +450,47 @@ class _RoutingScreenState extends ConsumerState<_RoutingScreen> {
     final rules = (rulesAsync.value ?? const <RoutingRule>[])
         .where((r) => r.type != RuleType.processName)
         .toList();
+    // Заголовок секции стоит над карточкой, поэтому внутри остаются только
+    // сами правила и строка «что это + добавить». Пустого состояния отдельной
+    // строкой нет: пояснение рядом с кнопкой и так говорит, что здесь будет.
     return ExpressiveCard(
-      child:Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(Icons.tune_rounded, size: 18, color: AppTheme.accent(context)),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  l10n.settingsRoutingAdvancedTitle,
-                  style: Theme.of(context)
-                      .textTheme
-                      .emphasized(Theme.of(context).textTheme.titleMedium)
-                      ?.copyWith(color: AppTheme.text(context)),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 2),
-          Text(
-            l10n.settingsRoutingAdvancedHint,
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: AppTheme.textLight(context)),
-          ),
-          const SizedBox(height: 12),
-          if (rules.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              child: Center(
-                child: Text(
-                  l10n.settingsRoutingAdvancedEmpty,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: AppTheme.textLight(context)),
-                ),
-              ),
-            )
-          else
-            for (final rule in rules) _ruleTile(context, l10n, rule),
-          const SizedBox(height: 8),
-          Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: FilledButton.tonalIcon(
-              onPressed: () => _openRuleEditor(l10n, null),
-              icon: const Icon(Icons.add_rounded, size: 18),
-              label: Text(l10n.settingsRoutingAdvancedAdd),
-            ),
+          for (final rule in rules) _ruleTile(context, l10n, rule),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final hint = Text(
+                l10n.settingsRoutingAdvancedHint,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              );
+              final add = FilledButton.tonalIcon(
+                onPressed: () => _openRuleEditor(l10n, null),
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: Text(l10n.settingsRoutingAdvancedAdd),
+              );
+              // На телефоне рядом с кнопкой пояснению осталась бы треть
+              // ширины, и оно рассыпалось бы на четыре строки.
+              if (constraints.maxWidth < _sideBySideWidth) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    hint,
+                    const SizedBox(height: ExpressiveSpacing.medium),
+                    add,
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(child: hint),
+                  const SizedBox(width: ExpressiveSpacing.medium),
+                  add,
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -432,10 +504,11 @@ class _RoutingScreenState extends ConsumerState<_RoutingScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.fromLTRB(10, 8, 4, 8),
+      // Та же подложка, что у полей списков выше: правило — тоже содержимое,
+      // а рамка вокруг каждого делала бы из карточки стопку коробок.
       decoration: BoxDecoration(
-        color: AppTheme.bg(context),
-        borderRadius: BorderRadius.circular(ExpressiveShape.medium),
-        border: Border.all(color: AppTheme.divider(context)),
+        color: Theme.of(context).colorScheme.surfaceContainerLowest,
+        borderRadius: ExpressiveShape.radius(ExpressiveShape.large),
       ),
       child: Row(
         children: [
@@ -620,114 +693,17 @@ class _RoutingScreenState extends ConsumerState<_RoutingScreen> {
   // кнопкой в шапке — та же справка, только полная. Подсказка формата осталась
   // там, где её читают: `hintText` каждого поля показывает готовый пример.
 
-  Widget _intro(BuildContext context, AppLocalizations l10n) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppTheme.accent(context).withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(ExpressiveShape.large),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.alt_route_rounded, size: 20, color: AppTheme.accent(context)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              l10n.settingsRoutingHeaderDesc,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    height: 1.35,
-                    color: AppTheme.text(context),
-                  ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-  Widget _presetsCard(BuildContext context, AppLocalizations l10n) {
-    return ExpressiveCard(
-      child:Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            l10n.settingsRoutingPresetsTitle,
-            style: Theme.of(context)
-                .textTheme
-                .emphasized(Theme.of(context).textTheme.titleMedium)
-                ?.copyWith(color: AppTheme.text(context)),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            l10n.settingsRoutingPresetsHint,
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: AppTheme.textLight(context)),
-          ),
-          const SizedBox(height: 12),
-          _presetPicker(context, l10n),
-        ],
-      ),
-    );
-  }
-
-  RoutingPreset? _selectedPreset() {
-    for (final preset in RoutingPresets.all) {
-      if (preset.id == _selectedPresetId) return preset;
-    }
-    return null;
-  }
-
-  /// Выбор пресета шторкой, а не `DropdownButton`.
+  /// «Готовые списки»: выбранный сразу дописывается в свой список.
   ///
-  /// `DropdownButton` — компонент M2: своя рамка, своя стрелка, а выбранное он
-  /// никак не помечает, просто прокручивает к нему список. Шторка со строками
-  /// [ExpressiveActionTile] — тот же способ выбора, что уже стоит у сортировки
-  /// серверов и интервала обновления подписки, и в неё помещается описание
-  /// пресета, которому в закрытом списке места не было вовсе.
-  Widget _presetPicker(BuildContext context, AppLocalizations l10n) {
-    final selected = _selectedPreset();
-    // Одной строкой: выбор и кнопка рядом, а не друг под другом.
-    //
-    // Описание пресета сюда не выводим — оно есть в шторке, ровно там, где по
-    // нему и принимают решение. Здесь оно занимало третью строку и повторяло
-    // то, что человек только что прочитал при выборе.
-    return Row(
-      children: [
-        Expanded(
-          child: ExpressiveGroup(
-            children: [
-              ExpressiveActionTile(
-                icon: selected == null
-                    ? Icons.tune_rounded
-                    : _presetIcon(selected.id),
-                title: selected == null
-                    ? l10n.settingsRoutingPresetChoose
-                    : _presetTitle(l10n, selected.id),
-                onTap: () => unawaited(_showPresetSheet(context, l10n)),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: ExpressiveSpacing.medium),
-        FilledButton.icon(
-          onPressed: selected == null
-              ? null
-              : () => _applyPreset(selected, _presetTitle(l10n, selected.id)),
-          icon: const Icon(Icons.add_rounded),
-          label: Text(l10n.settingsRoutingPresetAdd),
-        ),
-      ],
-    );
-  }
-
+  /// Раньше выбор и добавление были двумя шагами — пункт в карточке и кнопка
+  /// «Добавить» рядом. Шторку открывают ровно затем, чтобы добавить, а
+  /// описание пресета, по которому решают, есть в самой шторке.
   Future<void> _showPresetSheet(
     BuildContext context,
     AppLocalizations l10n,
   ) async {
     final theme = Theme.of(context);
-    final chosen = await showModalBottomSheet<String>(
+    final chosen = await showModalBottomSheet<RoutingPreset>(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
@@ -758,8 +734,7 @@ class _RoutingScreenState extends ConsumerState<_RoutingScreen> {
                         icon: _presetIcon(preset.id),
                         title: _presetTitle(l10n, preset.id),
                         subtitle: _presetDesc(l10n, preset.id),
-                        selected: preset.id == _selectedPresetId,
-                        onTap: () => Navigator.pop(ctx, preset.id),
+                        onTap: () => Navigator.pop(ctx, preset),
                       ),
                   ],
                 ),
@@ -770,12 +745,10 @@ class _RoutingScreenState extends ConsumerState<_RoutingScreen> {
       ),
     );
     if (chosen == null || !mounted) return;
-    setState(() => _selectedPresetId = chosen);
+    await _applyPreset(chosen, _presetTitle(l10n, chosen.id));
   }
 
-
-  Widget _section({
-    required BuildContext context,
+  Widget _listRow({
     required Color color,
     required IconData icon,
     required String title,
@@ -785,86 +758,95 @@ class _RoutingScreenState extends ConsumerState<_RoutingScreen> {
     required RoutingField field,
     required GeoAssetIndex geoIndex,
   }) {
-    final count = _countEntries(controller.text);
     final unknown = unknownGeoTokens(controller.text, geoIndex);
-    return ExpressiveCard(
-      child:Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return _row(
+      label: _rowLabel(
+        icon: icon,
+        background: color.withValues(alpha: 0.16),
+        foreground: color,
+        title: title,
+        subtitle: l10n.settingsRoutingItemCount(_countEntries(controller.text)),
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(7),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(ExpressiveShape.medium),
-                ),
-                child: Icon(icon, size: 17, color: color),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  title,
-                  style: Theme.of(context)
-                      .textTheme
-                      .emphasized(Theme.of(context).textTheme.titleSmall)
-                      ?.copyWith(color: AppTheme.text(context)),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 3,
-                ),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(ExpressiveShape.small),
-                ),
-                child: Text(
-                  l10n.settingsRoutingItemCount(count),
-                  style: Theme.of(context)
-                      .textTheme
-                      .labelSmall
-                      ?.copyWith(color: color),
-                ),
-              ),
-              if (!geoIndex.isEmpty)
-                IconButton(
-                  tooltip: l10n.settingsRoutingGeoPickerTooltip,
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  icon: Icon(Icons.travel_explore_rounded, size: 18, color: color),
-                  onPressed: () => _showGeoCodePicker(field, geoIndex),
-                ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          TextField(
+          _listField(
             controller: controller,
-            textDirection: technicalInputDirection,
-            minLines: 2,
-            maxLines: 8,
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.copyWith(color: AppTheme.text(context)),
-            // Форма, рамка, цвета фокуса и стили подсказок — из темы
-            // (`buildExpressiveComponentThemes.inputDecoration`). Здесь остаётся
-            // только то, что относится к этому конкретному полю: сам текст
-            // подсказки и пояснение под ним.
-            decoration: InputDecoration(
-              hintText: hint,
-              helperText: l10n.settingsRoutingValuesHint,
-            ),
-            onChanged: (_) => _scheduleSave(),
+            hint: hint,
+            l10n: l10n,
+            field: field,
+            geoIndex: geoIndex,
           ),
           if (unknown.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: ExpressiveSpacing.small),
             _unknownGeoWarning(context, l10n, unknown),
           ],
         ],
       ),
+    );
+  }
+
+  /// Поле списка — залитое, на уровень ниже строки, а не с рамкой, как поля
+  /// по теме. Здесь оно и есть содержимое строки: рамка в каждой из трёх строк
+  /// дробила бы группу на коробки, а тёмная подложка читается как «сам список».
+  /// Рамка остаётся только в фокусе — боковым зрением видно, где сейчас ввод.
+  Widget _listField({
+    required TextEditingController controller,
+    required String hint,
+    required AppLocalizations l10n,
+    required RoutingField field,
+    required GeoAssetIndex geoIndex,
+  }) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final radius = ExpressiveShape.radius(ExpressiveShape.large);
+    final withPicker = !geoIndex.isEmpty;
+    return Stack(
+      children: [
+        TextField(
+          controller: controller,
+          textDirection: technicalInputDirection,
+          minLines: 2,
+          maxLines: 8,
+          style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurface),
+          decoration: InputDecoration(
+            hintText: hint,
+            filled: true,
+            fillColor: scheme.surfaceContainerLowest,
+            border: OutlineInputBorder(
+              borderRadius: radius,
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: radius,
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: radius,
+              borderSide: BorderSide(color: scheme.primary, width: 2),
+            ),
+            // Справа место под кнопку кодов, чтобы текст под неё не заезжал.
+            contentPadding: EdgeInsetsDirectional.fromSTEB(
+              16,
+              14,
+              withPicker ? 48 : 16,
+              14,
+            ),
+          ),
+          onChanged: (_) => _scheduleSave(),
+        ),
+        if (withPicker)
+          PositionedDirectional(
+            top: 4,
+            end: 4,
+            child: IconButton(
+              tooltip: l10n.settingsRoutingGeoPickerTooltip,
+              icon: const Icon(Icons.travel_explore_rounded, size: 20),
+              color: scheme.onSurfaceVariant,
+              onPressed: () => _showGeoCodePicker(field, geoIndex),
+            ),
+          ),
+      ],
     );
   }
 

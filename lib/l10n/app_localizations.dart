@@ -425,35 +425,11 @@ abstract class AppLocalizations {
   /// **'Routing rules reset'**
   String get settingsRoutingResetDone;
 
-  /// No description provided for @settingsRoutingHeaderDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Which sites go past the VPN, which through it, and which are blocked'**
-  String get settingsRoutingHeaderDesc;
-
   /// No description provided for @settingsRoutingPresetsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Quick presets'**
+  /// **'Ready-made lists'**
   String get settingsRoutingPresetsTitle;
-
-  /// No description provided for @settingsRoutingPresetsHint.
-  ///
-  /// In en, this message translates to:
-  /// **'A ready-made list, added to the field below'**
-  String get settingsRoutingPresetsHint;
-
-  /// No description provided for @settingsRoutingPresetChoose.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose a preset…'**
-  String get settingsRoutingPresetChoose;
-
-  /// No description provided for @settingsRoutingPresetAdd.
-  ///
-  /// In en, this message translates to:
-  /// **'Add'**
-  String get settingsRoutingPresetAdd;
 
   /// No description provided for @settingsRoutingPresetRuTitle.
   ///
@@ -572,50 +548,44 @@ abstract class AppLocalizations {
   /// No description provided for @settingsRoutingDirectTitle.
   ///
   /// In en, this message translates to:
-  /// **'Direct (bypass VPN)'**
+  /// **'Direct'**
   String get settingsRoutingDirectTitle;
 
   /// No description provided for @settingsRoutingProxyTitle.
   ///
   /// In en, this message translates to:
-  /// **'Proxy (force VPN)'**
+  /// **'Via VPN'**
   String get settingsRoutingProxyTitle;
 
   /// No description provided for @settingsRoutingBlockTitle.
   ///
   /// In en, this message translates to:
-  /// **'Blocked'**
+  /// **'Block'**
   String get settingsRoutingBlockTitle;
-
-  /// No description provided for @settingsRoutingValuesHint.
-  ///
-  /// In en, this message translates to:
-  /// **'One per line, or comma separated'**
-  String get settingsRoutingValuesHint;
 
   /// No description provided for @settingsRoutingFinalTitle.
   ///
   /// In en, this message translates to:
-  /// **'Unmatched traffic'**
+  /// **'Everything else'**
   String get settingsRoutingFinalTitle;
 
-  /// No description provided for @settingsRoutingFinalProxy.
+  /// No description provided for @settingsRoutingFinalSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Proxy'**
-  String get settingsRoutingFinalProxy;
+  /// **'Not in the lists'**
+  String get settingsRoutingFinalSubtitle;
 
-  /// No description provided for @settingsRoutingFinalDirect.
+  /// No description provided for @settingsRoutingListsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Bypass'**
-  String get settingsRoutingFinalDirect;
+  /// **'Where sites go'**
+  String get settingsRoutingListsTitle;
 
-  /// No description provided for @settingsRoutingFinalBlock.
+  /// No description provided for @settingsRoutingReconnect.
   ///
   /// In en, this message translates to:
-  /// **'Block'**
-  String get settingsRoutingFinalBlock;
+  /// **'Reconnect'**
+  String get settingsRoutingReconnect;
 
   /// No description provided for @settingsRoutingAdvancedTitle.
   ///
@@ -626,14 +596,8 @@ abstract class AppLocalizations {
   /// No description provided for @settingsRoutingAdvancedHint.
   ///
   /// In en, this message translates to:
-  /// **'Individual rules with their own on/off switch. Applied on top of the lists above.'**
+  /// **'Individual rules with their own switch. Added to the lists above.'**
   String get settingsRoutingAdvancedHint;
-
-  /// No description provided for @settingsRoutingAdvancedEmpty.
-  ///
-  /// In en, this message translates to:
-  /// **'No custom rules yet'**
-  String get settingsRoutingAdvancedEmpty;
 
   /// No description provided for @settingsRoutingAdvancedAdd.
   ///
