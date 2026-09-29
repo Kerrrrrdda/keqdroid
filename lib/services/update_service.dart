@@ -223,9 +223,12 @@ class UpdateService {
     return UpdateInfo(
       currentVersion: currentVersion,
       latestVersion: latestTag,
-      // Пакет из AUR обновляет pacman, а не мы: ведём на его страницу.
+      // Пакет pacman обновляет pacman, а не мы: ведём на страницу релиза с
+      // новым PKGBUILD. Не на AUR: keqdroid-bin там может и не быть, а
+      // собранные из релизного PKGBUILD попали бы на 404.
       downloadUrl: linuxKind == LinuxInstallKind.pacman
-          ? LinuxInstall.aurPage
+          ? (latestRelease['html_url'] ??
+              'https://github.com/$_owner/$_repo/releases/latest')
           : asset['browser_download_url'],
       releaseNotes: latestRelease['body'],
       apkSize: asset['size'] ?? 0,
@@ -416,7 +419,7 @@ class UpdateService {
       LinuxInstallKind.appImage => const ['-x86_64.appimage', '.appimage'],
       LinuxInstallKind.deb => const ['_amd64.deb', '.deb'],
       LinuxInstallKind.rpm => const ['.x86_64.rpm', '.rpm'],
-      // Из этого архива собирается и пакет AUR, так что размер в окне — его.
+      // Из этого архива собирается и пакет pacman, так что размер в окне — его.
       LinuxInstallKind.pacman ||
       LinuxInstallKind.portable ||
       LinuxInstallKind.readOnly =>

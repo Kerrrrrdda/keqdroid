@@ -392,6 +392,7 @@ void main() {
       {
         'tag_name': 'v0.25.0',
         'published_at': '2026-10-01T00:00:00Z',
+        'html_url': 'https://example.invalid/releases/tag/v0.25.0',
         'body': '',
         'assets': [
           for (final n in [
@@ -431,12 +432,12 @@ void main() {
       }
     });
 
-    test('пакет из AUR ведёт на страницу AUR, файлы pacman не трогаются', () {
-      final aur = info(LinuxInstallKind.pacman);
-      expect(aur.openInBrowser, isTrue);
-      expect(aur.downloadUrl, LinuxInstall.aurPage);
-      // Размер — архива, из которого AUR собирает пакет.
-      expect(aur.apkSize, 'keqdroid-0.25.0-linux-x64.tar.gz'.length);
+    test('пакет pacman ведёт на страницу релиза, его файлы не трогаются', () {
+      final arch = info(LinuxInstallKind.pacman);
+      expect(arch.openInBrowser, isTrue);
+      expect(arch.downloadUrl, 'https://example.invalid/releases/tag/v0.25.0');
+      // Размер — архива, из которого PKGBUILD собирает пакет.
+      expect(arch.apkSize, 'keqdroid-0.25.0-linux-x64.tar.gz'.length);
     });
 
     test('архив в папке без записи скачивается браузером', () {

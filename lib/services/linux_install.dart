@@ -10,7 +10,8 @@ import 'linux_appimage_updater.dart';
 ///
 /// От этого зависит, какой файл релиза качать и кто вправе заменить
 /// установленное: AppImage и распакованный архив меняем сами, deb и rpm ставит
-/// пакетный менеджер, а пакет из AUR обновляет только pacman.
+/// пакетный менеджер, а пакет pacman (AUR или PKGBUILD из релиза) обновляет
+/// только pacman.
 enum LinuxInstallKind {
   appImage,
   deb,
@@ -27,8 +28,6 @@ enum LinuxInstallKind {
 
 class LinuxInstall {
   LinuxInstall._();
-
-  static const aurPage = 'https://aur.archlinux.org/packages/keqdroid-bin';
 
   static Future<LinuxInstallKind>? _detected;
 

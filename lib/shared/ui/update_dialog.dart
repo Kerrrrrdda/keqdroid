@@ -257,9 +257,9 @@ class _UpdateDialogState extends ConsumerState<_UpdateDialog> {
             setState(() => _progress = received / total);
           }
         },
-        // Desktop restarts (Windows zip, every Linux install but AUR) tear the
-        // VPN down first. Only invoked right before the app exits to apply —
-        // the browser hand-off path returns without calling it.
+        // Desktop restarts (Windows zip, every Linux install but pacman) tear
+        // the VPN down first. Only invoked right before the app exits to
+        // apply — the browser hand-off path returns without calling it.
         beforeRestart: Platform.isWindows || Platform.isLinux
             ? () async {
                 if (mounted) setState(() => _applying = true);
