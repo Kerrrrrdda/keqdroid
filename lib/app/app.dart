@@ -577,17 +577,8 @@ class _ThemedApp extends ConsumerWidget {
         );
       },
       locale: locale,
-      localeResolutionCallback: (deviceLocale, supported) {
-        if (locale != null) {
-          return supported.contains(locale) ? locale : const Locale('en');
-        }
-        if (deviceLocale != null) {
-          for (final l in supported) {
-            if (l.languageCode == deviceLocale.languageCode) return l;
-          }
-        }
-        return supported.first;
-      },
+      localeResolutionCallback: (deviceLocale, supported) =>
+          resolveAppLocale(locale, deviceLocale, supported),
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
