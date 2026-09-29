@@ -258,6 +258,12 @@ if (-not $SkipWindows) {
     }
   }
 
+  # Шрифт иконок десктопная сборка Flutter не ужимает (флаг уходит в кавычках,
+  # см. шапку скрипта): без этого шага в пакете весь 1.6 МБ вместо 26 КБ.
+  Write-Step "Tree-shaking the icon font"
+  powershell -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'shake_icon_font.ps1') -BundleDir $relDir
+  if ($LASTEXITCODE -ne 0) { throw "shake_icon_font.ps1 failed" }
+
   $zipOut = Join-Path $outDir "keqdroid-windows-x64-$version.zip"
   if (Test-Path -LiteralPath $zipOut) { Remove-Item -LiteralPath $zipOut -Force }
   # Zip the contents so keqdroid.exe sits at the archive root (the updater's

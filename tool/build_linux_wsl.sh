@@ -57,6 +57,34 @@ log "flutter build linux --release"
 flutter build linux --release
 
 BUNDLE="$REPO_DIR/build/linux/x64/release/bundle"
+
+# --- 4) icon font --------------------------------------------------------
+# flutter build linux never shakes the icon font: tool_backend.dart passes
+# -dTreeShakeIcons="true" with the quotes, and assemble reads that as not
+# "true" - 1.6 MB instead of ~26 KB. Rerun the same assemble step with the flag
+# spelled right, every other define as CMake used it, and put the shaken font
+# into the bundle. Windows twin: tool/shake_icon_font.ps1.
+log "Tree-shaking the icon font"
+CFG="$REPO_DIR/linux/flutter/ephemeral/generated_config.cmake"
+tool_env() { sed -n "s/^ *\"$1=\(.*\)\"\$/\1/p" "$CFG" | head -n 1; }
+flutter assemble --no-version-check --output=build \
+  -dTargetPlatform=linux-x64 \
+  -dTrackWidgetCreation="$(tool_env TRACK_WIDGET_CREATION)" \
+  -dBuildMode=release \
+  -dTargetFile="$(tool_env FLUTTER_TARGET)" \
+  -dTreeShakeIcons=true \
+  -dDartObfuscation="$(tool_env DART_OBFUSCATION)" \
+  --DartDefines="$(tool_env DART_DEFINES)" \
+  release_bundle_linux-x64_assets
+FONT="data/flutter_assets/fonts/MaterialIcons-Regular.otf"
+SHAKEN="$REPO_DIR/build/flutter_assets/fonts/MaterialIcons-Regular.otf"
+before="$(stat -c%s "$BUNDLE/$FONT")"
+after="$(stat -c%s "$SHAKEN")"
+# No smaller than the bundled one means the shaker did not run again.
+[ "$after" -lt "$before" ] || { echo "icon font was not shaken ($after >= $before bytes)"; exit 1; }
+cp -f "$SHAKEN" "$BUNDLE/$FONT"
+echo "  icon font $before -> $after bytes"
+
 log "Build finished"
 echo "bundle: $BUNDLE"
 ls -la "$BUNDLE" || true
