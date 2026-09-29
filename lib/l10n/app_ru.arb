@@ -858,7 +858,7 @@
   "connectionsEmpty": "Соединений пока не видно.",
   "connectionsUnavailable": "Список соединений недоступен.",
   "connectionsFilterHint": "Фильтр по домену, IP, процессу или правилу",
-  "connectionsCount": "{count, plural, =0{нет соединений} =1{1 соединение} few{{count} соединения} other{{count} соединений}}",
+  "connectionsCount": "{count, plural, =0{нет соединений} one{{count} соединение} few{{count} соединения} many{{count} соединений} other{{count} соединения}}",
   "@connectionsCount": {
     "placeholders": {
       "count": {
@@ -929,7 +929,7 @@
   "chainRouteLabel": "Маршрут",
   "chainMaxNodes": "В цепочке не больше {max} узлов",
   "chainDeleteConfirm": "Удалить цепочку «{name}»? Серверы из неё останутся в списке.",
-  "chainNodesCount": "{count, plural, =0{нет узлов} =1{1 узел} few{{count} узла} many{{count} узлов} other{{count} узла}}",
+  "chainNodesCount": "{count, plural, =0{нет узлов} one{{count} узел} few{{count} узла} many{{count} узлов} other{{count} узла}}",
   "@chainMaxNodes": {
     "placeholders": {
       "max": {
