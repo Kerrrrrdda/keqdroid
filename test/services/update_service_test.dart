@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:keqdroid/services/linux_install.dart';
 import 'package:keqdroid/services/update_service.dart';
 
 /// Сетевой слой по сценарию: каждый ответ — либо исключение, которое бросил бы
@@ -185,7 +186,7 @@ void main() {
       );
     });
 
-    test('selects AppImage before tarball/deb for Linux', () {
+    test('selects the AppImage for a Linux AppImage install', () {
       expect(
         UpdateService.findAssetNameForPlatform(assets, 'linux'),
         'keqdroid-0.5.1-x86_64.AppImage',
@@ -336,6 +337,18 @@ void main() {
           reason: name,
         );
       }
+      for (final kind in LinuxInstallKind.values) {
+        final name = UpdateService.findAssetNameForPlatform(
+          assets,
+          'linux',
+          linuxKind: kind,
+        )!;
+        expect(
+          UpdateService.checksumAssetFor(assets, name)?['name'],
+          'SHA256SUMS',
+          reason: '$kind: $name',
+        );
+      }
     });
 
     test('each asset reads its own line, the way every version reads it', () {
@@ -354,10 +367,124 @@ void main() {
       }
     });
 
-    test('Linux still updates from the AppImage, the rpm is not picked', () {
+    test('Linux updates with the file it was installed from', () {
+      String? pick(LinuxInstallKind kind) =>
+          UpdateService.findAssetNameForPlatform(
+            assets,
+            'linux',
+            linuxKind: kind,
+          );
+      expect(pick(LinuxInstallKind.appImage), 'keqdroid-0.19.0-x86_64.AppImage');
+      expect(pick(LinuxInstallKind.deb), 'keqdroid_0.19.0_amd64.deb');
+      expect(pick(LinuxInstallKind.rpm), 'keqdroid-0.19.0-1.x86_64.rpm');
+      for (final kind in [
+        LinuxInstallKind.pacman,
+        LinuxInstallKind.portable,
+        LinuxInstallKind.readOnly,
+      ]) {
+        expect(pick(kind), 'keqdroid-0.19.0-linux-x64.tar.gz', reason: '$kind');
+      }
+    });
+  });
+
+  group('обновление Linux по способу установки', () {
+    final releases = [
+      {
+        'tag_name': 'v0.25.0',
+        'published_at': '2026-10-01T00:00:00Z',
+        'body': '',
+        'assets': [
+          for (final n in [
+            'keqdroid-0.25.0-x86_64.AppImage',
+            'keqdroid_0.25.0_amd64.deb',
+            'keqdroid-0.25.0-1.x86_64.rpm',
+            'keqdroid-0.25.0-linux-x64.tar.gz',
+            'SHA256SUMS',
+          ])
+            {
+              'name': n,
+              'size': n.length,
+              'browser_download_url': 'https://example.invalid/$n',
+            },
+        ],
+      },
+    ];
+    UpdateInfo info(LinuxInstallKind kind) => UpdateService.buildUpdateInfo(
+          releases,
+          '0.24.0',
+          linuxKind: kind,
+        )!;
+
+    test('deb, rpm, AppImage и архив качаются и ставятся из приложения', () {
+      for (final kind in [
+        LinuxInstallKind.appImage,
+        LinuxInstallKind.deb,
+        LinuxInstallKind.rpm,
+        LinuxInstallKind.portable,
+      ]) {
+        expect(info(kind).openInBrowser, isFalse, reason: '$kind');
+        expect(
+          info(kind).downloadUrl,
+          'https://example.invalid/${info(kind).assetName}',
+        );
+        expect(info(kind).checksumUrl, 'https://example.invalid/SHA256SUMS');
+      }
+    });
+
+    test('пакет из AUR ведёт на страницу AUR, файлы pacman не трогаются', () {
+      final aur = info(LinuxInstallKind.pacman);
+      expect(aur.openInBrowser, isTrue);
+      expect(aur.downloadUrl, LinuxInstall.aurPage);
+      // Размер — архива, из которого AUR собирает пакет.
+      expect(aur.apkSize, 'keqdroid-0.25.0-linux-x64.tar.gz'.length);
+    });
+
+    test('архив в папке без записи скачивается браузером', () {
+      final ro = info(LinuxInstallKind.readOnly);
+      expect(ro.openInBrowser, isTrue);
       expect(
-        UpdateService.findAssetNameForPlatform(assets, 'linux'),
-        'keqdroid-0.19.0-x86_64.AppImage',
+        ro.downloadUrl,
+        'https://example.invalid/keqdroid-0.25.0-linux-x64.tar.gz',
+      );
+    });
+
+    test('скачанный файл любого вида узнаётся по расширению', () {
+      // Без этого файл, выбранный для установки, падал бы на «Unsupported
+      // update file type» уже после загрузки.
+      for (final kind in LinuxInstallKind.values) {
+        final url = info(kind).downloadUrl;
+        if (info(kind).openInBrowser) continue;
+        expect(
+          () => UpdateService.extensionFromUrl(url),
+          returnsNormally,
+          reason: '$kind: $url',
+        );
+      }
+      expect(
+        UpdateService.extensionFromUrl(
+          'https://example.invalid/keqdroid-0.25.0-1.x86_64.rpm',
+        ),
+        '.rpm',
+      );
+    });
+
+    test('нет файла своего вида — нет и обновления', () {
+      final noDeb = [
+        {
+          ...releases.single,
+          'assets': [
+            for (final a in releases.single['assets'] as List)
+              if (!(a['name'] as String).endsWith('.deb')) a,
+          ],
+        },
+      ];
+      expect(
+        UpdateService.buildUpdateInfo(
+          noDeb,
+          '0.24.0',
+          linuxKind: LinuxInstallKind.deb,
+        ),
+        isNull,
       );
     });
   });

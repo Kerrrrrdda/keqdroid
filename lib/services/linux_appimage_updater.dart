@@ -1,15 +1,14 @@
 import 'dart:io';
 
-import 'package:path/path.dart' as p;
+import 'linux_install.dart';
 
 /// In-place update for the Linux AppImage build.
 ///
 /// Only meaningful when the app is *running as an AppImage*: the AppImage
 /// runtime exports `APPIMAGE` = absolute path of the `.AppImage` the user
 /// launched. We overwrite that file with the freshly downloaded (and already
-/// SHA-256-verified by [UpdateService]) one and relaunch. `.deb`/`.tar.gz`
-/// installs, or a dev/extracted run, have no `APPIMAGE` — the caller must fall
-/// back to opening the download in the browser instead of silently failing.
+/// SHA-256-verified by [UpdateService]) one and relaunch. deb, rpm and tar.gz
+/// installs have no `APPIMAGE` and update their own way (see [LinuxInstall]).
 class LinuxAppImageUpdater {
   LinuxAppImageUpdater._();
 
@@ -36,61 +35,18 @@ class LinuxAppImageUpdater {
       throw StateError('Downloaded AppImage not found');
     }
 
-    final scriptPath = p.join(
-      Directory.systemTemp.path,
-      'keqdroid_apply_update_${DateTime.now().millisecondsSinceEpoch}.sh',
-    );
-    await File(scriptPath).writeAsString(_script);
-    try {
-      await Process.run('chmod', ['0755', scriptPath]);
-    } catch (_) {}
-
-    await _launchDetached(scriptPath, [
-      '$pid',
-      newAppImage,
-      targetAppImage,
-    ]);
+    await launchAfterExit(_script, [newAppImage, targetAppImage]);
 
     await beforeRestart?.call();
     await Future<void>.delayed(const Duration(milliseconds: 200));
     exit(0);
   }
 
-  /// Spawns the updater outside our process group (`setsid`) so it survives the
-  /// `exit(0)` below; falls back to a plain detached `sh` where setsid is
-  /// missing (some minimal distros).
-  static Future<void> _launchDetached(String script, List<String> args) async {
-    try {
-      await Process.start(
-        'setsid',
-        ['sh', script, ...args],
-        mode: ProcessStartMode.detached,
-      );
-    } catch (_) {
-      await Process.start(
-        'sh',
-        [script, ...args],
-        mode: ProcessStartMode.detached,
-      );
-    }
-  }
-
-  // Waits for the app (its PID) to exit, atomically replaces the AppImage with
-  // the downloaded one (same-dir `mv`, `cp` fallback), keeps the exec bit, and
-  // relaunches.
+  // Atomically replaces the AppImage with the downloaded one (same-dir `mv`,
+  // `cp` fallback), keeps the exec bit, and relaunches.
   static const _script = r'''
-APPPID="$1"; NEW="$2"; TARGET="$3"
-LOG="${TMPDIR:-/tmp}/keqdroid_update.log"
-log() { printf '%s  %s\n' "$(date -Is 2>/dev/null)" "$1" >>"$LOG" 2>/dev/null; }
-log "=== appimage update: pid=$APPPID new=$NEW target=$TARGET"
-
-i=0
-while [ "$i" -lt 120 ]; do
-  kill -0 "$APPPID" 2>/dev/null || break
-  sleep 1
-  i=$((i+1))
-done
-sleep 1
+NEW="$1"; TARGET="$2"
+log "=== appimage update: new=$NEW target=$TARGET"
 
 chmod +x "$NEW" 2>/dev/null
 if ! mv -f "$NEW" "$TARGET" 2>>"$LOG"; then

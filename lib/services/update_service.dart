@@ -11,6 +11,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'linux_appimage_updater.dart';
+import 'linux_install.dart';
 import 'windows_zip_updater.dart';
 import '../core/app_logger.dart';
 import '../utils/local_vpn_proxy.dart';
@@ -133,6 +134,7 @@ class UpdateService {
     final dio = _buildDio(viaLocalProxy: viaLocalProxy, httpPort: httpPort);
     try {
       final currentVersion = await _getCurrentVersion();
+      final linuxKind = Platform.isLinux ? await LinuxInstall.detect() : null;
       final releases = await fetchReleases(dio);
       if (releases.isEmpty) {
         if (force) {
@@ -144,7 +146,8 @@ class UpdateService {
         return _cachedResultRespectingSkip();
       }
 
-      final result = _buildUpdateInfo(releases, currentVersion);
+      final result =
+          buildUpdateInfo(releases, currentVersion, linuxKind: linuxKind);
       _lastAutoCheckAt = DateTime.now();
       // force тоже обновляет кэш: settings инвалидирует провайдер после
       // ручной проверки, и throttle-путь должен вернуть свежий результат
@@ -183,10 +186,14 @@ class UpdateService {
     return cached;
   }
 
-  static UpdateInfo? _buildUpdateInfo(
+  /// [linuxKind] задан только на Linux: там файл релиза зависит от того, как
+  /// установлено приложение.
+  @visibleForTesting
+  static UpdateInfo? buildUpdateInfo(
     List<Map<String, dynamic>> releases,
-    String currentVersion,
-  ) {
+    String currentVersion, {
+    LinuxInstallKind? linuxKind,
+  }) {
     final latestRelease = releases.first;
     final latestTag = (latestRelease['tag_name'] ?? '').toString();
     final currentRelease = _findReleaseForVersion(releases, currentVersion);
@@ -205,7 +212,9 @@ class UpdateService {
     }
 
     final assets = latestRelease['assets'] as List?;
-    final asset = _findAssetForCurrentPlatform(assets);
+    final asset = linuxKind != null
+        ? _findLinuxAsset(assets, linuxKind)
+        : _findAssetForCurrentPlatform(assets);
     if (asset == null) return null;
 
     final assetName = (asset['name'] ?? '').toString();
@@ -214,11 +223,15 @@ class UpdateService {
     return UpdateInfo(
       currentVersion: currentVersion,
       latestVersion: latestTag,
-      downloadUrl: asset['browser_download_url'],
+      // Пакет из AUR обновляет pacman, а не мы: ведём на его страницу.
+      downloadUrl: linuxKind == LinuxInstallKind.pacman
+          ? LinuxInstall.aurPage
+          : asset['browser_download_url'],
       releaseNotes: latestRelease['body'],
       apkSize: asset['size'] ?? 0,
-      openInBrowser:
-          Platform.isWindows && _shouldOpenDesktopAssetInBrowser(asset),
+      openInBrowser: linuxKind == LinuxInstallKind.pacman ||
+          linuxKind == LinuxInstallKind.readOnly ||
+          (Platform.isWindows && _shouldOpenDesktopAssetInBrowser(asset)),
       assetName: assetName,
       checksumUrl: checksumAsset?['browser_download_url'] as String?,
     );
@@ -356,18 +369,22 @@ class UpdateService {
     return null;
   }
 
+  /// Android и Windows; у Linux свой выбор, по способу установки.
   static Map<String, dynamic>? _findAssetForCurrentPlatform(List? assets) {
     if (Platform.isWindows) return _findWindowsAsset(assets);
-    if (Platform.isLinux) return _findLinuxAsset(assets);
     return _findApkAsset(assets, arm32: Abi.current() == Abi.androidArm);
   }
 
   /// [platform] — `android` (arm64), `android-arm` (armeabi-v7a), `windows`,
-  /// `linux`.
-  static String? findAssetNameForPlatform(List? assets, String platform) {
+  /// `linux` (с установкой [linuxKind]).
+  static String? findAssetNameForPlatform(
+    List? assets,
+    String platform, {
+    LinuxInstallKind linuxKind = LinuxInstallKind.appImage,
+  }) {
     final asset = switch (platform) {
       'windows' => _findWindowsAsset(assets),
-      'linux' => _findLinuxAsset(assets),
+      'linux' => _findLinuxAsset(assets, linuxKind),
       'android' => _findApkAsset(assets, arm32: false),
       'android-arm' => _findApkAsset(assets, arm32: true),
       _ => null,
@@ -387,16 +404,24 @@ class UpdateService {
     return null;
   }
 
-  static Map<String, dynamic>? _findLinuxAsset(List? assets) {
+  /// Файл того же вида, каким приложение установлено: AppImage вместо deb
+  /// оставлял установленную версию старой и запускал новую рядом с ней. Нет
+  /// такого файла в релизе — нет и обновления, чужой формат не подсовывается.
+  static Map<String, dynamic>? _findLinuxAsset(
+    List? assets,
+    LinuxInstallKind kind,
+  ) {
     if (assets == null) return null;
-    const preferredSuffixes = [
-      '-x86_64.appimage',
-      '.appimage',
-      '-linux-x64.tar.gz',
-      'linux-x64.tar.gz',
-      '_amd64.deb',
-      '.deb',
-    ];
+    final preferredSuffixes = switch (kind) {
+      LinuxInstallKind.appImage => const ['-x86_64.appimage', '.appimage'],
+      LinuxInstallKind.deb => const ['_amd64.deb', '.deb'],
+      LinuxInstallKind.rpm => const ['.x86_64.rpm', '.rpm'],
+      // Из этого архива собирается и пакет AUR, так что размер в окне — его.
+      LinuxInstallKind.pacman ||
+      LinuxInstallKind.portable ||
+      LinuxInstallKind.readOnly =>
+        const ['-linux-x64.tar.gz'],
+    };
     for (final suffix in preferredSuffixes) {
       for (final asset in assets) {
         final name = (asset['name'] ?? '').toString().toLowerCase();
@@ -543,7 +568,7 @@ class UpdateService {
     }
 
     final dir = await getTemporaryDirectory();
-    final ext = _extensionFromUrl(info.downloadUrl);
+    final ext = extensionFromUrl(info.downloadUrl);
     final file = File('${dir.path}/keqdroid_update_${info.latestVersion}$ext');
 
     if (await file.exists()) {
@@ -587,24 +612,39 @@ class UpdateService {
           beforeRestart: beforeRestart,
         );
       }
-      // Not launched as an AppImage (deb/tar.gz install, dev run): we don't own
-      // an install path to replace. At least make the download runnable so the
-      // hand-off below launches it instead of opening an archive manager.
+      // The AppImage vanished since the check: at least make the download
+      // runnable so the hand-off below launches it.
       try {
         await Process.run('chmod', ['+x', file.path]);
       } catch (_) {}
+    }
+
+    if (Platform.isLinux && (ext == '.deb' || ext == '.rpm')) {
+      return LinuxInstall.installPackage(
+        file.path,
+        beforeRestart: beforeRestart,
+      );
+    }
+
+    if (Platform.isLinux && ext == '.tar.gz') {
+      return LinuxInstall.applyPortable(
+        file.path,
+        beforeRestart: beforeRestart,
+      );
     }
 
     await OpenFilex.open(file.path);
     return false;
   }
 
-  static String _extensionFromUrl(String url) {
+  @visibleForTesting
+  static String extensionFromUrl(String url) {
     final path = Uri.parse(url).path.toLowerCase();
     for (final ext in [
       '.tar.gz',
       '.appimage',
       '.deb',
+      '.rpm',
       '.zip',
       '.msix',
       '.msi',
