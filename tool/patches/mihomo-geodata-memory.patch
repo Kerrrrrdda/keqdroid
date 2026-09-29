@@ -1,0 +1,61 @@
+Do not keep geodata that no rule uses.
+
+mihomo verifies GeoSite.dat and GeoIP.dat the first time a GEOSITE or GEOIP
+rule appears, and it does so by loading the CN list. The result lands in the
+same caches as real rules, so every process with a geo rule kept a CN matcher
+it never matches against. On top of that each loaded geosite code was held
+twice: the raw domain list and the matcher built from it, although only the
+matcher is ever used after loading.
+
+Both caches are fixed here. Verify still loads CN -- that is the check -- and
+then forgets it; a rule that really asks for CN loads it again. The raw list is
+no longer stored; the only cost is a second scan of the file when one config
+uses the same code with different @attributes.
+
+Measured on Windows against the same build without this patch (working set,
+the core with no geo rules at all is 19.6 MB):
+
+    GEOSITE category-ru only                      22.5-23.0 -> 21.6-21.9 MB
+    category-ru + category-ads-all + GEOIP ru     24.8-25.8 -> 22.5-22.6 MB
+    + geolocation-!cn (25 000 entries)            28.7-31.0 -> 23.9-25.7 MB
+
+Routing decisions for GeoSite(cn), GeoSite(category-*), GeoIP(ru) and MATCH
+were compared on both builds and are identical.
+
+Rebase check: keep the Forget keys in step with how LoadGeoSiteMatcher and
+LoadGeoIPMatcher build their cache keys (lower-cased list name, no attributes).
+
+diff --git a/component/geodata/utils.go b/component/geodata/utils.go
+index ee7946a..3b399f1 100644
+--- a/component/geodata/utils.go
++++ b/component/geodata/utils.go
+@@ -50,20 +50,28 @@ func SetSiteMatcher(newMatcher string) {
+ 	}
+ }
+ 
++// Verify only proves the file decodes. The CN list it loads for that is not a
++// rule, so it must not stay cached for the life of the process; a rule that
++// really asks for CN loads it again.
+ func Verify(name string) error {
+ 	switch name {
+ 	case C.GeositeName:
+ 		_, err := LoadGeoSiteMatcher("CN")
++		loadGeoSiteMatcherListSF.Forget("cn")
++		loadGeoSiteMatcherSF.Forget("cn")
+ 		return err
+ 	case C.GeoipName:
+ 		_, err := LoadGeoIPMatcher("CN")
++		loadGeoIPMatcherSF.Forget("cn")
+ 		return err
+ 	default:
+ 		return fmt.Errorf("not support name")
+ 	}
+ }
+ 
+-var loadGeoSiteMatcherListSF = singleflight.Group[[]*router.Domain]{StoreResult: true}
++// The raw domain list is only the input of a matcher, and the matcher is cached
++// below. Keeping the list as well held every loaded code in memory twice.
++var loadGeoSiteMatcherListSF = singleflight.Group[[]*router.Domain]{StoreResult: false}
+ var loadGeoSiteMatcherSF = singleflight.Group[router.DomainMatcher]{StoreResult: true}
+ 
+ func LoadGeoSiteMatcher(countryCode string) (router.DomainMatcher, error) {
