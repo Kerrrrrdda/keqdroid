@@ -1,98 +1,32 @@
-﻿# ═══════════════════════════════════════════════════════════════════════════════
-# FLUTTER & ANDROID FRAMEWORK
-# ═══════════════════════════════════════════════════════════════════════════════
+# Правила R8 для релизной сборки.
+#
+# Здесь только то, чего не знают остальные источники правил. Их четыре:
+# proguard-android-optimize.txt (native-методы, enum), flutter_proguard_rules.pro
+# (его добавляет плагин Flutter), правила внутри самих библиотек (Firebase,
+# WorkManager, Room, CameraX, ML Kit носят их в своих AAR) и AAPT, который
+# сохраняет всё, что названо в AndroidManifest.xml.
+#
+# Раньше файл держал почти весь код: сохранял любой класс с публичным
+# конструктором, Firebase и сервисы Google целиком, методы с именами вроде
+# toJson/fromJson во всех классах и отключал оптимизацию. Обоснованием был
+# «StackOverflow при разборе подписок», но разбор подписок написан на Dart, а
+# R8 видит только Java/Kotlin — правила на имена Dart-методов не делали ничего.
+# Итог был 16 000 классов в APK.
+#
+# Нативный код (src/main/cpp) в Java не ходит: FindClass/GetMethodID там нет,
+# связь только через native-методы, а их имена сохраняет стандартное правило.
+# Рефлексии в нашем Kotlin тоже нет.
 
-# Keep Flutter entry points and plugin registrant.
--keep class io.flutter.app.** { *; }
--keep class io.flutter.embedding.** { *; }
--keep class io.flutter.plugins.** { *; }
--keep class io.flutter.** { *; }
+# Имена классов не переименовываются: WorkManager хранит имя класса фоновой
+# задачи в своей базе, и уже запланированная задача после переименования не
+# нашла бы его. Одинаковый код R8 при этом всё равно склеивает, и в сырой трассе
+# бывают чужие кадры — точную восстанавливает Crashlytics по mapping.txt, который
+# его Gradle-плагин выгружает при каждой релизной сборке.
+-dontobfuscate
+-keepattributes SourceFile,LineNumberTable
 
-# Keep app entry points referenced from AndroidManifest.xml.
--keep class com.keqdroid.keqdroid.MainActivity { *; }
--keep class com.keqdroid.keqdroid.KeqdisVpnService { *; }
-
-# Keep native method signatures.
--keepclasseswithmembernames class * {
-    native <methods>;
-}
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# SUBSCRIPTION PARSING - CRITICAL FOR STACK OVERFLOW FIX
-# ═══════════════════════════════════════════════════════════════════════════════
-
-# Методы парсинга подписок защищены от R8: инлайн рекурсивного парсинга
-# приводил к StackOverflow в release-сборке.
-
--keep class com.keqdroid.keqdroid.services.SubscriptionService {
-    *** _parseBody(...);
-    *** _extractConfigsFromHtml(...);
-    *** _parseBodyNoRecursion(...);
-    *** _extractUrisDirectly(...);
-    *** _collectTextVariants(...);
-    *** _walkStructured(...);
-    *** _tryDecodeBase64Flexible(...);
-    *** _extractUriLinks(...);
-    *** _tryParseFromErrorResponse(...);
-    *** fetchRaw(...);
-    *** updateSubscription(...);
-    *** updateAll(...);
-    *** getDueForUpdate(...);
-}
-
-# Отключаем inline оптимизацию для методов со сложной логикой
--optimizations !method/inlining/*
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# JSON SERIALIZATION & DATA MODELS
-# ═══════════════════════════════════════════════════════════════════════════════
-
-# Модели держим целиком: удаление полей/конструкторов R8'ом ломает
-# сериализацию подписок (вплоть до StackOverflow на глубоком JSON).
--keep class com.keqdroid.keqdroid.models.** { *; }
--keep class com.keqdroid.keqdroid.Subscription { *; }
--keep class com.keqdroid.keqdroid.ServerItem { *; }
--keep class com.keqdroid.keqdroid.AppSettings { *; }
-
-# Защита всех методов - включая copyWith, toJson, fromJson, toString
--keepclassmembers class ** {
-    *** toJson(...);
-    *** fromJson(...);
-    *** copyWith(...);
-    java.lang.String toString();
-    boolean equals(java.lang.Object);
-    int hashCode();
-}
-
-# JSON annotation support
--keep class com.google.gson.** { *; }
--keep class com.fasterxml.jackson.** { *; }
--dontwarn com.google.gson.**
--dontwarn com.fasterxml.jackson.**
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# ENUM SUPPORT
-# ═══════════════════════════════════════════════════════════════════════════════
-
--keepclassmembers enum * {
-    public static *[] values();
-    public static * valueOf(java.lang.String);
-    public static * $VALUES;
-    public * $ENUM$VALUES;
-}
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# DISABLE R8 OPTIMIZATIONS THAT CAUSE StackOverflow
-# ═══════════════════════════════════════════════════════════════════════════════
-
-# Отключаем аггрессивную оптимизацию, которая может привести к infinite loops
--optimizations !code/simplification/arithmetic,!code/simplification/cast,!field/*,!class/merging/*
--optimizationpasses 3
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# FIREBASE & GOOGLE PLAY
-# ═══════════════════════════════════════════════════════════════════════════════
-
+# Отложенные компоненты Flutter ссылаются на Play Core, которого в приложении
+# нет; без этого R8 останавливает сборку на отсутствующих классах.
 -dontwarn com.google.android.play.core.splitcompat.SplitCompatApplication
 -dontwarn com.google.android.play.core.splitinstall.SplitInstallException
 -dontwarn com.google.android.play.core.splitinstall.SplitInstallManager
@@ -104,36 +38,3 @@
 -dontwarn com.google.android.play.core.tasks.OnFailureListener
 -dontwarn com.google.android.play.core.tasks.OnSuccessListener
 -dontwarn com.google.android.play.core.tasks.Task
-
-# Firebase
--keep class com.google.firebase.** { *; }
--keep class com.google.android.gms.** { *; }
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# PREVENT RECURSIVE OPTIMIZATION ISSUES
-# ═══════════════════════════════════════════════════════════════════════════════
-
-# Preserve static methods (workmanager, method channels, etc.)
--keepclasseswithmembernames class * {
-    public static <methods>;
-}
-
-# Keep constructors for all classes (essential for reflection/deserialization)
--keepclasseswithmembers class * {
-    public <init>(...);
-}
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# ADDITIONAL UTF-8 & BASE64 PROTECTION
-# ═══════════════════════════════════════════════════════════════════════════════
-
-# UTF-8 и Base64 — тоже целиком (используются парсером подписок)
--keep class java.util.Base64 { *; }
--keep class java.util.Base64$Decoder { *; }
--keep class java.util.Base64$Encoder { *; }
--keep class java.nio.charset.StandardCharsets { *; }
-
-# Максимально сокращаем оптимизацию чтобы избежать Stack Overflow
--optimizationpasses 1
--dontoptimize
-
