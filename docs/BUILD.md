@@ -70,12 +70,14 @@ Native Linux or WSL only. Two scripts:
 ```bash
 # build: installs the GTK toolchain and a native Linux Flutter (idempotent), then
 # flutter build linux --release
-wsl -e bash /mnt/c/Users/<you>/StudioProjects/keqdroid/tool/build_linux_wsl.sh
+wsl -d Ubuntu-22.04 -e bash /mnt/c/Users/<you>/StudioProjects/keqdroid/tool/build_linux_wsl.sh
 
 # package a finished bundle: tar.gz + deb + rpm + AppImage + PKGBUILD/.SRCINFO + SHA256SUMS
-wsl -e bash /mnt/c/Users/<you>/StudioProjects/keqdroid/tool/package_linux.sh
+wsl -d Ubuntu-22.04 -e bash /mnt/c/Users/<you>/StudioProjects/keqdroid/tool/package_linux.sh
 ```
 
+- Release packages are built on Ubuntu 22.04. A build made on a newer system needs its newer
+  GLib and does not start on Ubuntu 22.04 or Debian 12, so `package_linux.sh` refuses one.
 - Run them from PowerShell, not Git Bash: Git Bash turns `/mnt/c/...` into a Windows
   path (or set `MSYS_NO_PATHCONV=1`).
 - Both scripts work in the repository on `/mnt/c` directly, so a Linux build cannot run in
@@ -281,12 +283,15 @@ flutter build windows --release
 ```bash
 # сборка: ставит GTK-тулчейн и нативный Linux-Flutter (идемпотентно), потом
 # flutter build linux --release
-wsl -e bash /mnt/c/Users/<ты>/StudioProjects/keqdroid/tool/build_linux_wsl.sh
+wsl -d Ubuntu-22.04 -e bash /mnt/c/Users/<ты>/StudioProjects/keqdroid/tool/build_linux_wsl.sh
 
 # упаковка готового бандла: tar.gz + deb + rpm + AppImage + PKGBUILD/.SRCINFO + SHA256SUMS
-wsl -e bash /mnt/c/Users/<ты>/StudioProjects/keqdroid/tool/package_linux.sh
+wsl -d Ubuntu-22.04 -e bash /mnt/c/Users/<ты>/StudioProjects/keqdroid/tool/package_linux.sh
 ```
 
+- Релизные пакеты собираются на Ubuntu 22.04. Собранное на системе новее требует её новую
+  GLib и не запускается на Ubuntu 22.04 и Debian 12, поэтому `package_linux.sh` такую сборку
+  не пакует.
 - Запускай из PowerShell, не из Git Bash: Git Bash превращает `/mnt/c/...` в виндовый путь
   (или поставь `MSYS_NO_PATHCONV=1`).
 - Оба скрипта работают прямо в репозитории на `/mnt/c`, поэтому Linux-сборку нельзя

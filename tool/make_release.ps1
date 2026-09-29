@@ -42,7 +42,9 @@
   carry stale files into the packages.
 
 .PARAMETER WslDistro
-  WSL distribution that builds Linux.
+  WSL distribution that builds Linux. Ubuntu 22.04 on purpose: a build made on
+  a newer GLib does not start on Ubuntu 22.04 or Debian 12, and
+  tool/package_linux.sh refuses to package one.
 
 .PARAMETER Publish
   Create the GitHub release via the `gh` CLI and upload all assets.
@@ -63,7 +65,7 @@ param(
   [switch]$SkipWindows,
   [switch]$SkipLinux,
   [switch]$NoClean,
-  [string]$WslDistro = 'Ubuntu-24.04',
+  [string]$WslDistro = 'Ubuntu-22.04',
   [switch]$Publish,
   [string]$NotesFile
 )

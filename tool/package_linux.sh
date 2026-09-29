@@ -34,6 +34,20 @@ VERSION="$(grep -E '^version:' pubspec.yaml | sed -E 's/^version:[[:space:]]*([0
 TAG="v$VERSION"
 log "Packaging $APP $TAG"
 
+# --- build host GLib (fail closed) ------------------------------------------
+# Собранное на новой GLib на старой не запускается: G_DEFINE_TYPE на
+# заголовках 2.80 зовёт g_once_init_enter_pointer, которой нет в Ubuntu 22.04
+# (2.72) и Debian 12 (2.74), и программа падает до окна. Флаг компилятора тут
+# не спасает: библиотеки трея копируются в пакет прямо с машины сборки.
+# Поэтому релиз собирается на старейшей поддерживаемой системе.
+GLIB_FLOOR=2.72
+GLIB_HOST="$(pkg-config --modversion glib-2.0 | cut -d. -f1,2)"
+if [ "$(printf '%s\n%s\n' "$GLIB_FLOOR" "$GLIB_HOST" | sort -V | tail -n 1)" != "$GLIB_FLOOR" ]; then
+  echo "  ERROR: this system has GLib $GLIB_HOST; release packages are built on GLib $GLIB_FLOOR"
+  echo "         (Ubuntu 22.04: wsl -d Ubuntu-22.04), or they will not start on older systems"
+  exit 1
+fi
+
 BUNDLE="$REPO_DIR/build/linux/x64/release/bundle"
 if [ ! -x "$BUNDLE/$APP" ]; then
   log "Bundle missing — building first"
