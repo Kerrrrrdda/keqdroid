@@ -402,7 +402,11 @@ class MainActivity : FlutterFragmentActivity() {
                 ch.setMethodCallHandler { call, result ->
                     when (call.method) {
                         "setWindowBackgroundColor" -> {
-                            val color = call.argument<Int>("color")
+                            // Непрозрачный ARGB больше Int.MAX_VALUE, и канал
+                            // привозит его как Long: argument<Int> падал на каждом
+                            // вызове, и цвет не запоминался вовсе. toInt() берёт
+                            // младшие 32 бита — ровно те биты ARGB, что прислал Dart.
+                            val color = call.argument<Number>("color")?.toInt()
                             if (color == null) {
                                 result.error("INVALID_ARGS", "Missing color", null)
                             } else {
