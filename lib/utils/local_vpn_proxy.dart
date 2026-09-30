@@ -14,9 +14,20 @@ import 'socks5_credentials.dart';
 typedef LocalProxyPortResolver = int? Function();
 
 /// Значение для [HttpClient.findProxy].
-String localProxyDirective(int? httpPort) => httpPort == null
-    ? 'DIRECT'
-    : 'PROXY ${InternetAddress.loopbackIPv4.address}:$httpPort';
+///
+/// Логин с паролем едут в самой строке, и dart:io ставит по ним
+/// `Proxy-Authorization` на каждый запрос. Двоеточие в логине и `;` он
+/// разобрал бы неверно — наши пароли из одних букв и цифр.
+String localProxyDirective(
+  int? httpPort, {
+  String username = '',
+  String password = '',
+}) {
+  if (httpPort == null) return 'DIRECT';
+  final host = InternetAddress.loopbackIPv4.address;
+  if (username.isEmpty || password.isEmpty) return 'PROXY $host:$httpPort';
+  return 'PROXY $username:$password@$host:$httpPort';
+}
 
 /// Учит готовый [HttpClient] ходить через локальный HTTP-инбаунд ядра, пока
 /// [resolvePort] отдаёт порт.
@@ -24,36 +35,27 @@ String localProxyDirective(int? httpPort) => httpPort == null
 /// Dart [HttpClient.findProxy] понимает только `PROXY host:port` и `DIRECT`,
 /// не `SOCKS`/`SOCKS5` — с SOCKS он кидает
 /// `HttpException: Invalid proxy configuration SOCKS5 …` на Windows.
+///
+/// Пароль идёт в строке прокси, а не через `addProxyCredentials`: запомненный
+/// пароль прокси dart:io на ответ 407 повторяет без конца (флаг «уже
+/// пробовали» у них не ставится). Пароль инбаунда новый на каждое
+/// подключение, а клиент подписок живёт всё время работы приложения — после
+/// переподключения его запрос крутился в петле из сотен соединений в секунду,
+/// и память росла до гигабайт: 3 ГБ за четверть часа на телефоне, 20 на ПК.
 void configureHttpClientForLocalVpnProxy(
   HttpClient client,
   LocalProxyPortResolver resolvePort, {
   String? username,
   String? password,
 }) {
-  final host = InternetAddress.loopbackIPv4.address;
-  // findProxy зовётся на каждый запрос — креды регистрируем один раз на
-  // сочетание порт+логин, иначе список у клиента растёт без конца.
-  final registered = <String>{};
-  client.findProxy = (_) {
-    final port = resolvePort();
-    if (port == null) return 'DIRECT';
-    // Синглтон читается в момент запроса, а не сборки клиента: на Android
-    // после пересоздания изолята креды восстанавливаются из нативного сервиса
-    // асинхронно и могут появиться позже.
-    final user = username ?? Socks5Credentials().username;
-    final pass = password ?? Socks5Credentials().password;
-    if (user.isNotEmpty &&
-        pass.isNotEmpty &&
-        registered.add('$port$user$pass')) {
-      client.addProxyCredentials(
-        host,
-        port,
-        '',
-        HttpClientBasicCredentials(user, pass),
+  client.findProxy = (_) => localProxyDirective(
+        resolvePort(),
+        // Синглтон читается в момент запроса, а не сборки клиента: на Android
+        // после пересоздания изолята креды восстанавливаются из нативного
+        // сервиса асинхронно и могут появиться позже.
+        username: username ?? Socks5Credentials().username,
+        password: password ?? Socks5Credentials().password,
       );
-    }
-    return localProxyDirective(port);
-  };
 }
 
 /// Routes [dio] through the app's local HTTP proxy (keqrnel / xray / mihomo)
