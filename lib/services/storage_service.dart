@@ -18,6 +18,8 @@ class StorageService {
   static const _kSettings      = 'keqdis_settings';
   static const _kSocksPort     = 'keqdis_socks_port';
   static const _kActiveHttpPort = 'keqdis_active_http_port';
+  static const _kActiveHttpUser = 'keqdis_active_http_user';
+  static const _kActiveHttpPass = 'keqdis_active_http_pass';
   static const _kKeqtrisBest  = 'keqdis_keqtris_best';
   static const _kHwid          = 'keqdis_hwid';
   static const _kWindowBounds  = 'keqdis_window_bounds';
@@ -342,11 +344,34 @@ class StorageService {
   /// видит, а обновлять подписки мимо туннеля ему нельзя.
   int? getActiveLocalHttpPort() => _prefs.getInt(_kActiveHttpPort);
 
-  Future<void> setActiveLocalHttpPort(int? port) => _serial(() async {
+  /// Логин и пароль того же инбаунда; пустые — инбаунд без пароля или VPN
+  /// не подключён.
+  ///
+  /// Пишутся и стираются вместе с портом: без пароля фоновый изолят получал
+  /// 407 на каждое обновление подписки, пока включён VPN. Секрета на диске от
+  /// этого не прибавляется — тот же пароль лежит в конфиге ядра.
+  ({String username, String password}) getActiveLocalHttpCredentials() => (
+        username: _prefs.getString(_kActiveHttpUser) ?? '',
+        password: _prefs.getString(_kActiveHttpPass) ?? '',
+      );
+
+  Future<void> setActiveLocalHttpPort(
+    int? port, {
+    String username = '',
+    String password = '',
+  }) =>
+      _serial(() async {
         if (port == null) {
           await _prefs.remove(_kActiveHttpPort);
         } else {
           await _prefs.setInt(_kActiveHttpPort, port);
+        }
+        if (port == null || username.isEmpty || password.isEmpty) {
+          await _prefs.remove(_kActiveHttpUser);
+          await _prefs.remove(_kActiveHttpPass);
+        } else {
+          await _prefs.setString(_kActiveHttpUser, username);
+          await _prefs.setString(_kActiveHttpPass, password);
         }
       });
 

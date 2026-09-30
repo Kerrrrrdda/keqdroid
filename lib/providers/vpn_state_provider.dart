@@ -101,7 +101,8 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
     state = AsyncData(s);
   }
 
-  /// Порт HTTP-инбаунда живой сессии — на диск, для фоновых изолятов.
+  /// Порт HTTP-инбаунда живой сессии и пароль к нему — на диск, для фоновых
+  /// изолятов.
   ///
   /// Они обновляют подписки, не видя ни riverpod-состояния, ни ActiveLocalPorts
   /// (синглтон живёт в своём изоляте), а идти мимо туннеля им нельзя: пакет
@@ -130,9 +131,21 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
     if (!ref.mounted) return;
     // За время чтения статус мог смениться — не воскрешаем порт после отключения
     if (state.value?.status != VpnStatus.connected) return;
-    // _applyNativeState зовётся и на каждый тик телеметрии — пишем только смену
-    if (storage.getActiveLocalHttpPort() == port) return;
-    await storage.setActiveLocalHttpPort(port);
+    // _applyNativeState зовётся и на каждый тик телеметрии — пишем только
+    // смену. Пароль сверяем тоже: после переподключения порт прежний, а пароль
+    // новый, и на Android он ещё и приезжает из сервиса позже порта.
+    final creds = Socks5Credentials();
+    final stored = storage.getActiveLocalHttpCredentials();
+    if (storage.getActiveLocalHttpPort() == port &&
+        stored.username == creds.username &&
+        stored.password == creds.password) {
+      return;
+    }
+    await storage.setActiveLocalHttpPort(
+      port,
+      username: creds.username,
+      password: creds.password,
+    );
   }
 
   bool _credsRestoreInFlight = false;

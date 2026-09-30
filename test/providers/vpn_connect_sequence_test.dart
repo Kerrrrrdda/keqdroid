@@ -39,10 +39,14 @@ class _RecordingBackend extends FakeTunnelBackend {
     return true;
   }
 
+  /// Что отдаст нативная часть на следующее подключение.
+  ({String username, String password}) creds =
+      (username: 'user-from-native', password: 'pass-from-native');
+
   @override
   Future<({String username, String password})> fetchSocksCredentials() async {
     calls.add('fetchSocksCredentials');
-    return (username: 'user-from-native', password: 'pass-from-native');
+    return creds;
   }
 
   @override
@@ -149,6 +153,41 @@ void main() {
     if (session.xrayConfig.contains('"auth": "password"')) {
       expect(session.xrayConfig, contains('pass-from-native'));
     }
+  });
+
+  test('порт и пароль сессии ложатся на диск, пароль — свежий после '
+      'переподключения', () async {
+    // Их читает фоновый изолят WorkManager: без пароля каждое фоновое
+    // обновление подписки при включённом VPN упиралось в 407. Порт после
+    // переподключения тот же, поэтому сверять только его было бы мало.
+    final (container, backend) = await _container();
+    final storage = container.read(storageProvider);
+    // connect() пишет их без await — ждём записи, но недолго.
+    Future<void> until(bool Function() done) async {
+      for (var i = 0; i < 100 && !done(); i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+    }
+
+    await container.read(vpnStateProvider.notifier).connect();
+    await until(() => storage.getActiveLocalHttpCredentials().password.isNotEmpty);
+    expect(storage.getActiveLocalHttpPort(), isNotNull);
+    expect(
+      storage.getActiveLocalHttpCredentials(),
+      (username: 'user-from-native', password: 'pass-from-native'),
+    );
+
+    backend
+      ..current = VpnState.disconnected
+      ..creds = (username: 'user-2', password: 'pass-2');
+    await container.read(vpnStateProvider.notifier).connect();
+    await until(
+      () => storage.getActiveLocalHttpCredentials().password == 'pass-2',
+    );
+    expect(
+      storage.getActiveLocalHttpCredentials(),
+      (username: 'user-2', password: 'pass-2'),
+    );
   });
 
   test('без выбранного сервера сессия не стартует вовсе', () async {

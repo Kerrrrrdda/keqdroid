@@ -9,6 +9,7 @@ import 'package:workmanager/workmanager.dart';
 
 import '../core/app_logger.dart';
 import '../utils/local_vpn_proxy.dart';
+import '../utils/socks5_credentials.dart';
 import 'storage_service.dart';
 import 'subscription_service.dart';
 
@@ -46,6 +47,11 @@ void callbackDispatcher() {
       final proxyPort = await resolveLocalProxyForBackground(
         storage.getActiveLocalHttpPort(),
       );
+      // Пароль инбаунда — оттуда же: Socks5Credentials у этого изолята свой и
+      // пустой, и без пароля каждое фоновое обновление при включённом VPN
+      // упиралось в 407.
+      final creds = storage.getActiveLocalHttpCredentials();
+      Socks5Credentials().init(creds.username, creds.password);
       final service = SubscriptionService(storage, localProxyPort: proxyPort);
 
       // обновляем только то, у чего вышел интервал.

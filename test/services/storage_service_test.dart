@@ -34,6 +34,26 @@ void main() {
       expect(storage.getActiveLocalHttpPort(), isNull);
     });
 
+    test('пароль сессии пишется и стирается вместе с портом', () async {
+      // Фоновому изоляту мало одного порта: инбаунд с паролем без него
+      // отвечает 407.
+      const none = (username: '', password: '');
+      final storage = await buildStorageService();
+      expect(storage.getActiveLocalHttpCredentials(), none);
+
+      await storage.setActiveLocalHttpPort(2081, username: 'u', password: 'p');
+      expect(storage.getActiveLocalHttpCredentials(), (username: 'u', password: 'p'));
+
+      // Новая сессия без пароля: прошлый не должен её пережить.
+      await storage.setActiveLocalHttpPort(2081);
+      expect(storage.getActiveLocalHttpCredentials(), none);
+
+      await storage.setActiveLocalHttpPort(2081, username: 'u', password: 'p');
+      await storage.setActiveLocalHttpPort(null);
+      expect(storage.getActiveLocalHttpPort(), isNull);
+      expect(storage.getActiveLocalHttpCredentials(), none);
+    });
+
     test('replaceServersBySubscription keeps other subscriptions', () async {
       final storage = await buildStorageService();
       final s1 = ServerItem.fromRaw('vless://id@one.com:443', subscriptionId: 'sub-a');
