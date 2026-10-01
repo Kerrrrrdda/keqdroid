@@ -42,6 +42,8 @@ class KeqdisVpnService : VpnService() {
         const val EXTRA_SOCKS_PASSWORD = "socks_password"
         const val EXTRA_SERVER_NAME    = "server_name"
         const val EXTRA_VPN_BACKEND    = "vpn_backend"
+        // Строка в лог ядра: откуда взялась сессия, которую поднял не человек.
+        const val EXTRA_LOG_NOTE       = "log_note"
         const val VPN_BACKEND_XRAY     = "xray"
         const val VPN_BACKEND_MIHOMO   = "mihomo"
 
@@ -359,7 +361,9 @@ class KeqdisVpnService : VpnService() {
                 }
                 return START_NOT_STICKY
             }
-            ACTION_START -> return startSession(intent, startId)
+            ACTION_START -> return startSession(
+                intent, startId, logNote = intent.getStringExtra(EXTRA_LOG_NOTE),
+            )
             ACTION_STOP -> serviceScope.launch { stopVpn(startId) }
         }
         return START_NOT_STICKY
