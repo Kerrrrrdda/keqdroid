@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:keqdroid/shared/extensions/build_context_l10n.dart';
 
 import '../../providers/providers.dart';
+import '../../services/resume_after_update.dart';
 import '../../services/update_service.dart';
 import '../../tunnel/local_port_plan.dart';
 import '../../tunnel/tunnel_state.dart';
@@ -263,6 +264,12 @@ class _UpdateDialogState extends ConsumerState<_UpdateDialog> {
         beforeRestart: Platform.isWindows || Platform.isLinux
             ? () async {
                 if (mounted) setState(() => _applying = true);
+                // Включённый туннель новый процесс поднимет сам.
+                final status = ref.read(vpnStateProvider).value?.status;
+                if (status == VpnStatus.connected ||
+                    status == VpnStatus.connecting) {
+                  await ResumeAfterUpdate.mark();
+                }
                 await ref.read(vpnStateProvider.notifier).disconnect();
               }
             : null,

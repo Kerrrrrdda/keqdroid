@@ -12,6 +12,7 @@ import '../../platform/vpn_native_bridge.dart';
 import '../../services/desktop_background_service.dart';
 import '../../services/hotkey_service.dart';
 import '../../services/linux_background_service.dart';
+import '../../services/resume_after_update.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../models/app_settings.dart';
@@ -45,7 +46,7 @@ class _DesktopHomeScreenState extends ConsumerState<DesktopHomeScreen>
     with WidgetsBindingObserver {
   int _index = 0;
   bool _startupTasksDone = false;
-  bool _autostartConnectInFlight = false;
+  bool _startupConnectInFlight = false;
   StreamSubscription<void>? _tunRememberSub;
   bool _tunRememberDialogOpen = false;
 
@@ -74,7 +75,7 @@ class _DesktopHomeScreenState extends ConsumerState<DesktopHomeScreen>
       ref.read(homeTabIndexProvider.notifier).set(_index);
       ref.read(homeTabPageProvider.notifier).set(_index.toDouble());
       ref.read(updateInfoProvider);
-      unawaited(_runWindowsStartupTasks());
+      unawaited(_runStartupTasks());
       unawaited(_applyHotkeysFromSettings());
     });
   }
@@ -221,10 +222,19 @@ class _DesktopHomeScreenState extends ConsumerState<DesktopHomeScreen>
     await _maybeAutostartConnect();
   }
 
-  Future<void> _maybeAutostartConnect({bool force = false}) async {
-    if (!Platform.isWindows || _autostartConnectInFlight) return;
+  Future<void> _runStartupTasks() async {
+    try {
+      await _runWindowsStartupTasks();
+    } finally {
+      // После автостарта, а не наперегонки с ним: оба подключают один сервер.
+      await _maybeResumeAfterUpdate();
+    }
+  }
 
-    _autostartConnectInFlight = true;
+  Future<void> _maybeAutostartConnect({bool force = false}) async {
+    if (!Platform.isWindows || _startupConnectInFlight) return;
+
+    _startupConnectInFlight = true;
     try {
       if (!force) {
         final isAutostart = await WindowsDesktopService.isAutostartLaunch();
@@ -234,30 +244,7 @@ class _DesktopHomeScreenState extends ConsumerState<DesktopHomeScreen>
       final storage = ref.read(storageProvider);
       final settings = await storage.getSettings();
       if (!settings.launchAtStartup || !settings.autoConnectLastServer) return;
-      await ref.read(vpnStateProvider.future);
-      await ref.read(serversProvider.notifier).reloadPreservingActive();
-      if (!mounted) return;
-
-      final active = ref.read(serversProvider).activeServer;
-      if (active == null) {
-        AppLogger.instance.warn(
-          'Autostart connect skipped: no active server selected',
-        );
-        return;
-      }
-
-      final vpn = ref.read(vpnStateProvider).value;
-      if (vpn?.status == VpnStatus.connected ||
-          vpn?.status == VpnStatus.connecting) {
-        return;
-      }
-
-      AppLogger.instance.info(
-        'Autostart: connecting to ${active.displayName}',
-      );
-      await ref
-          .read(vpnStateProvider.notifier)
-          .connect(autostartTunFallback: true);
+      await _connectActiveOnStartup('Autostart');
     } catch (e, st) {
       AppLogger.instance.error(
         'Autostart connect failed',
@@ -265,8 +252,52 @@ class _DesktopHomeScreenState extends ConsumerState<DesktopHomeScreen>
         stackTrace: st,
       );
     } finally {
-      _autostartConnectInFlight = false;
+      _startupConnectInFlight = false;
     }
+  }
+
+  /// Туннель, погашенный перед перезапуском на обновление, поднимаем обратно.
+  Future<void> _maybeResumeAfterUpdate() async {
+    if (!await ResumeAfterUpdate.take() || _startupConnectInFlight) return;
+
+    _startupConnectInFlight = true;
+    try {
+      await _connectActiveOnStartup('After update');
+    } catch (e, st) {
+      AppLogger.instance.error(
+        'Reconnect after update failed',
+        error: e,
+        stackTrace: st,
+      );
+    } finally {
+      _startupConnectInFlight = false;
+    }
+  }
+
+  /// Подключение без нажатия на старте процесса — к тому серверу, что выбран.
+  Future<void> _connectActiveOnStartup(String reason) async {
+    await ref.read(vpnStateProvider.future);
+    await ref.read(serversProvider.notifier).reloadPreservingActive();
+    if (!mounted) return;
+
+    final active = ref.read(serversProvider).activeServer;
+    if (active == null) {
+      AppLogger.instance.warn(
+        '$reason connect skipped: no active server selected',
+      );
+      return;
+    }
+
+    final vpn = ref.read(vpnStateProvider).value;
+    if (vpn?.status == VpnStatus.connected ||
+        vpn?.status == VpnStatus.connecting) {
+      return;
+    }
+
+    AppLogger.instance.info('$reason: connecting to ${active.displayName}');
+    await ref
+        .read(vpnStateProvider.notifier)
+        .connect(autostartTunFallback: true);
   }
 
   /// Tray "Quit" on Linux: disconnect (kills cores + clears system proxy)
