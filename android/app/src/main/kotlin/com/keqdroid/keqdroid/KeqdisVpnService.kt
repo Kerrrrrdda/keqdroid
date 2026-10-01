@@ -1131,6 +1131,12 @@ class KeqdisVpnService : VpnService() {
             .setSession("KEQDIS")
             .setBlocking(false)
 
+        // Без этого VPN приложения с target Android 10+ система считает лимитной
+        // сетью даже поверх домашнего Wi-Fi, и всё, что ждёт безлимитную («только
+        // по Wi-Fi»), при включённом туннеле её не видит. false — признак берётся
+        // у сети под туннелем.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) b.setMetered(false)
+
         applyAppFilter(b, inc, exc)
         applyHuaweiUnderlying(b)
 
