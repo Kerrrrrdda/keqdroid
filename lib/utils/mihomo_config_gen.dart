@@ -1036,11 +1036,10 @@ class MihomoConfigGen {
 
   /// Как ссылка просит упаковывать UDP — `packetEncoding` из стандарта #716.
   ///
-  /// Три значения (`handleVShareLink` в `common/convert/v.go`): `none` — как
-  /// есть, `packet` — адрес в каждом пакете, всё прочее — xudp. Ссылка без
-  /// параметра оставлена как была, хотя ядро в своём разборе включает там
-  /// xudp: менять упаковку UDP всем подряд — отдельное решение, а не побочный
-  /// эффект правки про параметр, которого в ссылке нет.
+  /// Выбор у mihomo на деле один: `packet-addr` (адрес в каждом пакете) или
+  /// xudp. Конструктор VLESS (`NewVless` в `adapter/outbound/vless.go`)
+  /// включает xudp сам, если `packet-addr` не задан, поэтому `none` и ссылка
+  /// без параметра тоже едут через xudp: пустая карта ничего не выключает.
   static Map<String, dynamic> _packetEncoding(String raw) =>
       switch (raw.trim().toLowerCase()) {
         '' => const {},

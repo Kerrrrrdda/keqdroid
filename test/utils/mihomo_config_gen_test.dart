@@ -1608,8 +1608,9 @@ void main() {
 
   // Ранние данные: первый пакет уезжает вместе с рукопожатием WebSocket. На
   // подключение не влияет, на скорость первого запроса — да.
-  // Как упаковывать UDP: `none` — как есть, `packet` — адрес в каждом пакете,
-  // всё прочее — xudp. Ссылку без параметра намеренно не трогаем.
+  // Как упаковывать UDP: `packet` — адрес в каждом пакете, остальное — xudp.
+  // `none` и ссылка без параметра в конфиг ничего не пишут: mihomo без
+  // `packet-addr` всё равно включает xudp сам.
   group('packetEncoding', () {
     Map<String, dynamic> proxyFor(String value) => MihomoConfigGen.buildProxy(
           'vless://uuid@198.51.100.10:443?type=tcp&security=none'
@@ -1622,13 +1623,13 @@ void main() {
       expect(proxyFor('packet').containsKey('xudp'), isFalse);
     });
 
-    test('none не включает ничего', () {
+    test('none в конфиг ничего не пишет', () {
       final proxy = proxyFor('none');
       expect(proxy.containsKey('xudp'), isFalse);
       expect(proxy.containsKey('packet-addr'), isFalse);
     });
 
-    test('без параметра упаковка не меняется', () {
+    test('без параметра в конфиг ничего не пишется', () {
       final proxy = proxyFor('');
       expect(proxy.containsKey('xudp'), isFalse);
       expect(proxy.containsKey('packet-addr'), isFalse);
