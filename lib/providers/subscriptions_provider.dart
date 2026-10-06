@@ -326,6 +326,9 @@ class SubscriptionsNotifier extends AsyncNotifier<List<Subscription>> {
   /// сервером уже не управляет: сторож слушает только подписку активного
   /// сервера.
   Future<void> handAutoSelectTo(String? ownerId) async {
+    // Выбор переходит из рук в руки — прежний «свой» сервер автовыбора к нему
+    // больше отношения не имеет: включённое заново «Авто» выбирает с нуля.
+    await AutoSelectHomeStore.save(null);
     final subs = state.value ?? [];
     bool owns(Subscription s) => s.id == ownerId && s.autoSelectVisible;
     final next = [

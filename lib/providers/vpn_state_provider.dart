@@ -68,6 +68,12 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
   /// Прошлая секунда прослушки ещё не вернулась: на десктопе это запрос к
   /// ядру, и медленное ядро получало бы их внахлёст, по одному в секунду.
   bool _autoSelectListening = false;
+
+  /// Плановая проверка ([AutoSelectWatchdog.recheckEvery]) и сколько байт
+  /// туннель пропустил к прошлой: не сдвинулось — телефон лежит, и проверять
+  /// нечего.
+  Timer? _autoSelectRecheckTimer;
+  int? _autoSelectRecheckSeenBytes;
   AppLifecycleListener? _androidLifecycle;
 
   void _applyNativeState(VpnState s) {
@@ -262,9 +268,15 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
       AutoSelectWatchdog.listenEvery,
       (_) => unawaited(_autoSelectListenOnce()),
     );
+    _autoSelectRecheckTimer?.cancel();
+    _autoSelectRecheckTimer = Timer.periodic(
+      AutoSelectWatchdog.recheckEvery,
+      (_) => unawaited(_autoSelectRecheck()),
+    );
     ref.onDispose(() {
       _autoSelectTimer?.cancel();
       _autoSelectListenTimer?.cancel();
+      _autoSelectRecheckTimer?.cancel();
       _sub?.cancel();
       _stopAndroidPolling();
       _androidLifecycle?.dispose();
@@ -882,13 +894,19 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
   /// роутинга, ни от того, что творится в живой сессии. Результаты копятся по
   /// мере прихода — решать можно, не дожидаясь таймаута мёртвого сервера — и
   /// в конце ложатся в список: мёртвый сервер краснеет там же, где его видно.
-  _AutoSelectMeasure _autoSelectStartMeasure(ServerItem current, String subId) {
+  _AutoSelectMeasure _autoSelectStartMeasure(
+    ServerItem current,
+    String subId, {
+    int limit = AutoSelectWatchdog.candidateLimit,
+    Set<String> include = const {},
+  }) {
     final measure = _AutoSelectMeasure(current.id);
     final servers = AutoServerSelect.candidatesToMeasure(
       ref.read(serversProvider).servers,
       subscriptionId: subId,
       current: current,
-      limit: AutoSelectWatchdog.candidateLimit,
+      limit: limit,
+      include: include,
     );
     ({String id, bool success, int? latencyMs}) entry(PingResult r) =>
         (id: r.serverId, success: r.success, latencyMs: r.latencyMs);
@@ -1130,6 +1148,17 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
         'Auto select: ${server.displayName} did not answer, '
         '${next.displayName} did — switching',
       );
+      final subId = server.subscriptionId;
+      if (subId != null) {
+        await AutoSelectHomeStore.save(
+          AutoSelectHome.afterFailover(
+            await AutoSelectHomeStore.load(),
+            subscriptionId: subId,
+            fromId: server.id,
+            toId: next.id,
+          ),
+        );
+      }
       switched = true;
       _autoSelectSwitches.add(now);
       await ref.read(serversProvider.notifier).setActive(next);
@@ -1152,6 +1181,152 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
             : AutoSelectWatchdog.quietAfterCheck,
       );
       _autoSelectBusy = false;
+    }
+  }
+
+  /// Плановая проверка раз в [AutoSelectWatchdog.recheckEvery].
+  ///
+  /// Мерит текущий сервер, свой (если ждём его, см. [AutoSelectHome]) и пару
+  /// лучших соседей. Текущий не ответил — решает судья, как при тревоге.
+  /// Ответил — смотрим на свой: отвечает [AutoSelectHome.returnAfter] раз
+  /// подряд — возвращаемся.
+  Future<void> _autoSelectRecheck() async {
+    if (_autoSelectBusy) return;
+    final target = _autoSelectTarget();
+    var home = await AutoSelectHomeStore.load();
+    if (target == null) {
+      // VPN выключен — свой сервер ждёт следующего подключения, а «Авто»,
+      // погасшее в его подписке, значит, что сервер выбирает уже человек.
+      final subs = ref.read(subscriptionsProvider).value ?? const <Subscription>[];
+      if (home != null &&
+          !subs.any((s) => s.id == home!.subscriptionId && s.autoSelect)) {
+        await AutoSelectHomeStore.save(null);
+      }
+      _autoSelectRecheckSeenBytes = null;
+      return;
+    }
+    if (home != null) {
+      final waiting = home.stillWaiting(
+        activeId: target.server.id,
+        autoSubscriptionId: target.subId,
+        homeExists: ref
+            .read(serversProvider)
+            .servers
+            .any((s) => s.id == home!.homeId),
+      );
+      if (waiting == null) await AutoSelectHomeStore.save(null);
+      home = waiting;
+    }
+
+    // Байты не сдвинулись с прошлой проверки — телефон лежит, и ядро замера
+    // раз в пять минут на всю ночь было бы тратой батареи. Счётчика нет вовсе
+    // (бывает на десктопе) — проверяем без этого условия.
+    final bytes = await _autoSelectTotalBytes();
+    final seen = _autoSelectRecheckSeenBytes;
+    _autoSelectRecheckSeenBytes = bytes;
+    if (bytes != null && (seen == null || bytes <= seen)) return;
+
+    final quietUntil = _autoSelectQuietUntil;
+    if (quietUntil != null && DateTime.now().isBefore(quietUntil)) return;
+
+    final homeId = home?.homeId;
+    final measure = _autoSelectStartMeasure(
+      target.server,
+      target.subId,
+      limit: AutoSelectWatchdog.recheckLimit,
+      include: {?homeId},
+    );
+    await _autoSelectDecide(target.server, measure, reason: 'scheduled check');
+    if (home == null) return;
+
+    _autoSelectBusy = true;
+    try {
+      // Судья решает по первым ответам, а свой сервер мог ответить позже.
+      await measure.done;
+      if (state.value?.status != VpnStatus.connected) return;
+      // Судья увёз на другой сервер или человек выбрал сам — тогда свой
+      // сервер уже записан заново или сброшен, и решать тут нечего.
+      if (ref.read(serversProvider).activeServer?.id != target.server.id) return;
+      home = home.afterCheck(
+        homeAnswered: measure.results[home.homeId]?.success == true,
+      );
+      if (!home.shouldReturn) {
+        await AutoSelectHomeStore.save(home);
+        return;
+      }
+    } finally {
+      _autoSelectBusy = false;
+    }
+    await _autoSelectReturnHome(target.server, home);
+  }
+
+  /// Переезд обратно на свой сервер — с теми же предохранителями, что у
+  /// аварийного: не чаще [AutoSelectWatchdog.maxSwitchesPerWindow] раз за окно
+  /// и с паузой после.
+  Future<void> _autoSelectReturnHome(
+    ServerItem from,
+    AutoSelectHome home,
+  ) async {
+    final back = ref
+        .read(serversProvider)
+        .servers
+        .where((s) => s.id == home.homeId)
+        .firstOrNull;
+    if (back == null) {
+      await AutoSelectHomeStore.save(null);
+      return;
+    }
+    final now = DateTime.now();
+    _autoSelectSwitches.removeWhere(
+      (t) => now.difference(t) >= AutoSelectWatchdog.switchWindow,
+    );
+    if (!AutoSelectWatchdog.switchAllowed(_autoSelectSwitches, now)) {
+      // Окно забито переездами — попробуем на следующей проверке.
+      await AutoSelectHomeStore.save(home);
+      return;
+    }
+    AppLogger.instance.info(
+      'Auto select: ${back.displayName} answered ${home.aliveStreak} checks '
+      'in a row — returning from ${from.displayName}',
+    );
+    await AutoSelectHomeStore.save(null);
+    _autoSelectBusy = true;
+    _autoSelectSwitches.add(now);
+    try {
+      await ref.read(serversProvider.notifier).setActive(back);
+      await reconnectToActiveServer();
+    } catch (e, st) {
+      AppLogger.instance.debug(
+        'Auto select return failed',
+        error: e,
+        stackTrace: st,
+      );
+    } finally {
+      _autoSelectSeenFailures = null;
+      _autoSelectSilence = const SilenceStreak();
+      _autoSelectCounters = null;
+      _autoSelectQuietUntil = DateTime.now().add(
+        AutoSelectWatchdog.quietAfterSwitch,
+      );
+      _autoSelectBusy = false;
+    }
+  }
+
+  /// Сколько байт сессия пропустила в обе стороны; null — счётчика нет.
+  Future<int?> _autoSelectTotalBytes() async {
+    final engine = ref.read(vpnEngineProvider);
+    try {
+      if (Platform.isAndroid) {
+        final now = await engine.getCurrentState();
+        final down = now.totalDownload;
+        final up = now.totalUpload;
+        if (down == null && up == null) return null;
+        return (down ?? 0) + (up ?? 0);
+      }
+      final counters = await engine.sessionTrafficCounters();
+      return counters == null ? null : counters.down + counters.up;
+    } catch (_) {
+      return null;
     }
   }
 
