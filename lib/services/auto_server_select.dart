@@ -1,15 +1,83 @@
+import '../models/ping_sample.dart';
 import '../models/server_item.dart';
 
 /// Выбор сервера за человека — та самая «Авто» в шапке подписки.
 ///
-/// Правило одно: из живых берём лучший по последнему замеру. Живой тут значит
-/// «замер удался»: [ServerItem.pingMs] у неудачного замера обнуляется
-/// (см. servers_provider), поэтому красный сервер и сервер, которого никогда
-/// не мерили, в списке выглядят одинаково — и это не одно и то же. Ни разу не
-/// меренный не мёртв, он неизвестен, поэтому идёт следом за померенными, а не
-/// выбрасывается: подписка, которую ещё не пинговали, иначе не дала бы
-/// подключиться вовсе.
+/// Правило одно: из живых берём лучший по замерам ([latencyScore]). Живой тут
+/// значит «последний замер удался»: [ServerItem.pingMs] у неудачного замера
+/// обнуляется (см. servers_provider), поэтому красный сервер и сервер, которого
+/// никогда не мерили, в списке выглядят одинаково — и это не одно и то же. Ни
+/// разу не меренный не мёртв, он неизвестен, поэтому идёт следом за
+/// померенными, а не выбрасывается: подписка, которую ещё не пинговали, иначе
+/// не дала бы подключиться вовсе.
 abstract final class AutoServerSelect {
+  /// За какой срок замеры ещё что-то говорят о сервере.
+  static const historyWindow = Duration(hours: 24);
+
+  /// Цена одного провала за сутки в оценке — больше любой живой задержки:
+  /// сервер, который недавно падал, идёт после ровных.
+  static const failurePenalty = 1000;
+
+  /// Оценка по задержке, меньше — лучше; null — по задержке судить нечем
+  /// (последний замер провален или это тест скорости).
+  ///
+  /// Типичная задержка (медиана), плюс разброс, плюс штраф за каждый провал:
+  /// сервер, у которого пинг то 80, то 400, проигрывает ровным 150. Считаются
+  /// только замеры тем же методом, что и последний, — миллисекунды TCP и
+  /// HTTP-пинга между собой несравнимы. Без истории оценка — последний замер.
+  static int? latencyScore(ServerItem server, DateTime now) {
+    final last = server.pingMs;
+    final type = server.lastPingType;
+    if (last == null) return null;
+    if (type != null && !PingSample.latencyTypes.contains(type)) return null;
+    final recent = [
+      for (final s in server.pingSamples)
+        if (s.type == type && now.difference(s.at).abs() <= historyWindow) s,
+    ];
+    final answered = [
+      for (final s in recent)
+        if (s.ms != null) s.ms!,
+    ]..sort();
+    final failures = recent.length - answered.length;
+    if (answered.length < 2) return last + failures * failurePenalty;
+    final median = answered[answered.length ~/ 2];
+    final spread = answered.last - answered.first;
+    return median + spread + failures * failurePenalty;
+  }
+
+  /// Скорость из теста скорости, кбит/с; null — сервер мерили не им.
+  static int? _speedKbps(ServerItem server) =>
+      server.lastPingType == 'speed' ? server.pingMs : null;
+
+  /// Порядок «кто лучше» для [pick] и [candidatesToMeasure]: сначала
+  /// оценённые по задержке, затем живые по тесту скорости (быстрые первыми),
+  /// затем не меренные, последними — с проваленным замером.
+  static List<ServerItem> _ranked(Iterable<ServerItem> servers, DateTime now) {
+    int tier(ServerItem s) {
+      if (latencyScore(s, now) != null) return 0;
+      if (_speedKbps(s) != null) return 1;
+      if (s.lastTestedAt == null) return 2;
+      return 3;
+    }
+
+    // Сортировка в Dart не устойчивая, а при равенстве первым должен остаться
+    // тот, кто раньше в списке, — поэтому порядок в списке последний ключ.
+    final indexed = servers.indexed.toList();
+    indexed.sort((x, y) {
+      final (ia, a) = x;
+      final (ib, b) = y;
+      final byTier = tier(a).compareTo(tier(b));
+      if (byTier != 0) return byTier;
+      final byValue = switch (tier(a)) {
+        0 => latencyScore(a, now)!.compareTo(latencyScore(b, now)!),
+        1 => _speedKbps(b)!.compareTo(_speedKbps(a)!),
+        _ => 0,
+      };
+      return byValue != 0 ? byValue : ia.compareTo(ib);
+    });
+    return [for (final (_, s) in indexed) s];
+  }
+
   /// Кого включать автовыбором в подписке [subscriptionId].
   ///
   /// [exclude] — сервер, с которого только что съехали: он только что не
@@ -26,6 +94,7 @@ abstract final class AutoServerSelect {
     required String subscriptionId,
     String? exclude,
     String? excludeHost,
+    DateTime? now,
   }) {
     final group = [
       for (final server in servers)
@@ -50,23 +119,11 @@ abstract final class AutoServerSelect {
           ];
     final pool = candidates.isEmpty ? group : candidates;
 
-    final measured = [
-      for (final server in pool)
-        if (server.pingMs != null) server,
-    ]..sort((a, b) => a.pingMs!.compareTo(b.pingMs!));
-    if (measured.isNotEmpty) return measured.first;
-
-    final untested = [
-      for (final server in pool)
-        if (server.lastTestedAt == null) server,
-    ];
-    if (untested.isNotEmpty) return untested.first;
-
-    // Остались только те, чей замер не удался. Брать всё равно кого-то надо:
+    // Если остались только те, чей замер не удался, всё равно берём первого:
     // замер мог не удаться и по своей причине (пинг шёл до подключения, сеть
     // сменилась), а «автовыбор ничего не выбрал» — худший из возможных
     // ответов на нажатую кнопку.
-    return pool.first;
+    return _ranked(pool, now ?? DateTime.now()).first;
   }
 
   /// Кого мерить, когда текущий сервер под подозрением: он сам и лучшие из
@@ -76,28 +133,31 @@ abstract final class AutoServerSelect {
   /// свежему замеру, а не по тому, что показалось сторожу. Соседей — по
   /// порядку старых замеров, потому что мерить всю подписку ради одного
   /// переезда незачем, а десяток на Android — это ровно одно ядро замера.
+  ///
+  /// [include] — кого мерить обязательно, сразу после текущего: «свой» сервер
+  /// автовыбора, на который ждём возможности вернуться (см. AutoSelectHome).
   static List<ServerItem> candidatesToMeasure(
     List<ServerItem> servers, {
     required String subscriptionId,
     required ServerItem current,
     int limit = 10,
+    Set<String> include = const {},
+    DateTime? now,
   }) {
-    final others = [
+    final group = [
       for (final server in servers)
         if (server.subscriptionId == subscriptionId && server.id != current.id)
           server,
     ];
-    int rank(ServerItem s) => s.pingMs != null
-        ? 0
-        : s.lastTestedAt == null
-            ? 1
-            : 2;
-    others.sort((a, b) {
-      final byRank = rank(a).compareTo(rank(b));
-      if (byRank != 0) return byRank;
-      return (a.pingMs ?? 0).compareTo(b.pingMs ?? 0);
-    });
-    return [current, ...others.take(limit - 1)];
+    final forced = [
+      for (final server in group)
+        if (include.contains(server.id)) server,
+    ];
+    final others = _ranked(
+      group.where((s) => !include.contains(s.id)),
+      now ?? DateTime.now(),
+    );
+    return [current, ...forced, ...others].take(limit).toList();
   }
 
   /// Что делать по замеру — полному или ещё идущему.

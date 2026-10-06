@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:keqdroid/models/ping_sample.dart';
 import 'package:keqdroid/models/server_item.dart';
 import 'package:keqdroid/services/auto_server_select.dart';
 
@@ -12,6 +13,8 @@ ServerItem _server(
   required String sub,
   int? ping,
   DateTime? tested,
+  String? type,
+  List<PingSample> samples = const [],
 }) =>
     ServerItem(
       id: id,
@@ -21,6 +24,8 @@ ServerItem _server(
       addedAt: DateTime(2026),
       pingMs: ping,
       lastTestedAt: tested,
+      lastPingType: type,
+      pingSamples: samples,
     );
 
 void main() {
@@ -167,5 +172,96 @@ void main() {
     expect(picked.map((s) => s.id), isNot(contains('other-sub')));
     // Соседи — по старым замерам, лучшие первыми.
     expect(picked.skip(1).map((s) => s.id), ['s0', 's1', 's2', 's3']);
+  });
+
+  group('оценка по истории замеров', () {
+    final now = DateTime(2026, 10, 6, 12);
+    List<PingSample> history(List<int?> values, {String type = 'url'}) => [
+          for (var i = 0; i < values.length; i++)
+            PingSample(
+              at: now.subtract(Duration(minutes: 5 * (values.length - i))),
+              ms: values[i],
+              type: type,
+            ),
+        ];
+
+    test('ровный сервер обходит того, у кого пинг скачет', () {
+      final servers = [
+        _server('jumpy', sub: 's1', ping: 90, tested: now, type: 'url',
+            samples: history([80, 400, 90])),
+        _server('steady', sub: 's1', ping: 155, tested: now, type: 'url',
+            samples: history([150, 160, 155])),
+      ];
+
+      expect(AutoServerSelect.pick(servers, subscriptionId: 's1', now: now)?.id,
+          'steady');
+    });
+
+    test('недавний провал опускает сервер ниже живых без провалов', () {
+      final servers = [
+        _server('flaky', sub: 's1', ping: 60, tested: now, type: 'url',
+            samples: history([70, null, 60])),
+        _server('calm', sub: 's1', ping: 210, tested: now, type: 'url',
+            samples: history([200, 210])),
+      ];
+
+      expect(AutoServerSelect.pick(servers, subscriptionId: 's1', now: now)?.id,
+          'calm');
+    });
+
+    test('замеры старше суток не считаются', () {
+      final old = PingSample(
+        at: now.subtract(const Duration(days: 2)),
+        ms: null,
+        type: 'url',
+      );
+      final server = _server('a', sub: 's1', ping: 100, tested: now,
+          type: 'url', samples: [old, ...history([100])]);
+
+      expect(AutoServerSelect.latencyScore(server, now), 100);
+    });
+
+    test('замеры другим методом с текущими не смешиваются', () {
+      final server = _server('a', sub: 's1', ping: 100, tested: now,
+          type: 'url',
+          samples: [...history([5, 900], type: 'tcp'), ...history([100])]);
+
+      expect(AutoServerSelect.latencyScore(server, now), 100);
+    });
+
+    test('без истории оценка — последний замер, как раньше', () {
+      final server = _server('a', sub: 's1', ping: 120, tested: now);
+
+      expect(AutoServerSelect.latencyScore(server, now), 120);
+    });
+  });
+
+  test('после теста скорости выбирается самый быстрый, а не самый медленный',
+      () {
+    // У теста скорости в поле пинга кбит/с, и больше — лучше.
+    final servers = [
+      _server('slow', sub: 's1', ping: 3000, tested: tested, type: 'speed'),
+      _server('fast', sub: 's1', ping: 90000, tested: tested, type: 'speed'),
+    ];
+
+    expect(AutoServerSelect.pick(servers, subscriptionId: 's1')?.id, 'fast');
+  });
+
+  test('свой сервер автовыбора попадает в замер, даже если он в хвосте', () {
+    final servers = [
+      for (var i = 0; i < 6; i++)
+        _server('s$i', sub: 's1', ping: 10 + i, tested: tested),
+      _server('home', sub: 's1', tested: tested),
+    ];
+
+    final picked = AutoServerSelect.candidatesToMeasure(
+      servers,
+      subscriptionId: 's1',
+      current: servers[3],
+      limit: 4,
+      include: {'home'},
+    );
+
+    expect(picked.map((s) => s.id), ['s3', 'home', 's0', 's1']);
   });
 }

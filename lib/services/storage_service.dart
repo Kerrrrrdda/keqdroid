@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../core/app_logger.dart';
 import '../core/exceptions.dart';
 import '../models/app_settings.dart';
+import '../models/ping_sample.dart';
 import '../models/routing_rule.dart';
 import '../models/server_item.dart';
 import '../models/subscription.dart';
@@ -187,6 +188,15 @@ class StorageService {
           var item = s.copyWith(pingMs: u.pingMs, lastTestedAt: testedAt);
           if (u.lastPingType != null) {
             item = item.copyWith(lastPingType: u.lastPingType);
+          }
+          final type = item.lastPingType;
+          if (type != null && PingSample.latencyTypes.contains(type)) {
+            item = item.copyWith(
+              pingSamples: PingSample.append(
+                item.pingSamples,
+                PingSample(at: testedAt, ms: u.pingMs, type: type),
+              ),
+            );
           }
           return item;
         }).toList();

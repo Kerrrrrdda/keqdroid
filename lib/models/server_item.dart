@@ -8,6 +8,7 @@ import '../utils/custom_xray_config.dart';
 import '../utils/mieru_uri.dart';
 import '../utils/proxy_chain.dart';
 import '../utils/ssr_uri.dart';
+import 'ping_sample.dart';
 import 'server_flag.dart';
 import 'server_name_utils.dart';
 
@@ -38,6 +39,8 @@ class ServerItem {
   final DateTime? lastTestedAt;
   /// `'tcp'` | `'url'` — метод последнего пинга, нужен для цвета в UI
   final String? lastPingType;
+  /// Последние замеры задержки, старые в начале (см. [PingSample]).
+  final List<PingSample> pingSamples;
 
   // кэш чтобы не парсить uri каждый раз
   String? _cachedDerivedName;
@@ -67,6 +70,7 @@ class ServerItem {
     this.pingMs,
     this.lastTestedAt,
     this.lastPingType,
+    this.pingSamples = const [],
   }) : addedAt = addedAt ?? DateTime.now();
 
   /// из raw-строки конфига
@@ -107,6 +111,10 @@ class ServerItem {
         ? DateTime.parse(json['lastTestedAt'] as String)
         : null,
     lastPingType: json['lastPingType'] as String?,
+    pingSamples: [
+      for (final raw in (json['pingSamples'] as List?) ?? const [])
+        ?PingSample.fromJson(raw),
+    ],
   );
 
   Map<String, dynamic> toJson() => {
@@ -122,6 +130,8 @@ class ServerItem {
     if (pingMs != null) 'pingMs': pingMs,
     if (lastTestedAt != null) 'lastTestedAt': lastTestedAt!.toIso8601String(),
     if (lastPingType != null) 'lastPingType': lastPingType,
+    if (pingSamples.isNotEmpty)
+      'pingSamples': [for (final s in pingSamples) s.toJson()],
   };
 
   ServerItem copyWith({
@@ -137,6 +147,7 @@ class ServerItem {
     Object? pingMs = _sentinel,
     Object? lastTestedAt = _sentinel,
     Object? lastPingType = _sentinel,
+    List<PingSample>? pingSamples,
   }) =>
       ServerItem(
         id: id ?? this.id,
@@ -157,6 +168,7 @@ class ServerItem {
         lastPingType: lastPingType == _sentinel
             ? this.lastPingType
             : lastPingType as String?,
+        pingSamples: pingSamples ?? this.pingSamples,
       );
 
   bool get isPinned => pinnedAt != null;
