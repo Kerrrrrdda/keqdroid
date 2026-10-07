@@ -17,6 +17,7 @@ import 'core_capabilities.dart';
 import 'desktop_traffic_stats.dart';
 import 'linux_core_paths.dart';
 import 'linux_elevation.dart';
+import 'linux_system_proxy.dart';
 import 'local_port_plan.dart';
 import 'socks_credential_generator.dart';
 import 'tun_failure_hints.dart';
@@ -40,8 +41,8 @@ Stream<void> get linuxTunRememberOffers => _linuxTunRememberController.stream;
 /// и дождаться их локальных портов, без нативного канала.
 ///
 /// В proxy-режиме ядро поднимает локальный SOCKS/HTTP, а системный прокси
-/// прописывается через `gsettings` — по возможности: на не-GNOME он не встанет,
-/// но локальный прокси работает и его можно указать руками. В TUN-режиме поверх
+/// прописывается в настройки GNOME и KDE ([LinuxSystemProxy]); где их не читают,
+/// локальный прокси указывают руками. В TUN-режиме поверх
 /// того же SOCKS запускается sing-box с tun-инбаундом; создать устройство и
 /// править маршруты может только root, поэтому он идёт через `pkexec`. Счётчики
 /// трафика там читаются из sysfs tun-интерфейса.
@@ -985,76 +986,35 @@ chown root:root '$_polkitRulePath' 2>/dev/null || true
     );
   }
 
-  // ---- system proxy (GNOME gsettings, best effort) ------------------------
+  // ---- system proxy (see LinuxSystemProxy) --------------------------------
 
   Future<void> _applySystemProxy(TunnelSessionRequest request) async {
-    final ok = await _gsettingsProxy(
-      enabled: true,
-      socksPort: request.socksPort,
+    final ok = await (await LinuxSystemProxy.system()).enable(
       httpPort: request.httpPort,
+      socksPort: request.socksPort,
     );
     if (!ok) {
       AppLogger.instance.warn(
-        'Could not set the GNOME system proxy (gsettings unavailable or '
-        'non-GNOME desktop). The local proxy is up on 127.0.0.1: '
-        'SOCKS ${request.socksPort} / HTTP ${request.httpPort} — configure '
-        'it manually if your desktop does not honour gsettings.',
+        'Could not set the system proxy (neither gsettings nor KDE settings '
+        'are available). The local proxy is up on 127.0.0.1: '
+        'SOCKS ${request.socksPort} / HTTP ${request.httpPort}.',
       );
     }
-    // Намеренно не трогаем прокси-настройки браузеров: gsettings задаёт
-    // системный прокси, а Firefox можно один раз переключить на «Использовать
-    // системные настройки прокси». Приложение чужие значения не правит.
   }
 
-  Future<bool> _gsettingsProxy({
-    required bool enabled,
-    int socksPort = 0,
-    int httpPort = 0,
-  }) async {
-    Future<bool> set(List<String> args) async {
-      try {
-        final r = await Process.run('gsettings', args);
-        return r.exitCode == 0;
-      } catch (_) {
-        return false;
-      }
+  static Future<void> _restoreSystemProxy() async {
+    try {
+      await (await LinuxSystemProxy.system()).disable();
+    } catch (e) {
+      AppLogger.instance.warn('Could not restore the system proxy', error: e);
     }
-
-    if (!enabled) {
-      return set(['set', 'org.gnome.system.proxy', 'mode', 'none']);
-    }
-
-    await set(['set', 'org.gnome.system.proxy.http', 'host', '127.0.0.1']);
-    await set(['set', 'org.gnome.system.proxy.http', 'port', '$httpPort']);
-    await set(['set', 'org.gnome.system.proxy.https', 'host', '127.0.0.1']);
-    await set(['set', 'org.gnome.system.proxy.https', 'port', '$httpPort']);
-    await set(['set', 'org.gnome.system.proxy.socks', 'host', '127.0.0.1']);
-    await set(['set', 'org.gnome.system.proxy.socks', 'port', '$socksPort']);
-    await set([
-      'set',
-      'org.gnome.system.proxy',
-      'ignore-hosts',
-      "['localhost', '127.0.0.0/8', '::1']",
-    ]);
-    // The mode switch landing is our success signal; if gsettings is missing
-    // every call returns false.
-    return set(['set', 'org.gnome.system.proxy', 'mode', 'manual']);
   }
 
   /// Best-effort cleanup of state a previous (possibly crashed) run may have
   /// left behind: a system proxy still pointing at a dead local port. Called on
   /// Linux app startup. Does not touch core processes (avoid killing unrelated
   /// xray/sing-box the user may run).
-  static Future<void> cleanupStaleState() async {
-    try {
-      await Process.run('gsettings', [
-        'set',
-        'org.gnome.system.proxy',
-        'mode',
-        'none',
-      ]);
-    } catch (_) {}
-  }
+  static Future<void> cleanupStaleState() => _restoreSystemProxy();
 
   // ---- lifecycle ----------------------------------------------------------
 
@@ -1117,10 +1077,10 @@ chown root:root '$_polkitRulePath' 2>/dev/null || true
       await _dumpLogsToFile();
     }
 
-    // Always reset the system proxy on stop — even if this instance did not set
-    // it (left over from a previous run/crash) — otherwise the desktop keeps
-    // routing to a dead 127.0.0.1 proxy.
-    await _gsettingsProxy(enabled: false);
+    // Always restore the system proxy on stop — even if this instance did not
+    // set it (left over from a previous run/crash) — otherwise the desktop
+    // keeps routing to a dead 127.0.0.1 proxy.
+    await _restoreSystemProxy();
 
     // sing-box first: it owns the tun device + routes, tear it down before the
     // upstream SOCKS provider so traffic fails closed, not into a dead socks.
