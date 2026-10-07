@@ -26,9 +26,15 @@ if(APPINDICATOR_FOUND)
 else()
   pkg_check_modules(APPINDICATOR IMPORTED_TARGET appindicator3-0.1)
 endif()
+# keqdroid patch: XGetSelectionOwner для проверки трея X11 (isAvailable).
+pkg_check_modules(X11 IMPORTED_TARGET x11)
+if(X11_FOUND)
+  target_link_libraries(${PLUGIN_NAME} PRIVATE PkgConfig::X11)
+endif()
+
 if(APPINDICATOR_FOUND)
   target_link_libraries(${PLUGIN_NAME} PRIVATE PkgConfig::APPINDICATOR)
-else() 
+else()
   message(
     FATAL_ERROR
     "\n"

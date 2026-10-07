@@ -59,6 +59,8 @@ class _DesktopHomeScreenState extends ConsumerState<DesktopHomeScreen>
     // The tray "Quit" tears the tunnel down first via this callback.
     if (Platform.isLinux) {
       LinuxBackgroundService.instance.onQuit = _disconnectForQuit;
+      LinuxBackgroundService.instance.uiVisible
+          .addListener(_onLinuxWindowVisibility);
       // После первого ввода пароля в polkit для TUN — предложить сделать запуск
       // беспарольным (установить правило). См. LinuxTunnelBackend.
       _tunRememberSub = linuxTunRememberOffers.listen((_) {
@@ -78,6 +80,20 @@ class _DesktopHomeScreenState extends ConsumerState<DesktopHomeScreen>
       unawaited(_runStartupTasks());
       unawaited(_applyHotkeysFromSettings());
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Меню трея на Linux заводится до первого кадра, когда языка ещё нет; здесь
+    // же оно догоняет смену языка в настройках.
+    final l10n = AppLocalizations.of(context);
+    if (Platform.isLinux && l10n != null) {
+      unawaited(LinuxBackgroundService.instance.setTrayLabels(
+        show: l10n.trayOpenApp,
+        quit: l10n.trayExit,
+      ));
+    }
   }
 
   Future<void> _applyHotkeysFromSettings() async {
@@ -408,7 +424,11 @@ class _DesktopHomeScreenState extends ConsumerState<DesktopHomeScreen>
   void dispose() {
     HardwareKeyboard.instance.removeHandler(_onGlobalKey);
     unawaited(_tunRememberSub?.cancel());
-    if (Platform.isLinux) LinuxBackgroundService.instance.onQuit = null;
+    if (Platform.isLinux) {
+      LinuxBackgroundService.instance.onQuit = null;
+      LinuxBackgroundService.instance.uiVisible
+          .removeListener(_onLinuxWindowVisibility);
+    }
     HotkeyService.onPressed = null;
     VpnNativeBridge.registerAutostartHandler(null);
     VpnNativeBridge.registerWindowVisibilityHandler(null);
@@ -423,6 +443,11 @@ class _DesktopHomeScreenState extends ConsumerState<DesktopHomeScreen>
     if (!mounted) return;
     ref.read(desktopWindowVisibleProvider.notifier).set(visible);
   }
+
+  /// Linux: окно убрано в фон или возвращено нашими же руками (см.
+  /// LinuxBackgroundService.uiVisible).
+  void _onLinuxWindowVisibility() =>
+      _onWindowVisibility(LinuxBackgroundService.instance.uiVisible.value);
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -549,6 +574,10 @@ class _DesktopHomeScreenState extends ConsumerState<DesktopHomeScreen>
   /// and so does anything opened on top of the tab — see the checks below.
   bool _onGlobalKey(KeyEvent event) {
     if (event is! KeyDownEvent || !mounted) return false;
+    if (Platform.isLinux && _isQuitShortcut(event)) {
+      unawaited(LinuxBackgroundService.instance.quit());
+      return true;
+    }
     final mod = HardwareKeyboard.instance.isControlPressed ||
         HardwareKeyboard.instance.isMetaPressed;
     if (!mod || event.physicalKey != PhysicalKeyboardKey.keyV) return false;
@@ -574,6 +603,21 @@ class _DesktopHomeScreenState extends ConsumerState<DesktopHomeScreen>
         return true;
     }
     return false;
+  }
+
+  /// Ctrl+Q — выход, как у Linux-программ: где трея нет, крестик только
+  /// сворачивает окно, и другого выхода не остаётся. Физическая клавиша — чтобы
+  /// работало в русской раскладке. Сочетание из настроек хоткеев и запись
+  /// нового сочетания важнее.
+  bool _isQuitShortcut(KeyEvent event) {
+    final hk = HardwareKeyboard.instance;
+    return event.physicalKey == PhysicalKeyboardKey.keyQ &&
+        hk.isControlPressed &&
+        !hk.isAltPressed &&
+        !hk.isShiftPressed &&
+        !hk.isMetaPressed &&
+        !HotkeyService.captureMode &&
+        !HotkeyService.isBound(event.physicalKey, hk);
   }
 }
 

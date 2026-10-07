@@ -51,6 +51,22 @@ static gboolean startup_watchdog_cb(gpointer user_data) {
   return G_SOURCE_REMOVE;
 }
 
+// Тайлинговые композиторы рисуют окна без заголовков и сами ими управляют:
+// шапка GTK с кнопками там лишняя полоса над содержимым. Тот же список — в
+// LinuxBackgroundService.isTilingDesktop.
+static gboolean is_tiling_desktop() {
+  const gchar* desktop = g_getenv("XDG_CURRENT_DESKTOP");
+  if (desktop == nullptr) return FALSE;
+  static const gchar* const kTiling[] = {"Hyprland", "sway", "niri", "river"};
+  g_auto(GStrv) names = g_strsplit(desktop, ":", -1);
+  for (gchar** name = names; *name != nullptr; name++) {
+    for (const gchar* tiling : kTiling) {
+      if (g_ascii_strcasecmp(*name, tiling) == 0) return TRUE;
+    }
+  }
+  return FALSE;
+}
+
 // Called when first Flutter frame received.
 static void first_frame_cb(MyApplication* self, FlView* view) {
   self->first_frame_seen = TRUE;
@@ -84,6 +100,10 @@ static void my_application_activate(GApplication* application) {
     }
   }
 #endif
+  if (is_tiling_desktop()) {
+    use_header_bar = FALSE;
+    gtk_window_set_decorated(window, FALSE);
+  }
   if (use_header_bar) {
     GtkHeaderBar* header_bar = GTK_HEADER_BAR(gtk_header_bar_new());
     gtk_widget_show(GTK_WIDGET(header_bar));

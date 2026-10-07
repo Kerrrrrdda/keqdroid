@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' show Rect, Size;
 
+import 'package:flutter/foundation.dart' show ValueNotifier, visibleForTesting;
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -11,15 +12,45 @@ import 'storage_service.dart';
 
 /// Фон и трей на Linux; у Windows трей свой, нативный.
 ///
-/// Закрытие окна прячет его, а не выходит из приложения — туннель продолжает
-/// работать. Вернуть окно и выйти можно из меню трея: AppIndicator умеет только
-/// меню, одиночные клики до приложения не доходят вовсе, а на чистом GNOME
-/// значок вообще не виден без расширения. Второй запуск не плодит копию, а
-/// поднимает уже работающее окно — на GNOME без трея это единственный надёжный
-/// способ его вернуть.
+/// Крестик не выходит из приложения — туннель продолжает работать. Окно уходит
+/// в трей, а когда трея нет (чистый GNOME, тайлинги без модуля трея), — в
+/// панель задач: спрятанное окно без значка вернуть было бы нечем. Выход — из
+/// меню трея или по Ctrl+Q. AppIndicator умеет только меню, одиночные клики до
+/// приложения не доходят вовсе. Второй запуск не плодит копию, а поднимает уже
+/// работающее окно.
 class LinuxBackgroundService with WindowListener, TrayListener {
   LinuxBackgroundService._();
   static final LinuxBackgroundService instance = LinuxBackgroundService._();
+
+  @visibleForTesting
+  LinuxBackgroundService.forTesting();
+
+  /// Под этим id значок живёт между запусками: по нему KDE помнит, показывать
+  /// ли его всегда.
+  static const _trayId = 'keqdroid';
+
+  /// Сколько дать движку дорисовать последний кадр спрятанного окна.
+  @visibleForTesting
+  static Duration quitSettleDelay = const Duration(milliseconds: 300);
+
+  /// Выход уже идёт: окно закрываем мы сами, и его событие закрытия — не
+  /// просьба человека убрать окно в фон.
+  bool _quitting = false;
+
+  /// Видно ли окно человеку — по нашим же действиям. Свёрнутое окно на
+  /// Wayland GTK3 видимым и остаётся: композитор не сообщает о сворачивании,
+  /// и Flutter рисовал бы волну в фоне. Экран гасит по этому флагу анимации и
+  /// опрос трафика, как на Windows (desktopWindowVisibleProvider).
+  final ValueNotifier<bool> uiVisible = ValueNotifier(true);
+
+  /// `XDG_CURRENT_DESKTOP` для тестов.
+  @visibleForTesting
+  static String? desktopOverride;
+
+  /// Подписи меню трея. До первого кадра языка ещё нет, поэтому английские;
+  /// экран подменяет их на язык интерфейса ([setTrayLabels]).
+  String _showLabel = 'Show keqdroid';
+  String _quitLabel = 'Quit';
 
   // Loopback "lock": only one process can bind it; later launches connect to it.
   static const int _lockPort = 47351;
@@ -65,17 +96,11 @@ class LinuxBackgroundService with WindowListener, TrayListener {
 
     trayManager.addListener(this);
     try {
-      await trayManager.setIcon('assets/icon.png');
+      await trayManager.setIcon('assets/icon.png', id: _trayId, title: 'keqdroid');
       // Нет setToolTip: Linux-реализация tray_manager его не поддерживает
       // (MissingPluginException), а вылет здесь оставит индикатор с пустым
       // меню — AppIndicator без меню вообще не реагирует на клики.
-      await trayManager.setContextMenu(
-        Menu(items: [
-          MenuItem(key: 'show', label: 'Show KeqDroid'),
-          MenuItem.separator(),
-          MenuItem(key: 'quit', label: 'Quit'),
-        ]),
-      );
+      await _applyTrayMenu();
     } catch (e, st) {
       // No StatusNotifier/AppIndicator host (e.g. vanilla GNOME): the app still
       // runs in the background; single-instance relaunch restores the window.
@@ -88,23 +113,78 @@ class LinuxBackgroundService with WindowListener, TrayListener {
     }
   }
 
+  Future<void> _applyTrayMenu() => trayManager.setContextMenu(
+        Menu(items: [
+          MenuItem(key: 'show', label: _showLabel),
+          MenuItem.separator(),
+          MenuItem(key: 'quit', label: _quitLabel),
+        ]),
+      );
+
+  /// Меню трея на языке интерфейса; зовёт экран, когда язык известен или сменился.
+  Future<void> setTrayLabels({
+    required String show,
+    required String quit,
+  }) async {
+    if (show == _showLabel && quit == _quitLabel) return;
+    _showLabel = show;
+    _quitLabel = quit;
+    try {
+      await _applyTrayMenu();
+    } catch (_) {
+      // Трея нет — меню показывать некому.
+    }
+  }
+
   void unawaitedShow() {
     _showWindow();
   }
 
-  /// Хоткей «показать/скрыть окно»: видимое окно прячется (в фон/трей),
-  /// скрытое — восстанавливается.
+  /// Хоткей «показать/скрыть окно»: видимое окно уходит в фон, скрытое или
+  /// свёрнутое — возвращается.
   Future<void> toggleWindowVisibility() async {
-    if (await windowManager.isVisible()) {
+    if (await windowManager.isVisible() && !await windowManager.isMinimized()) {
       _boundsSaveDebounce?.cancel();
       await _saveWindowBounds();
-      await windowManager.hide();
+      await _sendToBackground();
     } else {
       await _showWindow();
     }
   }
 
+  /// В трей, если он есть, иначе в панель задач. Тайлинговые композиторы окна
+  /// не сворачивают вовсе — просьба молча пропадает, и крестик выглядел бы
+  /// сломанным; там окно прячется, а возвращает его повторный запуск.
+  Future<void> _sendToBackground() async {
+    uiVisible.value = false;
+    if (await _trayAvailable() || isTilingDesktop(desktopOverride)) {
+      await windowManager.hide();
+    } else {
+      await windowManager.minimize();
+    }
+  }
+
+  static const _tilingDesktops = {'hyprland', 'sway', 'niri', 'river'};
+
+  /// Тот же список, что у шапки окна в linux/runner/my_application.cc.
+  static bool isTilingDesktop([String? desktop]) =>
+      (desktop ?? Platform.environment['XDG_CURRENT_DESKTOP'] ?? '')
+          .toLowerCase()
+          .split(':')
+          .any(_tilingDesktops.contains);
+
+  /// Спрашивается в момент закрытия, а не на старте: панель с треем часто
+  /// поднимается позже приложений из автозапуска.
+  Future<bool> _trayAvailable() async {
+    try {
+      return await trayManager.isAvailable();
+    } catch (_) {
+      return true; // неизвестно — ведём себя как раньше
+    }
+  }
+
   Future<void> _showWindow() async {
+    uiVisible.value = true;
     await windowManager.show();
     await windowManager.focus();
   }
@@ -191,11 +271,15 @@ class LinuxBackgroundService with WindowListener, TrayListener {
 
   @override
   void onWindowClose() {
-    // preventClose is on: hide to background rather than exit.
+    if (_quitting) return;
     _boundsSaveDebounce?.cancel();
     _saveWindowBounds();
-    windowManager.hide();
+    unawaited(_sendToBackground());
   }
+
+  /// Свёрнутое окно вернули из панели задач: другого сигнала на Wayland нет.
+  @override
+  void onWindowFocus() => uiVisible.value = true;
 
   @override
   void onWindowResize() => _scheduleBoundsSave();
@@ -220,11 +304,14 @@ class LinuxBackgroundService with WindowListener, TrayListener {
       case 'show':
         _showWindow();
       case 'quit':
-        _quit();
+        quit();
     }
   }
 
-  Future<void> _quit() async {
+  /// Выход: пункт трея и Ctrl+Q.
+  Future<void> quit() async {
+    if (_quitting) return;
+    _quitting = true;
     try {
       await onQuit?.call();
     } catch (_) {}
@@ -233,6 +320,12 @@ class LinuxBackgroundService with WindowListener, TrayListener {
     try {
       await trayManager.destroy();
     } catch (_) {}
+    // Окно, уничтоженное посреди кадра, роняет процесс в движке: мьютекс кадра
+    // освобождается, пока его держит растровый поток (abort в g_mutex_clear,
+    // 3 выхода из 6 при открытом окне). Спрятанное окно Flutter не рисует,
+    // поэтому сначала прячем и даём дорисоваться последнему кадру.
+    await windowManager.hide();
+    await Future<void>.delayed(quitSettleDelay);
     await windowManager.setPreventClose(false);
     await windowManager.destroy();
   }

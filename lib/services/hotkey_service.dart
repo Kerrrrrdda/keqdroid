@@ -31,6 +31,11 @@ class HotkeyService {
   static Map<HotkeyAction, HotkeyBinding> _bindings = {};
   static bool _keyHandlerInstalled = false;
 
+  /// Занято ли нажатие сочетанием из настроек: тогда оно принадлежит действию,
+  /// которое назначил человек, а не встроенным клавишам окна.
+  static bool isBound(PhysicalKeyboardKey key, HardwareKeyboard hk) =>
+      _bindings.values.any((binding) => binding.matches(key, hk));
+
   /// Разбирает карту из настроек (HotkeyAction.id → токен), отбрасывая
   /// неизвестные действия и битые токены.
   static Map<HotkeyAction, HotkeyBinding> parseBindings(

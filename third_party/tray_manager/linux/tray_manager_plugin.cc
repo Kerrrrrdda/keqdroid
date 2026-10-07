@@ -3,6 +3,9 @@
 #include <flutter_linux/flutter_linux.h>
 #include <gtk/gtk.h>
 #include <sys/utsname.h>
+#ifdef GDK_WINDOWING_X11
+#include <gdk/gdkx.h>
+#endif
 
 #ifdef HAVE_AYATANA
 #include <libayatana-appindicator/app-indicator.h>
@@ -122,11 +125,63 @@ static FlMethodResponse* set_icon(TrayManagerPlugin* self, FlValue* args) {
     gtk_widget_show_all(menu);
   }
 
+  // keqdroid patch: без заголовка хост трея подписывает значок id приложения
+  // (`com.keqdroid.keqdroid`) — так его видно в подсказке и настройках трея.
+  FlValue* title_value = fl_value_lookup_string(args, "title");
+  if (title_value != nullptr &&
+      fl_value_get_type(title_value) == FL_VALUE_TYPE_STRING) {
+    app_indicator_set_title(indicator, fl_value_get_string(title_value));
+  }
+
   app_indicator_set_status(indicator, APP_INDICATOR_STATUS_ACTIVE);
   app_indicator_set_icon_full(indicator, icon_path, "");
 
   return FL_METHOD_RESPONSE(
       fl_method_success_response_new(fl_value_new_bool(true)));
+}
+
+// keqdroid patch: есть ли сейчас кому показать значок. Либо хост
+// StatusNotifier (KDE, GNOME с расширением AppIndicator, waybar, swaybar), либо
+// старый трей X11, куда AppIndicator встраивается сам, когда хоста нет. Без
+// этого спрятанное окно вернуть нечем, а приложение продолжает работать.
+static gboolean tray_host_present() {
+  g_autoptr(GDBusConnection) bus =
+      g_bus_get_sync(G_BUS_TYPE_SESSION, nullptr, nullptr);
+  if (bus != nullptr) {
+    g_autoptr(GVariant) reply = g_dbus_connection_call_sync(
+        bus, "org.kde.StatusNotifierWatcher", "/StatusNotifierWatcher",
+        "org.freedesktop.DBus.Properties", "Get",
+        g_variant_new("(ss)", "org.kde.StatusNotifierWatcher",
+                      "IsStatusNotifierHostRegistered"),
+        G_VARIANT_TYPE("(v)"), G_DBUS_CALL_FLAGS_NO_AUTO_START, 500, nullptr,
+        nullptr);
+    if (reply != nullptr) {
+      g_autoptr(GVariant) value = nullptr;
+      g_variant_get(reply, "(v)", &value);
+      if (g_variant_is_of_type(value, G_VARIANT_TYPE_BOOLEAN) &&
+          g_variant_get_boolean(value)) {
+        return TRUE;
+      }
+    }
+  }
+#ifdef GDK_WINDOWING_X11
+  GdkDisplay* display = gdk_display_get_default();
+  if (GDK_IS_X11_DISPLAY(display)) {
+    Display* xdisplay = GDK_DISPLAY_XDISPLAY(display);
+    g_autofree gchar* selection =
+        g_strdup_printf("_NET_SYSTEM_TRAY_S%d", DefaultScreen(xdisplay));
+    Atom atom = XInternAtom(xdisplay, selection, False);
+    if (XGetSelectionOwner(xdisplay, atom) != None) {
+      return TRUE;
+    }
+  }
+#endif
+  return FALSE;
+}
+
+static FlMethodResponse* is_available(TrayManagerPlugin* self) {
+  return FL_METHOD_RESPONSE(
+      fl_method_success_response_new(fl_value_new_bool(tray_host_present())));
 }
 
 static FlMethodResponse* set_title(TrayManagerPlugin* self, FlValue* args) {
@@ -166,6 +221,8 @@ static void tray_manager_plugin_handle_method_call(TrayManagerPlugin* self,
     response = set_title(self, args);
   } else if (strcmp(method, "setContextMenu") == 0) {
     response = set_context_menu(self, args);
+  } else if (strcmp(method, "isAvailable") == 0) {
+    response = is_available(self);
   } else {
     response = FL_METHOD_RESPONSE(fl_method_not_implemented_response_new());
   }
