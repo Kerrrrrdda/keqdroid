@@ -684,7 +684,7 @@ class MihomoConfigGen {
       'proxy-server-nameserver': servers,
       'nameserver': servers,
       if (viaTunnel) ...{
-        'direct-nameserver': servers,
+        'direct-nameserver': [...servers, ...directPlainFallback(servers)],
         // Иначе домен со своим резолвером (корпоративный) напрямую не открылся
         // бы: своей политики у резолвера прямых соединений нет.
         if (policy.isNotEmpty) 'direct-nameserver-follow-policy': true,
@@ -754,8 +754,44 @@ class MihomoConfigGen {
 
   static const _bootstrapFallback = ['1.1.1.1', '8.8.8.8'];
 
+  /// Запасные серверы прямых соединений: те же резолверы, но обычным DNS.
+  ///
+  /// DoH к публичным резолверам провайдер может резать, и тогда прямое
+  /// соединение ждёт резолва до таймаута ядра (5 с) и висит на рукопожатии
+  /// (`direct.go`: с этим списком ядро резолвит прямой домен заново). Список ядро
+  /// опрашивает параллельно и берёт первый ответ (`batchExchange` в
+  /// dns/util.go), поэтому живой DoH запасной не тормозит. Открытыми провайдер
+  /// видит только домены прямых соединений — их он и так видит в SNI.
+  ///
+  /// Резолверы те же, что выбрал человек. `system` сюда не годится: на Android
+  /// это запасные 114.114.114.114 и 8.8.8.8 самого ядра, а на Linux в TUN —
+  /// systemd-resolved, который ходит через наш же туннель. Серверы, заданные
+  /// именами, остаются как были: подставить за них нечего.
+  static List<String> directPlainFallback(List<String> servers) {
+    final hasPlain = servers.any((s) =>
+        s == 'system' ||
+        !s.contains('://') ||
+        s.startsWith('udp://') ||
+        s.startsWith('tcp://') ||
+        s.startsWith('dhcp://'));
+    if (hasPlain) return const [];
+    final out = <String>[];
+    for (final server in servers) {
+      final host = _hostOf(server);
+      final ip = InternetAddress.tryParse(host);
+      if (ip == null) continue;
+      final plain = ip.type == InternetAddressType.IPv6 ? '[$host]' : host;
+      if (!out.contains(plain)) out.add(plain);
+    }
+    return out;
+  }
+
   /// Адрес записи — IP, а не имя.
-  static bool _hasIpAddress(String server) {
+  static bool _hasIpAddress(String server) =>
+      InternetAddress.tryParse(_hostOf(server)) != null;
+
+  /// Хост записи без схемы, пути, фрагмента и порта.
+  static String _hostOf(String server) {
     var host = server;
     // Ни фрагмент (`#DIRECT`), ни путь (`/dns-query`) к адресу не относятся.
     final hash = host.indexOf('#');
@@ -766,14 +802,14 @@ class MihomoConfigGen {
     if (slash >= 0) host = host.substring(0, slash);
     if (host.startsWith('[')) {
       final close = host.indexOf(']');
-      if (close < 0) return false;
+      if (close < 0) return '';
       host = host.substring(1, close);
     } else if (':'.allMatches(host).length == 1) {
       // Одно двоеточие — это порт. У голого IPv6 их больше, и там отрезать
       // нечего.
       host = host.substring(0, host.indexOf(':'));
     }
-    return InternetAddress.tryParse(host) != null;
+    return host;
   }
 
   /// Схемы, которые mihomo принимает в `nameserver`.

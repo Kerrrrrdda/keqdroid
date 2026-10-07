@@ -939,7 +939,54 @@ void main() {
       test('резолвятся из дома, когда DNS идёт через туннель', () {
         final dns = dnsOf(const AppSettings());
         expect(dns['respect-rules'], isTrue);
-        expect(dns['direct-nameserver'], dns['nameserver']);
+        expect(dns['direct-nameserver'], [
+          ...dns['nameserver'] as List,
+          '1.1.1.1',
+          '8.8.8.8',
+        ]);
+      });
+
+      // Заблокированный у провайдера DoH держал прямое соединение до таймаута
+      // резолва: сайт висел на рукопожатии. Те же резолверы обычным DNS
+      // опрашиваются параллельно и отвечают первыми.
+      group('запасной обычный DNS', () {
+        List<String> fallback(String servers) =>
+            MihomoConfigGen.directPlainFallback(MihomoConfigGen.dnsServers(
+              XrayCoreSettings(dnsUseCustom: true, dnsServers: servers),
+            ));
+
+        test('те же резолверы, что выбрал человек', () {
+          expect(fallback('https://9.9.9.9/dns-query'), ['9.9.9.9']);
+          expect(fallback('tls://1.1.1.1\nquic://8.8.8.8:853'),
+              ['1.1.1.1', '8.8.8.8']);
+          expect(fallback('https://9.9.9.9/dns-query\nhttps://9.9.9.9/dns'),
+              ['9.9.9.9']);
+        });
+
+        test('IPv6 — в скобках, иначе ядро не разберёт адрес', () {
+          expect(fallback('https://[2606:4700::1111]/dns-query'),
+              ['[2606:4700::1111]']);
+        });
+
+        test('обычный резолвер уже в списке — добавлять нечего', () {
+          expect(fallback('https://1.1.1.1/dns-query\n9.9.9.9'), isEmpty);
+          expect(fallback('https://1.1.1.1/dns-query\nlocalhost'), isEmpty);
+          expect(fallback('https://1.1.1.1/dns-query\nudp://9.9.9.9'), isEmpty);
+        });
+
+        test('серверы по именам остаются как были', () {
+          expect(fallback('https://dns.google/dns-query'), isEmpty);
+        });
+
+        test('основной список и адрес сервера не трогаем', () {
+          // Обычный DNS отвечает быстрее DoH и выигрывал бы гонку, а
+          // провайдер вправе подменить в нём адрес заблокированного сервера.
+          final dns = dnsOf(const AppSettings());
+          expect(dns['nameserver'], MihomoConfigGen.dnsServers(
+            const XrayCoreSettings(),
+          ));
+          expect(dns['proxy-server-nameserver'], dns['nameserver']);
+        });
       });
 
       test('лишнего не пишем, когда DNS и так из дома', () {
