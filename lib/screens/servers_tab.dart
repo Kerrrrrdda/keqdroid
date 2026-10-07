@@ -326,6 +326,12 @@ class _ServersTabState extends ConsumerState<ServersTab>
   late final AnimationController _waveCtrl;
   late final AnimationController _stateCtrl;
 
+  /// Сколько волна ещё крутится после перехода к «отключено»: её амплитуда
+  /// гаснет покадрово (~1/8 за кадр) и догоняет ноль десятками кадров позже
+  /// самого перехода, а на медленном рендере это больше секунды.
+  static const _waveSettleGrace = Duration(seconds: 2);
+  Timer? _waveSettleTimer;
+
   bool _handlingLaunchAction = false;
   bool _appInForeground = true;
 
@@ -360,6 +366,13 @@ class _ServersTabState extends ConsumerState<ServersTab>
         initialStatus == VpnStatus.connecting ||
         initialStatus == VpnStatus.disconnecting;
     _stateCtrl.value = initiallyActive ? 1.0 : 0.0;
+    _stateCtrl.addStatusListener((status) {
+      if (status != AnimationStatus.dismissed) return;
+      _waveSettleTimer?.cancel();
+      _waveSettleTimer = Timer(_waveSettleGrace, () {
+        if (mounted) _syncHeaderAnimations();
+      });
+    });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (Platform.isAndroid) {
@@ -374,6 +387,7 @@ class _ServersTabState extends ConsumerState<ServersTab>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     VpnNativeBridge.registerLaunchHandler(null);
+    _waveSettleTimer?.cancel();
     _waveCtrl.dispose();
     _stateCtrl.dispose();
     super.dispose();
@@ -459,7 +473,17 @@ class _ServersTabState extends ConsumerState<ServersTab>
     // (resumed) анимация перезапускается. Трей-hide (SW_HIDE = lifecycle
     // `inactive`) дополнительно гасится глобальным TickerMode в app.dart
     // (там же — kawaii-оверлей), см. desktopUiVisibleProvider.
-    final run = _appInForeground && (_serversTabVisible || vpnActive);
+    //
+    // У отключённого волна — ровный трек: фаза двигает синусоиду нулевой
+    // высоты, и каждый кадр рисует то же самое. Такой «анимацией» вкладка
+    // держала под 45% ядра при программном рендере (Linux без GPU-драйвера),
+    // а под X11 движок ещё и копирует каждый кадр через процессор. Пока гаснет
+    // переход к отключению, волна видна и крутится.
+    final settled = !vpnActive &&
+        _stateCtrl.isDismissed &&
+        _waveSettleTimer?.isActive != true;
+    final run =
+        _appInForeground && (vpnActive || (_serversTabVisible && !settled));
     if (run) {
       if (!_waveCtrl.isAnimating) _waveCtrl.repeat();
     } else {
