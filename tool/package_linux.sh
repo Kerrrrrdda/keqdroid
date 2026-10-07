@@ -132,6 +132,14 @@ echo "  bundled: $(ls "$PL_LIB" 2>/dev/null | grep -E 'ayatana|dbusmenu' | tr '\
 ICON_SRC="$REPO_DIR/assets/icon.png"
 [ -f "$ICON_SRC" ] || ICON_SRC=""
 
+# Окно называет себя id приложения (g_set_prgname в linux/runner): это его
+# WM_CLASS на X11 и app_id на Wayland. Окно с ярлыком, а значит и с иконкой,
+# среда связывает по StartupWMClass; со значением `keqdroid` связи не было, и
+# иконки не было нигде. Имя файла ярлыка прежнее, иначе после обновления
+# пропали бы значки, закреплённые в доке. Иконка ставится и под именем окна:
+# доки на wlroots ищут её в теме прямо по app_id.
+APP_ID=com.keqdroid.keqdroid
+
 write_desktop() { # $1 = exec name, $2 = dest file
   cat > "$2" <<EOF
 [Desktop Entry]
@@ -142,7 +150,7 @@ Exec=$1
 Icon=$APP
 Categories=Network;
 Terminal=false
-StartupWMClass=$APP
+StartupWMClass=$APP_ID
 EOF
 }
 
@@ -169,7 +177,10 @@ mkdir -p "$DEBROOT/DEBIAN" "$DEBROOT/opt/$APP" \
 cp -a "$PAYLOAD/." "$DEBROOT/opt/$APP/"
 ln -s "/opt/$APP/$APP" "$DEBROOT/usr/bin/$APP"
 write_desktop "$APP" "$DEBROOT/usr/share/applications/$APP.desktop"
-[ -n "$ICON_SRC" ] && cp "$ICON_SRC" "$DEBROOT/usr/share/icons/hicolor/256x256/apps/$APP.png"
+if [ -n "$ICON_SRC" ]; then
+  cp "$ICON_SRC" "$DEBROOT/usr/share/icons/hicolor/256x256/apps/$APP.png"
+  cp "$ICON_SRC" "$DEBROOT/usr/share/icons/hicolor/256x256/apps/$APP_ID.png"
+fi
 
 INSTALLED_KB="$(du -sk "$DEBROOT" | cut -f1)"
 cat > "$DEBROOT/DEBIAN/control" <<EOF
@@ -212,8 +223,10 @@ write_desktop "$APP" "$RPM_DESKTOP"
 RPM_ICON_INSTALL=""
 RPM_ICON_FILE=""
 if [ -n "$ICON_SRC" ]; then
-  RPM_ICON_INSTALL="install -Dm644 \"$ICON_SRC\" %{buildroot}/usr/share/icons/hicolor/256x256/apps/$APP.png"
-  RPM_ICON_FILE="/usr/share/icons/hicolor/256x256/apps/$APP.png"
+  RPM_ICON_INSTALL="install -Dm644 \"$ICON_SRC\" %{buildroot}/usr/share/icons/hicolor/256x256/apps/$APP.png
+install -Dm644 \"$ICON_SRC\" %{buildroot}/usr/share/icons/hicolor/256x256/apps/$APP_ID.png"
+  RPM_ICON_FILE="/usr/share/icons/hicolor/256x256/apps/$APP.png
+/usr/share/icons/hicolor/256x256/apps/$APP_ID.png"
 fi
 cat > "$RPMTOP/SPECS/$APP.spec" <<EOF
 Name:           $APP
@@ -343,6 +356,9 @@ package() {
   cp -a "\$srcdir/$APP/." "\$pkgdir/opt/$APP/"
   install -dm755 "\$pkgdir/usr/bin"
   ln -s "/opt/$APP/$APP" "\$pkgdir/usr/bin/$APP"
+  local icon="\$srcdir/$APP/data/flutter_assets/assets/icon.png"
+  install -Dm644 "\$icon" "\$pkgdir/usr/share/icons/hicolor/256x256/apps/$APP.png"
+  install -Dm644 "\$icon" "\$pkgdir/usr/share/icons/hicolor/256x256/apps/$APP_ID.png"
   install -Dm644 /dev/stdin "\$pkgdir/usr/share/applications/$APP.desktop" <<'DESKTOP'
 [Desktop Entry]
 Type=Application
@@ -352,7 +368,7 @@ Exec=$APP
 Icon=$APP
 Categories=Network;
 Terminal=false
-StartupWMClass=$APP
+StartupWMClass=$APP_ID
 DESKTOP
 }
 EOF

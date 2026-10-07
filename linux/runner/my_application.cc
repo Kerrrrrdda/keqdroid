@@ -51,6 +51,21 @@ static gboolean startup_watchdog_cb(gpointer user_data) {
   return G_SOURCE_REMOVE;
 }
 
+// Иконка окна для X11: оконный менеджер, не связавший окно с ярлыком, иначе
+// рисует безликий значок из темы. Wayland такое свойство окна не читает, там
+// иконку даёт только ярлык (см. StartupWMClass в tool/package_linux.sh).
+static void set_window_icon(GtkWindow* window) {
+  g_autofree gchar* exe = g_file_read_link("/proc/self/exe", nullptr);
+  if (exe == nullptr) return;
+  g_autofree gchar* dir = g_path_get_dirname(exe);
+  g_autofree gchar* path = g_build_filename(
+      dir, "data", "flutter_assets", "assets", "icon.png", nullptr);
+  // Исходник 2048×2048, а свойство иконки X11 несёт пиксели целиком.
+  g_autoptr(GdkPixbuf) icon =
+      gdk_pixbuf_new_from_file_at_size(path, 256, 256, nullptr);
+  if (icon != nullptr) gtk_window_set_icon(window, icon);
+}
+
 // Тайлинговые композиторы рисуют окна без заголовков и сами ими управляют:
 // шапка GTK с кнопками там лишняя полоса над содержимым. Тот же список — в
 // LinuxBackgroundService.isTilingDesktop.
@@ -118,6 +133,7 @@ static void my_application_activate(GApplication* application) {
   // 1280x720 placed at the WM origin looked oversized and corner-anchored).
   gtk_window_set_default_size(window, 920, 720);
   gtk_window_set_position(window, GTK_WIN_POS_CENTER);
+  set_window_icon(window);
 
   g_autoptr(FlDartProject) project = fl_dart_project_new();
   fl_dart_project_set_dart_entrypoint_arguments(

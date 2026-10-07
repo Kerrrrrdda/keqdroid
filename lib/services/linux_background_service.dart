@@ -8,6 +8,7 @@ import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../core/app_logger.dart';
+import 'linux_desktop_entry.dart';
 import 'storage_service.dart';
 
 /// Фон и трей на Linux; у Windows трей свой, нативный.
@@ -89,6 +90,8 @@ class LinuxBackgroundService with WindowListener, TrayListener {
   }
 
   Future<void> initWindowAndTray() async {
+    // Ярлык AppImage даёт окну иконку на Wayland, см. LinuxDesktopEntry.
+    unawaited(LinuxDesktopEntry.sync());
     await windowManager.ensureInitialized();
     windowManager.addListener(this);
     await windowManager.setPreventClose(true);
