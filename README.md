@@ -160,7 +160,7 @@ Debian/Fedora/Arch, x86_64. Releases ship AppImage, deb, rpm and tar.gz. On Arch
 | **Proxy** | No root |
 | **TUN** | Root via `pkexec` (polkit) on connect |
 
-The window remembers its size and position; hotkeys work while the app window is focused.
+The window remembers its size and position; hotkeys work while the app window is focused. Closing the window keeps the app in the tray, or minimizes it where there is no tray; Ctrl+Q quits. Proxy mode sets the system proxy in GNOME and KDE settings, which Firefox reads on any desktop; elsewhere other apps need 127.0.0.1 and the port entered by hand.
 
 ---
 
@@ -386,7 +386,7 @@ Debian/Fedora/Arch, x86_64. В релизе есть AppImage, deb, rpm и tar.g
 | **Proxy** | Без root |
 | **TUN** | Root через `pkexec` (polkit) при подключении |
 
-Окно запоминает размер и позицию; хоткеи работают, пока окно приложения в фокусе.
+Окно запоминает размер и позицию; хоткеи работают, пока окно приложения в фокусе. Крестик оставляет приложение в трее, а где трея нет, сворачивает окно; Ctrl+Q закрывает приложение. В режиме Proxy системный прокси прописывается в настройки GNOME и KDE, их читает Firefox в любой среде; в остальных средах другим программам 127.0.0.1 и порт указывают вручную.
 
 ---
 
