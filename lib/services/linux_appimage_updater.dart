@@ -42,6 +42,31 @@ class LinuxAppImageUpdater {
     exit(0);
   }
 
+  /// Кладёт скачанный AppImage в «Загрузки» под именем ассета и делает его
+  /// исполняемым; возвращает путь. Для случая, когда заменить на месте нечего:
+  /// файл, из которого запущено приложение, переместили или переименовали.
+  /// Запускать скачанное нельзя — вторая копия упрётся в замок единственного
+  /// экземпляра и молча выйдет, а обновление так и не встанет.
+  static Future<String> keepDownload(String downloaded, String assetName) async {
+    var dir = Platform.environment['HOME'] ?? Directory.systemTemp.path;
+    try {
+      final r = await Process.run('xdg-user-dir', ['DOWNLOAD']);
+      final out = '${r.stdout}'.trim();
+      if (r.exitCode == 0 && out.isNotEmpty && Directory(out).existsSync()) {
+        dir = out;
+      }
+    } on ProcessException {
+      // нет xdg-user-dirs — остаётся домашний каталог
+    }
+    final name = assetName.isEmpty ? 'keqdroid.AppImage' : assetName;
+    final target = '$dir/$name';
+    // /tmp и домашний каталог часто на разных разделах, rename туда не ходит.
+    await File(downloaded).copy(target);
+    await File(downloaded).delete();
+    await Process.run('chmod', ['+x', target]);
+    return target;
+  }
+
   // Atomically replaces the AppImage with the downloaded one (same-dir `mv`,
   // `cp` fallback), keeps the exec bit, and relaunches.
   static const _script = r'''

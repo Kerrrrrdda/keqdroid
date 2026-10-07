@@ -615,11 +615,15 @@ class UpdateService {
           beforeRestart: beforeRestart,
         );
       }
-      // The AppImage vanished since the check: at least make the download
-      // runnable so the hand-off below launches it.
-      try {
-        await Process.run('chmod', ['+x', file.path]);
-      } catch (_) {}
+      final saved = await LinuxAppImageUpdater.keepDownload(
+        file.path,
+        info.assetName,
+      );
+      throw StateError(
+        'The AppImage this app was started from has been moved or renamed, '
+        'so it cannot be replaced in place. The new version is saved as '
+        '$saved',
+      );
     }
 
     if (Platform.isLinux && (ext == '.deb' || ext == '.rpm')) {
