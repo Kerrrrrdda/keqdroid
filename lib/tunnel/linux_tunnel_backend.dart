@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path/path.dart' as p;
 
 import '../core/app_logger.dart';
@@ -456,6 +457,29 @@ class LinuxTunnelBackend with DesktopTrafficStats implements TunnelBackend {
   /// для активной локальной сессии.
   static const _polkitRulePath = '/etc/polkit-1/rules.d/49-keqdroid-tun.rules';
 
+  /// Доверенные копии ядер, root-owned. Беспарольный хелпер запускает только
+  /// их, см. [_tunWrapperBody].
+  static const _trustedCoresDir = '/usr/local/lib/keqdroid/cores';
+
+  /// Метка тела хелпера. Хелпер без неё — прошлой версии, запускавший от root
+  /// любой бинарь из аргумента.
+  static const _helperVersionMark = '[wrap v5';
+
+  /// Код выхода хелпера: ядро не совпало с доверенной копией (обновилось).
+  static const _untrustedCoreExit = 4;
+
+  @visibleForTesting
+  static String get tunWrapperBodyForTest => _tunWrapperBody;
+
+  @visibleForTesting
+  static String get polkitRuleForTest => _polkitRuleContent;
+
+  @visibleForTesting
+  static const polkitHelperPathForTest = _polkitHelperPath;
+
+  @visibleForTesting
+  static const helperVersionMarkForTest = _helperVersionMark;
+
   /// Разово за запуск приложения: показали ли уже предложение установить правило.
   static bool _rememberOfferedThisRun = false;
 
@@ -467,6 +491,15 @@ class LinuxTunnelBackend with DesktopTrafficStats implements TunnelBackend {
   /// (`keqrnel run -c <cfg>` против `mihomo -d <home> -f <cfg>`), а обёртка
   /// одна. Пустой KIND означает keqrnel — так обёртка ведёт себя как прежняя.
   ///
+  /// Беспарольный хелпер (`$0` — его путь) зовёт без пароля любой процесс
+  /// этого пользователя, а путь к ядру — аргумент. Поэтому хелпер запускает
+  /// только ядро, байт в байт совпавшее с доверенной копией ([_trustedCoresDir]),
+  /// и запускает саму копию: подмена файла между сверкой и запуском ничего не
+  /// даёт. Копии кладёт установка правила, а после обновления ядра хелпер
+  /// отказывает кодом [_untrustedCoreExit], подключение один раз идёт с паролем,
+  /// и этот запуск обновляет копию. Путь с паролем заодно снимает хелпер
+  /// прошлых версий, который запускал от root что угодно.
+  ///
   /// `modprobe tun` здесь потому, что это единственное место, где мы root:
   /// без модуля `/dev/net/tun` не существует, и ядро падает на открытии
   /// устройства («no such file or directory») — типовой случай минимальных
@@ -475,9 +508,21 @@ class LinuxTunnelBackend with DesktopTrafficStats implements TunnelBackend {
   /// просто не умеет этого чинить, и тогда причину называет
   /// [tunFailureHint]).
   static const _tunWrapperBody = r'''SB="$1"; CFG="$2"; GEO="$3"; LOGF="$4"; SENT="$5"; APPPID="$6"; AUTHF="$7"; KIND="$8"
+HELPER=/usr/local/lib/keqdroid/core-tun-root
+CORES=/usr/local/lib/keqdroid/cores
+NAME=keqrnel
+[ "$KIND" = "mihomo" ] && NAME=mihomo
+if [ "$0" = "$HELPER" ]; then
+  [ "$(sha256sum <"$SB")" = "$(sha256sum <"$CORES/$NAME")" ] || exit 4
+  SB="$CORES/$NAME"
+elif grep -q '\[wrap v5' "$HELPER" 2>/dev/null; then
+  mkdir -p "$CORES" && install -m 0755 "$SB" "$CORES/$NAME"
+elif [ -f "$HELPER" ]; then
+  rm -f "$HELPER" /usr/local/lib/keqdroid/keqrnel-tun-root /etc/polkit-1/rules.d/49-keqdroid-tun.rules
+fi
 : >"$LOGF"
 : >"$AUTHF"
-echo "[wrap v4 sentinel] start KIND=$KIND SENT=$SENT exists=$([ -e "$SENT" ] && echo y || echo n) APPPID=$APPPID app=$(kill -0 "$APPPID" 2>/dev/null && echo y || echo n)" >>"$LOGF"
+echo "[wrap v5 sentinel] start KIND=$KIND SENT=$SENT exists=$([ -e "$SENT" ] && echo y || echo n) APPPID=$APPPID app=$(kill -0 "$APPPID" 2>/dev/null && echo y || echo n)" >>"$LOGF"
 if [ ! -e /dev/net/tun ]; then
   echo "[wrap] /dev/net/tun missing, loading module" >>"$LOGF"
   modprobe tun >>"$LOGF" 2>&1 || echo "[wrap] modprobe tun failed" >>"$LOGF"
@@ -493,7 +538,7 @@ while [ -e "$SENT" ] && kill -0 "$APPPID" 2>/dev/null; do
   kill -0 "$sb" 2>/dev/null || break
   sleep 1
 done
-echo "[wrap v4 sentinel] stop sent=$([ -e "$SENT" ] && echo y || echo n) app=$(kill -0 "$APPPID" 2>/dev/null && echo y || echo n) sb=$(kill -0 "$sb" 2>/dev/null && echo y || echo n)" >>"$LOGF"
+echo "[wrap v5 sentinel] stop sent=$([ -e "$SENT" ] && echo y || echo n) app=$(kill -0 "$APPPID" 2>/dev/null && echo y || echo n) sb=$(kill -0 "$sb" 2>/dev/null && echo y || echo n)" >>"$LOGF"
 kill -TERM "$sb" 2>/dev/null
 wait "$sb"
 ''';
@@ -524,7 +569,11 @@ polkit.addRule(function(action, subject) {
   static bool isPasswordlessTunInstalled() {
     if (!Platform.isLinux) return false;
     try {
-      return File(_polkitHelperPath).existsSync();
+      // Хелпер прошлой версии считаем отсутствующим: подключение спросит
+      // пароль, снимет его и предложит поставить новый.
+      final helper = File(_polkitHelperPath);
+      return helper.existsSync() &&
+          helper.readAsStringSync().contains(_helperVersionMark);
     } catch (_) {
       return false;
     }
@@ -535,12 +584,23 @@ polkit.addRule(function(action, subject) {
   static Future<bool> installPasswordlessTun() async {
     if (!Platform.isLinux) return false;
     final helper = '#!/bin/sh\n$_tunWrapperBody';
+    // Доверенные копии ядер — те, что приложение запустит сейчас.
+    final cores = <String, String?>{
+      'keqrnel': await LinuxCorePaths.keqrnelExecutable(),
+      'mihomo': await LinuxCorePaths.mihomoExecutable(),
+    };
+    final installCores = [
+      for (final MapEntry(:key, :value) in cores.entries)
+        if (value != null)
+          "install -m 0755 ${_shellQuote(value)} '$_trustedCoresDir/$key'",
+    ].join('\n');
     // Кавычки вокруг разделителей heredoc (<<'EOF') запрещают шеллу разворачивать
     // $1/$SB/$(...) внутри — они пишутся в файлы буквально.
     final script = '''
 set -e
-mkdir -p /usr/local/lib/keqdroid
+mkdir -p /usr/local/lib/keqdroid '$_trustedCoresDir'
 rm -f '$_legacyPolkitHelperPath'
+$installCores
 cat > '$_polkitHelperPath' <<'KEQDROID_HELPER_EOF'
 $helper
 KEQDROID_HELPER_EOF
@@ -574,7 +634,8 @@ chown root:root '$_polkitRulePath' 2>/dev/null || true
   static Future<bool> removePasswordlessTun() async {
     if (!Platform.isLinux) return false;
     final script =
-        "rm -f '$_polkitHelperPath' '$_legacyPolkitHelperPath' '$_polkitRulePath'";
+        "rm -f '$_polkitHelperPath' '$_legacyPolkitHelperPath' '$_polkitRulePath'; "
+        "rm -rf '$_trustedCoresDir'";
     try {
       final res = await Process.run('pkexec', ['sh', '-c', script]);
       return res.exitCode == 0;
@@ -584,6 +645,11 @@ chown root:root '$_polkitRulePath' 2>/dev/null || true
       return false;
     }
   }
+
+  /// Строка в одинарных кавычках для sh: путь в домашнем каталоге может
+  /// содержать что угодно, включая саму кавычку.
+  static String _shellQuote(String value) =>
+      "'${value.replaceAll("'", r"'\''")}'";
 
   // ---- sing-box TUN (root via pkexec) -------------------------------------
 
@@ -695,6 +761,7 @@ chown root:root '$_polkitRulePath' 2>/dev/null || true
     required String label,
     required StringBuffer log,
     required void Function(Process) onStarted,
+    bool allowPasswordless = true,
   }) async {
     // sing-box runs as root via pkexec. pkexec does NOT reliably forward signals
     // to its root child, and a normal user cannot signal a root process — so we
@@ -739,7 +806,7 @@ chown root:root '$_polkitRulePath' 2>/dev/null || true
       authMarker.path,
       kind,
     ];
-    final usePasswordless = isPasswordlessTunInstalled();
+    final usePasswordless = allowPasswordless && isPasswordlessTunInstalled();
     final launch = planElevation(
       coreArgs: coreArgs,
       wrapperBody: _tunWrapperBody,
@@ -779,11 +846,30 @@ chown root:root '$_polkitRulePath' 2>/dev/null || true
     // Сначала дожидаемся polkit-аутентификации, и только потом меряем
     // готовность TUN — иначе 20с бюджета _waitForTunCore тикали, пока
     // пользователь вводил пароль, и коннект падал «после запроса прав».
-    await _waitForElevation(
+    final authorized = await _waitForElevation(
       process: process,
       authMarker: authMarker,
       log: log,
+      untrustedCoreExit: usePasswordless ? _untrustedCoreExit : null,
     );
+    if (!authorized) {
+      // Ядро обновилось и разошлось с доверенной копией беспарольного хелпера.
+      // Это подключение один раз идёт с паролем — оно же обновит копию.
+      AppLogger.instance.info(
+        '$label changed since passwordless TUN was set up; asking for the '
+        'password once to trust the new one',
+      );
+      return _startElevatedCore(
+        binPath: binPath,
+        configPath: configPath,
+        geoOrHomeDir: geoOrHomeDir,
+        kind: kind,
+        label: label,
+        log: log,
+        onStarted: onStarted,
+        allowPasswordless: false,
+      );
+    }
 
     // Пользователь только что ввёл пароль в polkit, а беспарольного правила нет —
     // разово за запуск сигналим UI предложить его установить. Дальше — гейт по
@@ -826,22 +912,25 @@ chown root:root '$_polkitRulePath' 2>/dev/null || true
   /// Root-обёртка первым действием создаёт [authMarker] — это сигнал «пароль
   /// принят, ядро запускается». До маркера ждём без TUN-бюджета (до 2 минут на
   /// ввод пароля); выход pkexec до маркера — отмена/нет агента (126/127) или
-  /// реальная ошибка, обе ветки объясняет [_elevationError].
-  Future<void> _waitForElevation({
+  /// реальная ошибка, обе ветки объясняет [_elevationError]. false — хелпер
+  /// вышел кодом [untrustedCoreExit]: ядро не то, которому он доверяет.
+  Future<bool> _waitForElevation({
     required Process process,
     required File authMarker,
     required StringBuffer log,
+    int? untrustedCoreExit,
   }) async {
     const maxWait = Duration(minutes: 2);
     final sw = Stopwatch()..start();
     while (sw.elapsed < maxWait) {
       final code = await _exitCodeOrNull(process);
       if (code != null) {
+        if (code == untrustedCoreExit) return false;
         throw VpnStartException(_elevationError(code, log));
       }
-      if (authMarker.existsSync()) return;
+      if (authMarker.existsSync()) return true;
       // Подстраховка: ядро уже подняло TUN, а маркер не виден (экзотика ФС).
-      if (await _tunInterfaceExists()) return;
+      if (await _tunInterfaceExists()) return true;
       await Future<void>.delayed(const Duration(milliseconds: 300));
     }
     // Диалог так и висит без ответа — сворачиваем pkexec. Это безопасно:
