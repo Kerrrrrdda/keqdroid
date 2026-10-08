@@ -338,6 +338,19 @@
       "error": {}
     }
   },
+  "subscriptionsQrSaved": "QR-код сохранён: {path}",
+  "@subscriptionsQrSaved": {
+    "placeholders": {
+      "path": {}
+    }
+  },
+  "subscriptionsQrSaveFailed": "Не удалось сохранить QR-код: {error}",
+  "@subscriptionsQrSaveFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "subscriptionsQrSaveTitle": "Сохранить QR-код",
   "subscriptionIdentityTitle": "Идентичность устройства",
   "subscriptionIdentityHint": "Каким панель видит клиента: HWID, User-Agent и device-заголовки. Действует только на эту подписку.",
   "subscriptionIdentityEnable": "Своя идентичность",

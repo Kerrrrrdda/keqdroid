@@ -815,6 +815,19 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String subscriptionsQrSaved(Object path) {
+    return 'QR-Code gespeichert: $path';
+  }
+
+  @override
+  String subscriptionsQrSaveFailed(Object error) {
+    return 'QR-Code konnte nicht gespeichert werden: $error';
+  }
+
+  @override
+  String get subscriptionsQrSaveTitle => 'QR-Code speichern';
+
+  @override
   String get subscriptionIdentityTitle => 'Geräteidentität';
 
   @override

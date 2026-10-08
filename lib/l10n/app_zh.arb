@@ -338,6 +338,19 @@
       "error": {}
     }
   },
+  "subscriptionsQrSaved": "二维码已保存：{path}",
+  "@subscriptionsQrSaved": {
+    "placeholders": {
+      "path": {}
+    }
+  },
+  "subscriptionsQrSaveFailed": "二维码保存失败：{error}",
+  "@subscriptionsQrSaveFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "subscriptionsQrSaveTitle": "保存二维码",
   "subscriptionIdentityTitle": "设备标识",
   "subscriptionIdentityHint": "面板看到的信息：HWID、User-Agent 和设备请求头。仅对此订阅生效。",
   "subscriptionIdentityEnable": "使用自定义标识",

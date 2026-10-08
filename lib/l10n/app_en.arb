@@ -338,6 +338,19 @@
       "error": {}
     }
   },
+  "subscriptionsQrSaved": "QR code saved: {path}",
+  "@subscriptionsQrSaved": {
+    "placeholders": {
+      "path": {}
+    }
+  },
+  "subscriptionsQrSaveFailed": "Could not save the QR code: {error}",
+  "@subscriptionsQrSaveFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "subscriptionsQrSaveTitle": "Save QR code",
   "subscriptionIdentityTitle": "Device identity",
   "subscriptionIdentityHint": "What this panel sees: HWID, User-Agent and device headers. Applies to this subscription only.",
   "subscriptionIdentityEnable": "Use a custom identity",

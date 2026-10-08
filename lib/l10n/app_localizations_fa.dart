@@ -815,6 +815,19 @@ class AppLocalizationsFa extends AppLocalizations {
   }
 
   @override
+  String subscriptionsQrSaved(Object path) {
+    return 'کد QR ذخیره شد: $path';
+  }
+
+  @override
+  String subscriptionsQrSaveFailed(Object error) {
+    return 'ذخیره کد QR انجام نشد: $error';
+  }
+
+  @override
+  String get subscriptionsQrSaveTitle => 'ذخیره کد QR';
+
+  @override
   String get subscriptionIdentityTitle => 'مشخصات دستگاه';
 
   @override

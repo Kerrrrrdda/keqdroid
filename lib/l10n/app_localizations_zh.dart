@@ -815,6 +815,19 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String subscriptionsQrSaved(Object path) {
+    return '二维码已保存：$path';
+  }
+
+  @override
+  String subscriptionsQrSaveFailed(Object error) {
+    return '二维码保存失败：$error';
+  }
+
+  @override
+  String get subscriptionsQrSaveTitle => '保存二维码';
+
+  @override
   String get subscriptionIdentityTitle => '设备标识';
 
   @override

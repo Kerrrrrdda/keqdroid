@@ -25,7 +25,9 @@ import 'package:share_plus/share_plus.dart';
 import '../models/subscription.dart';
 import '../models/subscription_card_layout.dart';
 import '../models/subscription_card_theme.dart';
+import '../core/exceptions.dart';
 import '../services/card_image_service.dart';
+import '../services/file_dialog_service.dart';
 import '../platform/platform_bootstrap.dart';
 import '../providers/providers.dart';
 import 'qr_scan_screen.dart';
@@ -1645,12 +1647,21 @@ class _SubItemState extends ConsumerState<_SubItem> {
                     borderRadius: BorderRadius.circular(ExpressiveShape.large),
                   ),
                 ),
-                icon: const Icon(Icons.share_rounded, size: 18),
+                icon: Icon(
+                  Platform.isLinux
+                      ? Icons.download_rounded
+                      : Icons.share_rounded,
+                  size: 18,
+                ),
                 label: Text(
-                  l10n.subscriptionsShareAction,
+                  Platform.isLinux
+                      ? l10n.subscriptionsSave
+                      : l10n.subscriptionsShareAction,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                onPressed: () => _shareQr(ctx, qrKey),
+                onPressed: () => Platform.isLinux
+                    ? _saveQr(ctx, qrKey)
+                    : _shareQr(ctx, qrKey),
               ),
             ),
           ],
@@ -1659,22 +1670,62 @@ class _SubItemState extends ConsumerState<_SubItem> {
     );
   }
 
+  /// QR из диалога картинкой PNG; null — диалог уже закрыт.
+  Future<Uint8List?> _qrPng(GlobalKey qrKey) async {
+    final boundary =
+        qrKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+    if (boundary == null) return null;
+    final image = await boundary.toImage(pixelRatio: 3.0);
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    return byteData?.buffer.asUint8List();
+  }
+
+  String get _qrFileName {
+    final safe = widget.sub.name.replaceAll(RegExp(r'[^\w\-]+'), '_');
+    return 'keqdis_sub_${safe.isEmpty ? 'qr' : safe}.png';
+  }
+
+  /// На Linux поделиться файлом нечем: share_plus файлы там не передаёт и
+  /// бросает исключение, а общей «панели поделиться» у Linux нет. Картинку
+  /// сохраняем туда, куда человек укажет.
+  Future<void> _saveQr(BuildContext ctx, GlobalKey qrKey) async {
+    final l10n = AppLocalizations.of(context)!;
+    String message;
+    try {
+      final png = await _qrPng(qrKey);
+      if (png == null) return;
+      final path = await AppFileDialogs.saveFile(
+        fileName: _qrFileName,
+        bytes: png,
+        dialogTitle: l10n.subscriptionsQrSaveTitle,
+        mimeType: 'image/png',
+      );
+      if (path == null) return;
+      message = l10n.subscriptionsQrSaved(path);
+    } catch (e) {
+      if (!mounted) return;
+      message = l10n.subscriptionsQrSaveFailed(
+        e is FileDialogUnavailableException
+            ? friendlyErrorDetailed(e, context)
+            : friendlyError(e, context),
+      );
+    }
+    // Шторка с QR закрывает низ экрана вместе с сообщением — убираем её.
+    if (ctx.mounted) Navigator.of(ctx).pop();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
+
   Future<void> _shareQr(BuildContext ctx, GlobalKey qrKey) async {
     final sub = widget.sub;
     final l10n = AppLocalizations.of(context)!;
     try {
-      final boundary =
-          qrKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
-      if (boundary == null) return;
-      final image = await boundary.toImage(pixelRatio: 3.0);
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (byteData == null) return;
+      final png = await _qrPng(qrKey);
+      if (png == null) return;
       final dir = await getTemporaryDirectory();
-      final safe = sub.name.replaceAll(RegExp(r'[^\w\-]+'), '_');
-      final file = File(
-        '${dir.path}/keqdis_sub_${safe.isEmpty ? 'qr' : safe}.png',
-      );
-      await file.writeAsBytes(byteData.buffer.asUint8List(), flush: true);
+      final file = File('${dir.path}/$_qrFileName');
+      await file.writeAsBytes(png, flush: true);
       await SharePlus.instance.share(
         ShareParams(text: sub.url, files: [XFile(file.path)]),
       );

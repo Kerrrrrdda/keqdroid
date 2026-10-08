@@ -1643,6 +1643,24 @@ abstract class AppLocalizations {
   /// **'Could not share: {error}'**
   String subscriptionsShareFailed(Object error);
 
+  /// No description provided for @subscriptionsQrSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'QR code saved: {path}'**
+  String subscriptionsQrSaved(Object path);
+
+  /// No description provided for @subscriptionsQrSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the QR code: {error}'**
+  String subscriptionsQrSaveFailed(Object error);
+
+  /// No description provided for @subscriptionsQrSaveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Save QR code'**
+  String get subscriptionsQrSaveTitle;
+
   /// No description provided for @subscriptionIdentityTitle.
   ///
   /// In en, this message translates to:

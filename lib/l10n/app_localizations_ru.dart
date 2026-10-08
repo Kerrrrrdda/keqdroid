@@ -817,6 +817,19 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String subscriptionsQrSaved(Object path) {
+    return 'QR-код сохранён: $path';
+  }
+
+  @override
+  String subscriptionsQrSaveFailed(Object error) {
+    return 'Не удалось сохранить QR-код: $error';
+  }
+
+  @override
+  String get subscriptionsQrSaveTitle => 'Сохранить QR-код';
+
+  @override
   String get subscriptionIdentityTitle => 'Идентичность устройства';
 
   @override

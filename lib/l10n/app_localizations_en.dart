@@ -815,6 +815,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String subscriptionsQrSaved(Object path) {
+    return 'QR code saved: $path';
+  }
+
+  @override
+  String subscriptionsQrSaveFailed(Object error) {
+    return 'Could not save the QR code: $error';
+  }
+
+  @override
+  String get subscriptionsQrSaveTitle => 'Save QR code';
+
+  @override
   String get subscriptionIdentityTitle => 'Device identity';
 
   @override

@@ -338,6 +338,19 @@
       "error": {}
     }
   },
+  "subscriptionsQrSaved": "QR-Code gespeichert: {path}",
+  "@subscriptionsQrSaved": {
+    "placeholders": {
+      "path": {}
+    }
+  },
+  "subscriptionsQrSaveFailed": "QR-Code konnte nicht gespeichert werden: {error}",
+  "@subscriptionsQrSaveFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "subscriptionsQrSaveTitle": "QR-Code speichern",
   "subscriptionIdentityTitle": "Geräteidentität",
   "subscriptionIdentityHint": "Was das Panel sieht: HWID, User-Agent und Geräte-Header. Gilt nur für dieses Abonnement.",
   "subscriptionIdentityEnable": "Eigene Identität verwenden",
