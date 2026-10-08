@@ -574,6 +574,13 @@ class MainActivity : FlutterFragmentActivity() {
                         }
                         "getProcessExits" -> result.success(ProcessExits.recent(this))
                         "getDeviceModel" -> result.success(android.os.Build.MODEL ?: "Android Device")
+                        // Телевизор: пульт вместо пальца и камеры нет. По режиму
+                        // интерфейса, а не по размеру экрана — планшет в
+                        // альбомной тоже широкий, но им управляют касанием.
+                        "isTelevision" -> result.success(
+                            (getSystemService(android.content.Context.UI_MODE_SERVICE) as? android.app.UiModeManager)
+                                ?.currentModeType == android.content.res.Configuration.UI_MODE_TYPE_TELEVISION,
+                        )
                         "getNativeInternals" -> {
                             // Панель «Внутренности» читает версии ядер прямо из
                             // файлов (Go build info), поэтому ей нужен каталог с

@@ -59,6 +59,14 @@ Future<void> main() async {
       await BackgroundService.init();
       await BackgroundService.registerPeriodicTask();
       await NotificationService.init();
+      await PlatformBootstrap.initialize();
+      // Телевизор: фокус показываем всегда. Сам Flutter включает его только по
+      // нажатию с настоящей клавиатуры, а пульт в телефоне и adb шлют клавиши
+      // как виртуальная клавиатура — и фокус оставался невидимым.
+      if (PlatformBootstrap.isTelevision) {
+        FocusManager.instance.highlightStrategy =
+            FocusHighlightStrategy.alwaysTraditional;
+      }
     } else if (Platform.isWindows) {
       await PlatformBootstrap.initialize();
     } else if (Platform.isLinux || Platform.isMacOS) {
