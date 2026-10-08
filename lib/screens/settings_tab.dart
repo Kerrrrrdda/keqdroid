@@ -29,6 +29,7 @@ import 'package:keqdroid/services/geo_base_downloader.dart';
 import 'package:keqdroid/services/connections_service.dart';
 import 'package:keqdroid/services/debug_log_service.dart';
 import 'package:keqdroid/services/hotkey_service.dart';
+import 'package:keqdroid/services/linux_autostart.dart';
 import 'package:keqdroid/services/settings_backup_service.dart';
 import 'package:keqdroid/services/vpn_engine.dart';
 import 'package:keqdroid/services/windows_desktop_service.dart';
@@ -135,9 +136,11 @@ class SettingsTab extends ConsumerWidget {
                         children: [
                           _LanSharingCard(settingsAsync: settingsAsync),
                           const _SplitTunnelingSettingsCard(),
-                          if (Platform.isWindows)
+                          if (Platform.isWindows || Platform.isLinux)
                             _SettingsCard(
-                              title: l10n.settingsDesktopTitle,
+                              title: Platform.isLinux
+                                  ? l10n.settingsDesktopTitleLinux
+                                  : l10n.settingsDesktopTitle,
                               subtitle: l10n.settingsDesktopSubtitle,
                               icon: Icons.desktop_windows_rounded,
                               accent: ExpressiveAccent.secondary,
@@ -145,7 +148,7 @@ class SettingsTab extends ConsumerWidget {
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) =>
-                                      const _WindowsDesktopSettingsScreen(),
+                                      const _DesktopSettingsScreen(),
                                 ),
                               ),
                             ),

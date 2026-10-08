@@ -1274,6 +1274,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settingsDesktopTitle => 'Windows';
 
   @override
+  String get settingsDesktopTitleLinux => 'Linux';
+
+  @override
   String get settingsDesktopSubtitle => 'Трей, автозапуск, автоподключение';
 
   @override
@@ -1281,6 +1284,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get settingsLaunchAtStartup => 'Запускать с Windows';
+
+  @override
+  String get settingsLaunchAtLogin => 'Запускать при входе в систему';
 
   @override
   String get settingsLaunchAtStartupAdmin => 'Запускать с правами администратора';
@@ -1293,6 +1299,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get settingsAutoConnectRequiresAutostart => 'Сначала включите «Запускать с Windows»';
+
+  @override
+  String get settingsAutoConnectRequiresLogin => 'Сначала включите «Запускать при входе в систему»';
 
   @override
   String get desktopTunAdminTitle => 'Нужны права администратора';

@@ -13,12 +13,13 @@ import 'storage_service.dart';
 
 /// Фон и трей на Linux; у Windows трей свой, нативный.
 ///
-/// Крестик не выходит из приложения — туннель продолжает работать. Окно уходит
-/// в трей, а когда трея нет (чистый GNOME, тайлинги без модуля трея), — в
-/// панель задач: спрятанное окно без значка вернуть было бы нечем. Выход — из
-/// меню трея или по Ctrl+Q. AppIndicator умеет только меню, одиночные клики до
-/// приложения не доходят вовсе. Второй запуск не плодит копию, а поднимает уже
-/// работающее окно.
+/// Крестик по умолчанию не выходит из приложения — туннель продолжает
+/// работать. Окно уходит в трей, а когда трея нет (чистый GNOME, тайлинги без
+/// модуля трея), — в панель задач: спрятанное окно без значка вернуть было бы
+/// нечем. Выход — из меню трея, по Ctrl+Q или крестиком, если в настройках
+/// выключено «Сворачивать в трей при закрытии». AppIndicator умеет только
+/// меню, одиночные клики до приложения не доходят вовсе. Второй запуск не
+/// плодит копию, а поднимает уже работающее окно.
 class LinuxBackgroundService with WindowListener, TrayListener {
   LinuxBackgroundService._();
   static final LinuxBackgroundService instance = LinuxBackgroundService._();
@@ -308,8 +309,28 @@ class LinuxBackgroundService with WindowListener, TrayListener {
     if (_quitting) return;
     _boundsSaveDebounce?.cancel();
     _saveWindowBounds();
-    unawaited(_sendToBackground());
+    unawaited(_onCloseButton());
   }
+
+  Future<void> _onCloseButton() async {
+    if (await closeToBackground()) {
+      await _sendToBackground();
+    } else {
+      await quit();
+    }
+  }
+
+  /// «Сворачивать в трей при закрытии» — та же настройка, что на Windows:
+  /// выключили — крестик закрывает приложение.
+  @visibleForTesting
+  static Future<bool> Function() closeToBackground = () async {
+    try {
+      final storage = await StorageService.init();
+      return (await storage.getSettings()).minimizeToTray;
+    } catch (_) {
+      return true;
+    }
+  };
 
   /// Свёрнутое окно вернули из панели задач: другого сигнала на Wayland нет.
   @override

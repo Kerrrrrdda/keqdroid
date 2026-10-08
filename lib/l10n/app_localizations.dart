@@ -2489,6 +2489,12 @@ abstract class AppLocalizations {
   /// **'Windows'**
   String get settingsDesktopTitle;
 
+  /// No description provided for @settingsDesktopTitleLinux.
+  ///
+  /// In en, this message translates to:
+  /// **'Linux'**
+  String get settingsDesktopTitleLinux;
+
   /// No description provided for @settingsDesktopSubtitle.
   ///
   /// In en, this message translates to:
@@ -2506,6 +2512,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Start with Windows'**
   String get settingsLaunchAtStartup;
+
+  /// No description provided for @settingsLaunchAtLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Start at login'**
+  String get settingsLaunchAtLogin;
 
   /// No description provided for @settingsLaunchAtStartupAdmin.
   ///
@@ -2530,6 +2542,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enable \"Start with Windows\" first'**
   String get settingsAutoConnectRequiresAutostart;
+
+  /// No description provided for @settingsAutoConnectRequiresLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable \"Start at login\" first'**
+  String get settingsAutoConnectRequiresLogin;
 
   /// No description provided for @desktopTunAdminTitle.
   ///

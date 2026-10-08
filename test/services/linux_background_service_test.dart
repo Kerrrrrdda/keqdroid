@@ -17,6 +17,7 @@ void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     LinuxBackgroundService.quitSettleDelay = Duration.zero;
+    LinuxBackgroundService.closeToBackground = () async => true;
     calls = [];
     trayAvailable = true;
     messenger.setMockMethodCallHandler(windowChannel, (call) async {
@@ -82,6 +83,15 @@ void main() {
 
       service.onWindowFocus();
       expect(service.uiVisible.value, isTrue);
+    });
+
+    test('quits when "minimize to tray on close" is off', () async {
+      LinuxBackgroundService.closeToBackground = () async => false;
+      LinuxBackgroundService.forTesting().onWindowClose();
+      await pumpEventQueue();
+
+      expect(calls, contains('window.destroy'));
+      expect(calls, isNot(contains('window.minimize')));
     });
 
     test('keeps hiding when the tray check itself fails', () async {

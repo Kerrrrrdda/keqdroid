@@ -1272,6 +1272,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsDesktopTitle => 'Windows';
 
   @override
+  String get settingsDesktopTitleLinux => 'Linux';
+
+  @override
   String get settingsDesktopSubtitle => 'Tray, autostart, auto-connect';
 
   @override
@@ -1279,6 +1282,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsLaunchAtStartup => 'Start with Windows';
+
+  @override
+  String get settingsLaunchAtLogin => 'Start at login';
 
   @override
   String get settingsLaunchAtStartupAdmin => 'Start with admin rights';
@@ -1291,6 +1297,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsAutoConnectRequiresAutostart => 'Enable \"Start with Windows\" first';
+
+  @override
+  String get settingsAutoConnectRequiresLogin => 'Enable \"Start at login\" first';
 
   @override
   String get desktopTunAdminTitle => 'Administrator rights required';

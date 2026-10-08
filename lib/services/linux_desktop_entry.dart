@@ -101,7 +101,7 @@ class LinuxDesktopEntry {
 
   /// Путь в Exec по спецификации ярлыков: в кавычках, с экранированием внутри
   /// кавычек и ещё раз — как строковое значение ключа; `%` — коды полей.
-  @visibleForTesting
+  /// Нужен и ярлыку автозапуска ([LinuxAutostart]).
   static String execArgument(String path) {
     final quoted = path
         .replaceAll(r'\', r'\\')

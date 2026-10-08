@@ -11,6 +11,7 @@ import '../../core/app_logger.dart';
 import '../../platform/vpn_native_bridge.dart';
 import '../../services/desktop_background_service.dart';
 import '../../services/hotkey_service.dart';
+import '../../services/linux_autostart.dart';
 import '../../services/linux_background_service.dart';
 import '../../services/resume_after_update.dart';
 
@@ -241,19 +242,31 @@ class _DesktopHomeScreenState extends ConsumerState<DesktopHomeScreen>
   Future<void> _runStartupTasks() async {
     try {
       await _runWindowsStartupTasks();
+      await _runLinuxStartupTasks();
     } finally {
       // После автостарта, а не наперегонки с ним: оба подключают один сервер.
       await _maybeResumeAfterUpdate();
     }
   }
 
+  Future<void> _runLinuxStartupTasks() async {
+    if (!Platform.isLinux || _startupTasksDone) return;
+    _startupTasksDone = true;
+    await LinuxAutostart.refresh();
+    await _maybeAutostartConnect();
+  }
+
   Future<void> _maybeAutostartConnect({bool force = false}) async {
-    if (!Platform.isWindows || _startupConnectInFlight) return;
+    if (!(Platform.isWindows || Platform.isLinux) || _startupConnectInFlight) {
+      return;
+    }
 
     _startupConnectInFlight = true;
     try {
       if (!force) {
-        final isAutostart = await WindowsDesktopService.isAutostartLaunch();
+        final isAutostart = Platform.isLinux
+            ? LinuxAutostart.launchedAtLogin()
+            : await WindowsDesktopService.isAutostartLaunch();
         if (!isAutostart) return;
       }
 

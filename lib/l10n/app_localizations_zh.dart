@@ -1272,6 +1272,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsDesktopTitle => 'Windows';
 
   @override
+  String get settingsDesktopTitleLinux => 'Linux';
+
+  @override
   String get settingsDesktopSubtitle => '托盘、开机启动、自动连接';
 
   @override
@@ -1279,6 +1282,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get settingsLaunchAtStartup => '随 Windows 启动';
+
+  @override
+  String get settingsLaunchAtLogin => '登录时启动';
 
   @override
   String get settingsLaunchAtStartupAdmin => '以管理员权限启动';
@@ -1291,6 +1297,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get settingsAutoConnectRequiresAutostart => '请先启用“随 Windows 启动”';
+
+  @override
+  String get settingsAutoConnectRequiresLogin => '请先启用“登录时启动”';
 
   @override
   String get desktopTunAdminTitle => '需要管理员权限';

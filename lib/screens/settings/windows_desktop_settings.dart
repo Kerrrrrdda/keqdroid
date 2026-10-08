@@ -1,21 +1,22 @@
 part of '../settings_tab.dart';
 
-/// Настройки Windows: трей и автозапуск.
+/// Настройки десктопа: трей и автозапуск, на Windows и Linux.
 ///
 /// Экран с состоянием, потому что автозапуск живёт не только в наших
-/// настройках: обычный — в ключе реестра Run, повышенный — задачей
-/// планировщика. И то и другое можно снести мимо приложения, поэтому при
-/// открытии экрана переключатели сверяются с системой.
-class _WindowsDesktopSettingsScreen extends ConsumerStatefulWidget {
-  const _WindowsDesktopSettingsScreen();
+/// настройках: на Windows обычный — в ключе реестра Run, повышенный — задачей
+/// планировщика, на Linux — ярлыком в `~/.config/autostart`. Всё это можно
+/// снести мимо приложения, поэтому при открытии экрана переключатели
+/// сверяются с системой.
+class _DesktopSettingsScreen extends ConsumerStatefulWidget {
+  const _DesktopSettingsScreen();
 
   @override
-  ConsumerState<_WindowsDesktopSettingsScreen> createState() =>
-      _WindowsDesktopSettingsScreenState();
+  ConsumerState<_DesktopSettingsScreen> createState() =>
+      _DesktopSettingsScreenState();
 }
 
-class _WindowsDesktopSettingsScreenState
-    extends ConsumerState<_WindowsDesktopSettingsScreen> {
+class _DesktopSettingsScreenState
+    extends ConsumerState<_DesktopSettingsScreen> {
   @override
   void initState() {
     super.initState();
@@ -33,6 +34,16 @@ class _WindowsDesktopSettingsScreenState
   /// руками или папку с приложением перенесли (задача осталась на старом пути),
   /// переключатель честно гаснет, и включить его можно заново.
   Future<void> _syncWithSystem() async {
+    if (Platform.isLinux) {
+      final enabled = LinuxAutostart.isEnabled();
+      final settings = ref.read(settingsNotifierProvider).value;
+      if (!mounted || settings == null) return;
+      if (settings.launchAtStartup == enabled) return;
+      await ref
+          .read(settingsNotifierProvider.notifier)
+          .save(settings.copyWith(launchAtStartup: enabled));
+      return;
+    }
     if (!Platform.isWindows) return;
     final elevated = await WindowsDesktopService.isLaunchAtStartupElevated();
     final run = await WindowsDesktopService.isLaunchAtStartupEnabled();
@@ -54,6 +65,14 @@ class _WindowsDesktopSettingsScreenState
   /// не намерение, а факт: оба переключателя обязаны показывать то, что система
   /// действительно делает на входе в систему.
   Future<void> _applyAutostart(AppSettings next) async {
+    if (Platform.isLinux) {
+      await LinuxAutostart.setEnabled(next.launchAtStartup);
+      if (!mounted) return;
+      await ref.read(settingsNotifierProvider.notifier).save(
+            next.copyWith(launchAtStartup: LinuxAutostart.isEnabled()),
+          );
+      return;
+    }
     final ok = await WindowsDesktopService.applyLaunchAtStartup(
       enabled: next.launchAtStartup,
       elevated: next.launchAtStartupElevated,
@@ -100,8 +119,9 @@ class _WindowsDesktopSettingsScreenState
           ),
         );
 
+    final linux = Platform.isLinux;
     return ExpressivePage(
-      title: l10n.settingsDesktopTitle,
+      title: linux ? l10n.settingsDesktopTitleLinux : l10n.settingsDesktopTitle,
       physics: const ClampingScrollPhysics(),
       children: [
         ExpressiveGroup(
@@ -114,24 +134,29 @@ class _WindowsDesktopSettingsScreenState
             ),
             _AppearanceSwitchTile(
               icon: Icons.power_settings_new_rounded,
-              title: l10n.settingsLaunchAtStartup,
+              title: linux
+                  ? l10n.settingsLaunchAtLogin
+                  : l10n.settingsLaunchAtStartup,
               value: settings.launchAtStartup,
               onChanged: (v) => unawaited(
                 _applyAutostart(settings.copyWith(launchAtStartup: v)),
               ),
             ),
-            _AppearanceSwitchTile(
-              icon: Icons.admin_panel_settings_rounded,
-              title: l10n.settingsLaunchAtStartupAdmin,
-              value: settings.launchAtStartupElevated,
-              onChanged: settings.launchAtStartup
-                  ? (v) => unawaited(
-                        _applyAutostart(
-                          settings.copyWith(launchAtStartupElevated: v),
-                        ),
-                      )
-                  : null,
-            ),
+            // Повышенного автозапуска на Linux нет: root для TUN даёт polkit
+            // при подключении.
+            if (!linux)
+              _AppearanceSwitchTile(
+                icon: Icons.admin_panel_settings_rounded,
+                title: l10n.settingsLaunchAtStartupAdmin,
+                value: settings.launchAtStartupElevated,
+                onChanged: settings.launchAtStartup
+                    ? (v) => unawaited(
+                          _applyAutostart(
+                            settings.copyWith(launchAtStartupElevated: v),
+                          ),
+                        )
+                    : null,
+              ),
             _AppearanceSwitchTile(
               icon: Icons.vpn_lock_rounded,
               title: l10n.settingsAutoConnectOnAutostart,
@@ -143,7 +168,9 @@ class _WindowsDesktopSettingsScreenState
           ],
         ),
         if (!settings.launchAtStartup)
-          note(l10n.settingsAutoConnectRequiresAutostart),
+          note(linux
+              ? l10n.settingsAutoConnectRequiresLogin
+              : l10n.settingsAutoConnectRequiresAutostart),
       ],
     );
   }

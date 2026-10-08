@@ -1272,6 +1272,9 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsDesktopTitle => 'ویندوز';
 
   @override
+  String get settingsDesktopTitleLinux => 'Linux';
+
+  @override
   String get settingsDesktopSubtitle => 'سینی سیستم، اجرای خودکار، اتصال خودکار';
 
   @override
@@ -1279,6 +1282,9 @@ class AppLocalizationsFa extends AppLocalizations {
 
   @override
   String get settingsLaunchAtStartup => 'اجرا همراه ویندوز';
+
+  @override
+  String get settingsLaunchAtLogin => 'اجرا هنگام ورود به سیستم';
 
   @override
   String get settingsLaunchAtStartupAdmin => 'اجرا با دسترسی مدیر';
@@ -1291,6 +1297,9 @@ class AppLocalizationsFa extends AppLocalizations {
 
   @override
   String get settingsAutoConnectRequiresAutostart => 'اول «اجرا همراه ویندوز» را روشن کنید';
+
+  @override
+  String get settingsAutoConnectRequiresLogin => 'اول «اجرا هنگام ورود به سیستم» را روشن کنید';
 
   @override
   String get desktopTunAdminTitle => 'دسترسی مدیر لازم است';
