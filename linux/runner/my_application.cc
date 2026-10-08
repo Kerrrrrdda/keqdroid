@@ -82,6 +82,23 @@ static gboolean is_tiling_desktop() {
   return FALSE;
 }
 
+// Без OpenGL окно остаётся чёрным: движок пишет предупреждение и рисует в
+// никуда, а на программную отрисовку сам не переходит (setup_opengl в
+// fl_view.cc). Так бывает с неполным драйвером NVIDIA, на удалённом рабочем
+// столе, в части виртуалок. Контекст проверяем заранее и, если его нет,
+// включаем программную отрисовку; переменная, заданная руками, важнее.
+static void use_software_rendering_without_gl(GtkWindow* window) {
+  if (g_getenv("FLUTTER_LINUX_RENDERER") != nullptr) return;
+  gtk_widget_realize(GTK_WIDGET(window));
+  g_autoptr(GError) error = nullptr;
+  g_autoptr(GdkGLContext) context = gdk_window_create_gl_context(
+      gtk_widget_get_window(GTK_WIDGET(window)), &error);
+  if (context != nullptr && gdk_gl_context_realize(context, &error)) return;
+  g_warning("OpenGL is unavailable (%s), using the software renderer",
+            error != nullptr ? error->message : "unknown error");
+  g_setenv("FLUTTER_LINUX_RENDERER", "software", TRUE);
+}
+
 // Called when first Flutter frame received.
 static void first_frame_cb(MyApplication* self, FlView* view) {
   self->first_frame_seen = TRUE;
@@ -134,6 +151,8 @@ static void my_application_activate(GApplication* application) {
   gtk_window_set_default_size(window, 920, 720);
   gtk_window_set_position(window, GTK_WIN_POS_CENTER);
   set_window_icon(window);
+
+  use_software_rendering_without_gl(window);
 
   g_autoptr(FlDartProject) project = fl_dart_project_new();
   fl_dart_project_set_dart_entrypoint_arguments(
