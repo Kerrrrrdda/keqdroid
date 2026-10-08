@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 import '../core/app_logger.dart';
 import '../core/exceptions.dart';
@@ -53,7 +55,10 @@ class LinuxTunnelBackend with DesktopTrafficStats implements TunnelBackend {
   /// Куда root-обёртка pkexec редиректит stdout/stderr ядра (см.
   /// [_runKeqrnelAsRoot]): pkexec не держит наш pipe, и без файла реальная
   /// причина падения ядра терялась — наружу уходил только generic exit code.
-  static const _coreLogPath = '/tmp/keqdroid_keqrnel.log';
+  /// Файл в каталоге сессии (0700), а не общий в /tmp: root создаёт его с
+  /// правами 0644, а в логе адреса серверов и, в режиме отладки, сайты.
+  String get _coreLogPath =>
+      _sessionDir == null ? '' : p.join(_sessionDir!.path, 'core.log');
 
   /// Момент запуска pkexec текущей сессии — [_coreLogPath] обнуляется только
   /// внутри root-обёртки, так что при падении до неё (сам pkexec) файл ещё
@@ -83,6 +88,9 @@ class LinuxTunnelBackend with DesktopTrafficStats implements TunnelBackend {
   // и список соединений для дебаг-экрана (оба режима).
   int? _keqrnelClashPort;
 
+  /// Пароль API keqrnel, свой на каждую сессию (см. [KeqrnelConfig]).
+  String? _keqrnelClashSecret;
+
   /// С какого уровня строки xray доходят до лога сессии; 0 — все. Поднятый
   /// до info xray пишет больше, чем заказано, ради счётчика отказов (см.
   /// XraySessionLog). Строки mihomo и sing-box меток xray не несут, и порог
@@ -102,6 +110,19 @@ class LinuxTunnelBackend with DesktopTrafficStats implements TunnelBackend {
   int? get clashApiPort =>
       _keqrnelClashPort ??
       (_mihomoProcess != null ? MihomoApiSession().port : null);
+
+  /// Пароль к API из [clashApiPort]; пустая строка — без пароля.
+  String get clashApiSecret => _keqrnelClashPort != null
+      ? _keqrnelClashSecret ?? ''
+      : MihomoApiSession().secret;
+
+  static String _newSecret() {
+    final random = Random.secure();
+    return [
+      for (var i = 0; i < 16; i++)
+        random.nextInt(256).toRadixString(16).padLeft(2, '0'),
+    ].join();
+  }
 
   /// PID живых процессов ядра: подпись → pid. Пустая карта — сессии нет.
   /// Читает панель «Внутренности».
@@ -150,13 +171,25 @@ class LinuxTunnelBackend with DesktopTrafficStats implements TunnelBackend {
 
   /// Also persist the combined core logs to a stable file so they can be read
   /// after disconnect (the session dir is wiped on stop). Path is logged.
+  ///
+  /// Не в общий /tmp: файл там читали все пользователи машины, а в нём адреса
+  /// серверов и, в режиме отладки, посещённые сайты. `$XDG_RUNTIME_DIR` —
+  /// личный каталог сессии (0700); без него — каталог приложения и права 0600.
   Future<void> _dumpLogsToFile() async {
     try {
-      final path = p.join(Directory.systemTemp.path, 'keqdroid_cores.log');
+      final runtime = Platform.environment['XDG_RUNTIME_DIR'];
+      final private = runtime != null && Directory(runtime).existsSync();
+      final dir = private
+          ? runtime
+          : (await getApplicationSupportDirectory()).path;
+      final path = p.join(dir, coresLogName);
       await File(path).writeAsString(exportSessionLogs(maxLines: 2000));
+      if (!private) await Process.run('chmod', ['600', path]);
       AppLogger.instance.info('Core logs written to $path');
     } catch (_) {}
   }
+
+  static const coresLogName = 'keqdroid_cores.log';
 
   @override
   Future<({String username, String password})> fetchSocksCredentials() async {
@@ -242,6 +275,7 @@ class LinuxTunnelBackend with DesktopTrafficStats implements TunnelBackend {
     _xrayBinPath = bin;
 
     final clashPort = await _freePort();
+    final clashSecret = _newSecret();
     final xrayLog = XraySessionLog.raise(request.xrayConfig);
     _xrayLogThreshold = xrayLog.threshold;
     final merged = KeqrnelConfig.proxyWithStats(
@@ -249,9 +283,11 @@ class LinuxTunnelBackend with DesktopTrafficStats implements TunnelBackend {
       socksPort: request.socksPort,
       httpPort: request.httpPort,
       clashPort: clashPort,
+      clashApiSecret: clashSecret,
       findProcess: request.debugMode,
     );
     _keqrnelClashPort = clashPort;
+    _keqrnelClashSecret = clashSecret;
     final configFile = File(p.join(_sessionDir!.path, 'keqrnel.json'));
     await configFile.writeAsString(merged);
 
@@ -312,6 +348,7 @@ class LinuxTunnelBackend with DesktopTrafficStats implements TunnelBackend {
     await _ensurePortsAvailable(request, needsHttp: true);
 
     final clashPort = await _freePort();
+    final clashSecret = _newSecret();
     final xrayLog = XraySessionLog.raise(request.xrayConfig);
     _xrayLogThreshold = xrayLog.threshold;
     final merged = KeqrnelConfig.fromChain(
@@ -319,8 +356,10 @@ class LinuxTunnelBackend with DesktopTrafficStats implements TunnelBackend {
       xrayConfig: xrayLog.config,
       windows: false,
       clashApiPort: clashPort,
+      clashApiSecret: clashSecret,
     );
     _keqrnelClashPort = clashPort;
+    _keqrnelClashSecret = clashSecret;
     await _runKeqrnelAsRoot(merged);
   }
 
@@ -1188,6 +1227,7 @@ chown root:root '$_polkitRulePath' 2>/dev/null || true
     _xrayProcess = null;
     _xrayBinPath = null;
     _keqrnelClashPort = null;
+    _keqrnelClashSecret = null;
 
     final dir = _sessionDir;
     _sessionDir = null;
@@ -1580,7 +1620,9 @@ chown root:root '$_polkitRulePath' 2>/dev/null || true
       return port == null ? null : queryClashTraffic(port, secret: api.secret);
     }
     final port = _keqrnelClashPort;
-    return port == null ? null : queryClashTraffic(port);
+    return port == null
+        ? null
+        : queryClashTraffic(port, secret: _keqrnelClashSecret ?? '');
   }
 
   @override
@@ -1624,7 +1666,10 @@ chown root:root '$_polkitRulePath' 2>/dev/null || true
         outOctets = c.tx;
       } else if (_keqrnelClashPort != null) {
         // keqrnel proxy: кумулятивный трафик из clash_api sing-box.
-        final t = await queryClashTraffic(_keqrnelClashPort!);
+        final t = await queryClashTraffic(
+          _keqrnelClashPort!,
+          secret: _keqrnelClashSecret ?? '',
+        );
         if (t == null) {
           emitConnectedTelemetry(mode);
           return;

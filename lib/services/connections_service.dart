@@ -97,11 +97,14 @@ class ConnectionsService {
     return null;
   }
 
-  /// Токен API. У keqrnel его нет (API слушает петлю), у mihomo он есть всегда:
+  /// Токен API. У keqrnel на Windows его нет (API слушает петлю), на Linux
+  /// он свой на каждую сессию; у mihomo он есть всегда:
   /// на Android петля общая для всех приложений, а разные правила для разных ОС
   /// означали бы 401 ровно на одной из них. Пустая строка — значит активной
   /// сессии mihomo нет, и заголовок не нужен.
-  static String _activeClashSecret() => MihomoApiSession().secret;
+  static String _activeClashSecret() => Platform.isLinux
+      ? LinuxTunnelBackend.activeInstance?.clashApiSecret ?? ''
+      : MihomoApiSession().secret;
 
   static Future<ConnectionsSnapshot> _fromClashApi() async {
     final port = _activeClashPort();

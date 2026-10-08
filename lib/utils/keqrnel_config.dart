@@ -10,17 +10,25 @@ import 'singbox_tun_config.dart' show kSingboxBlockAction;
 class KeqrnelConfig {
   KeqrnelConfig._();
 
+  static Map<String, dynamic> _clashApi(int port, String? secret) => {
+        'external_controller': '127.0.0.1:$port',
+        if (secret != null && secret.isNotEmpty) 'secret': secret,
+      };
+
   /// [singboxConfig] — результат `SingBoxTunConfigGen.generate` (desktop TUN).
   /// [xrayConfig] — обычный xray-конфиг сервера (его `outbounds` исполнит
   /// встроенный xray). [windows] управляет именем процесса в bypass-правиле.
   /// [clashApiPort] — порт clash_api sing-box-части. Нужен дебаг-экрану
   /// «Соединения» (`GET /connections` отдаёт процесс, домен, правило и байты) и
   /// подсчёту трафика. null — не поднимать API вовсе.
+  /// [clashApiSecret] — пароль API: петля общая для всех пользователей машины,
+  /// а API отдаёт список соединений и умеет их рвать.
   static String fromChain({
     required String singboxConfig,
     required String xrayConfig,
     required bool windows,
     int? clashApiPort,
+    String? clashApiSecret,
   }) {
     final box = jsonDecode(singboxConfig) as Map<String, dynamic>;
     final xray = jsonDecode(xrayConfig) as Map<String, dynamic>;
@@ -29,9 +37,7 @@ class KeqrnelConfig {
       final experimental = Map<String, dynamic>.from(
         (box['experimental'] as Map<String, dynamic>?) ?? const {},
       );
-      experimental['clash_api'] = {
-        'external_controller': '127.0.0.1:$clashApiPort',
-      };
+      experimental['clash_api'] = _clashApi(clashApiPort, clashApiSecret);
       box['experimental'] = experimental;
     }
 
@@ -150,6 +156,7 @@ class KeqrnelConfig {
     required int socksPort,
     required int httpPort,
     required int clashPort,
+    String? clashApiSecret,
     bool findProcess = false,
   }) {
     final xray = jsonDecode(xrayConfig) as Map<String, dynamic>;
@@ -163,7 +170,7 @@ class KeqrnelConfig {
     final box = <String, dynamic>{
       'log': {'level': 'warn'},
       'experimental': {
-        'clash_api': {'external_controller': '127.0.0.1:$clashPort'},
+        'clash_api': _clashApi(clashPort, clashApiSecret),
       },
       'inbounds': [
         {
