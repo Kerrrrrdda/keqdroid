@@ -1411,6 +1411,9 @@ class AppLocalizationsFa extends AppLocalizations {
   String get serversJumpToActive => 'نمایش در فهرست';
 
   @override
+  String get exitIpLabel => 'آی‌پی که سایت‌ها می‌بینند';
+
+  @override
   String get serversAutoSelect => 'خودکار';
 
   @override

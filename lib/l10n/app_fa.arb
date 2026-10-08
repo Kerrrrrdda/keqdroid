@@ -441,6 +441,7 @@
   "serversScrollToEnd": "به انتهای فهرست",
   "serversScrollToTop": "به ابتدای فهرست",
   "serversJumpToActive": "نمایش در فهرست",
+  "exitIpLabel": "آی‌پی که سایت‌ها می‌بینند",
   "serversAutoSelect": "خودکار",
   "serversAutoSelectTooltip": "برنامه سرور این اشتراک را خودش انتخاب می‌کند و وقتی از کار بیفتد، سرور دیگری را جایگزین می‌کند",
   "serversManualGroup": "سرورهای دستی",

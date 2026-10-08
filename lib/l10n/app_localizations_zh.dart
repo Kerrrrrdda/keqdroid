@@ -1411,6 +1411,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get serversJumpToActive => '在列表中显示';
 
   @override
+  String get exitIpLabel => '网站看到的 IP';
+
+  @override
   String get serversAutoSelect => '自动';
 
   @override

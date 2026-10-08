@@ -653,6 +653,7 @@
   "serversScrollToEnd": "跳到列表底部",
   "serversScrollToTop": "跳到列表顶部",
   "serversJumpToActive": "在列表中显示",
+  "exitIpLabel": "网站看到的 IP",
   "serversAutoSelect": "自动",
   "serversAutoSelectTooltip": "由应用选择该订阅中的服务器，并在其不可用时切换",
   "serversManualGroup": "手动添加的服务器",

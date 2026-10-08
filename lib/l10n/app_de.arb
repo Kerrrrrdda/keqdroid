@@ -653,6 +653,7 @@
   "serversScrollToEnd": "Zum Ende springen",
   "serversScrollToTop": "Zum Anfang springen",
   "serversJumpToActive": "In der Liste zeigen",
+  "exitIpLabel": "IP, die Websites sehen",
   "serversAutoSelect": "Auto",
   "serversAutoSelectTooltip": "Die App wählt den Server in diesem Abonnement selbst und wechselt, wenn er nicht mehr funktioniert",
   "serversManualGroup": "Manuelle Server",

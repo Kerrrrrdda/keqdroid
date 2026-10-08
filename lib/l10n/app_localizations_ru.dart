@@ -1413,6 +1413,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get serversJumpToActive => 'Показать в списке';
 
   @override
+  String get exitIpLabel => 'IP, который видят сайты';
+
+  @override
   String get serversAutoSelect => 'Авто';
 
   @override

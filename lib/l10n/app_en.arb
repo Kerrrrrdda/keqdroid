@@ -656,6 +656,7 @@
   "serversScrollToEnd": "Jump to end",
   "serversScrollToTop": "Jump to top",
   "serversJumpToActive": "Show in list",
+  "exitIpLabel": "IP that websites see",
   "serversAutoSelect": "Auto",
   "serversAutoSelectTooltip": "The app picks the server in this subscription and switches when it stops working",
   "serversManualGroup": "Manual servers",

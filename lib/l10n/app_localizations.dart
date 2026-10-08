@@ -2747,6 +2747,12 @@ abstract class AppLocalizations {
   /// **'Show in list'**
   String get serversJumpToActive;
 
+  /// No description provided for @exitIpLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'IP that websites see'**
+  String get exitIpLabel;
+
   /// No description provided for @serversAutoSelect.
   ///
   /// In en, this message translates to:

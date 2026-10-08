@@ -12,6 +12,7 @@ import 'package:keqdroid/shared/extensions/build_context_l10n.dart';
 import 'package:keqdroid/shared/ui/app_theme.dart';
 import 'package:keqdroid/shared/ui/expressive.dart';
 import 'package:keqdroid/shared/ui/expressive_group.dart';
+import 'package:keqdroid/shared/ui/exit_ip_flag.dart';
 import 'package:keqdroid/shared/ui/expressive_toggle_button.dart';
 import 'package:keqdroid/shared/ui/haptics.dart';
 import 'package:keqdroid/shared/ui/server_group_anchors.dart';
@@ -37,6 +38,7 @@ import '../models/traffic_split.dart';
 import '../providers/providers.dart';
 import '../providers/traffic_split_provider.dart';
 import '../services/auto_server_select.dart';
+import '../services/exit_ip_service.dart';
 import '../services/file_dialog_service.dart';
 import '../services/ping_service.dart';
 import '../services/subscription_accent_service.dart';
@@ -72,6 +74,7 @@ Widget _serversStatusText(
   VpnStatus status,
   String? errorMessage,
   ServerItem? activeServer,
+  ExitIp? exit,
 ) {
   final l10n = AppLocalizations.of(context)!;
   final textTheme = Theme.of(context).textTheme;
@@ -92,6 +95,19 @@ Widget _serversStatusText(
     final shape = RoundedRectangleBorder(
       borderRadius: ExpressiveShape.radius(ExpressiveShape.full),
     );
+    // Флаг страны выхода — ведущим элементом чипа, а не отдельной ячейкой:
+    // полоса показателей ниже стоит ровной сеткой, и пятая ячейка ломала её в
+    // 3+2 с дырой. Флаг выхода бывает не тем, что у сервера в списке (у
+    // цепочек и серверов для белых списков вход свой, выход другой).
+    final exitFlag = exit?.flag;
+    final label = Text(
+      l10n.vpnConnectedTo(cleanName),
+      textAlign: TextAlign.center,
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+      style: _ServersTabState._statusChipTextStyle(textTheme)
+          ?.copyWith(color: scheme.onSecondaryContainer),
+    );
     return Tooltip(
       key: const ValueKey('connected'),
       message: l10n.serversJumpToActive,
@@ -104,18 +120,30 @@ Widget _serversStatusText(
           customBorder: shape,
           child: Semantics(
             button: true,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: _ServersTabState._statusChipVerticalPadding,
-              ),
-              child: Text(
-                l10n.vpnConnectedTo(cleanName),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: _ServersTabState._statusChipTextStyle(textTheme)
-                    ?.copyWith(color: scheme.onSecondaryContainer),
+            child: AnimatedSize(
+              duration: ExpressiveMotion.durationFast,
+              curve: ExpressiveMotion.emphasized,
+              // Кнопка флага выше строки текста на 8dp — на столько же меньше
+              // поля сверху и снизу, и чип с флагом той же высоты, что без.
+              child: Padding(
+                padding: EdgeInsetsDirectional.fromSTEB(
+                  exitFlag != null ? 6 : 16,
+                  _ServersTabState._statusChipVerticalPadding -
+                      (exitFlag != null ? 4 : 0),
+                  16,
+                  _ServersTabState._statusChipVerticalPadding -
+                      (exitFlag != null ? 4 : 0),
+                ),
+                child: exitFlag == null
+                    ? label
+                    : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ExitIpFlagButton(exit: exit!, flag: exitFlag),
+                          const SizedBox(width: 6),
+                          Flexible(child: label),
+                        ],
+                      ),
               ),
             ),
           ),
@@ -193,6 +221,10 @@ class _ConnectHeader extends ConsumerWidget {
     final activeServer = ref.watch(
       serversProvider.select((s) => s.activeServer),
     );
+    // Пока выход перепроверяется после смены сервера, флаг прежнего выхода не
+    // показываем: он был бы уже неправдой.
+    final exitLookup = ref.watch(exitIpProvider);
+    final exit = exitLookup.isLoading ? null : exitLookup.value;
     // При смене сервера на активном VPN движок на миг проходит через
     // `disconnected` (старый сервер отключается перед подключением нового).
     // Без учёта serverSwitchInProgress круг проваливался в серый «неактивный»
@@ -258,6 +290,7 @@ class _ConnectHeader extends ConsumerWidget {
                           : vpnStatus,
                       serverSwitchInProgress ? null : vpnErrorMessage,
                       activeServer,
+                      exit,
                     ),
                   ),
                 ),

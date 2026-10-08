@@ -26,6 +26,7 @@ import '../services/auto_select_watchdog.dart';
 import '../services/auto_server_select.dart';
 import '../services/card_image_service.dart';
 import '../services/core_dial_failures.dart';
+import '../services/exit_ip_service.dart';
 import '../services/geo_asset_service.dart';
 import '../services/notification_service.dart';
 import '../services/ping_service.dart';
@@ -137,6 +138,24 @@ final subscriptionServiceProvider = Provider<SubscriptionService>((ref) {
     storage,
     localProxyPort: () => _activeLocalHttpProxyPort(ref, storage),
   );
+});
+
+/// Выход текущего подключения: адрес и страна, которыми его видят сайты.
+/// null — подключения нет или трассировка не ответила.
+///
+/// Спрашивается раз на подключение и на смену сервера: выход меняется только
+/// с ними, а опрос по таймеру тратил бы трафик и батарею впустую.
+final exitIpProvider = FutureProvider.autoDispose<ExitIp?>((ref) async {
+  final connected = ref.watch(
+    vpnStateProvider.select((a) => a.value?.status == VpnStatus.connected),
+  );
+  final serverId = ref.watch(
+    serversProvider.select((s) => s.activeServer?.id),
+  );
+  if (!connected || serverId == null) return null;
+  final port = _activeLocalHttpProxyPort(ref, ref.read(storageProvider));
+  if (port == null) return null;
+  return ExitIpService.lookup(proxyPort: port);
 });
 
 final vpnEngineProvider = Provider<VpnEngine>((ref) {

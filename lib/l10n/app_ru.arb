@@ -655,6 +655,7 @@
   "serversScrollToEnd": "К концу списка",
   "serversScrollToTop": "К началу списка",
   "serversJumpToActive": "Показать в списке",
+  "exitIpLabel": "IP, который видят сайты",
   "serversAutoSelect": "Авто",
   "serversAutoSelectTooltip": "Сервер в этой подписке выбирает приложение и меняет его, когда текущий перестаёт работать",
   "serversManualGroup": "Ручные серверы",

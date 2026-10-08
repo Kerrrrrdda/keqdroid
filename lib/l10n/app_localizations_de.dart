@@ -1411,6 +1411,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get serversJumpToActive => 'In der Liste zeigen';
 
   @override
+  String get exitIpLabel => 'IP, die Websites sehen';
+
+  @override
   String get serversAutoSelect => 'Auto';
 
   @override
