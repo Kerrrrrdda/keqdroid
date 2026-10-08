@@ -419,35 +419,40 @@ void _serverGroupSortMenu(
   showModalBottomSheet<void>(
     context: context,
     showDragHandle: true,
+    // Без этого шторка не выше 9/16 экрана, и на телевизоре (540dp) список
+    // режимов обрывался по нижнему краю.
+    isScrollControlled: true,
     builder: (ctx) {
       return SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ExpressiveSectionHeader(l10n.serversSortTitle),
-            // Это выбор, а не список действий: текущий режим виден заливкой
-            // и галочкой, а не только чуть более жирной подписью.
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: ExpressiveGroup(
-                children: [
-                  for (final mode in ServerSortMode.values)
-                    ExpressiveActionTile(
-                      icon: mode.icon,
-                      title: mode.label(l10n),
-                      selected: mode == current,
-                      onTap: () {
-                        ref.read(serverSortModesProvider.notifier).update(
-                              (m) => {...m, collapseKey: mode.name},
-                            );
-                        Navigator.of(ctx).pop();
-                      },
-                    ),
-                ],
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ExpressiveSectionHeader(l10n.serversSortTitle),
+              // Это выбор, а не список действий: текущий режим виден заливкой
+              // и галочкой, а не только чуть более жирной подписью.
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: ExpressiveGroup(
+                  children: [
+                    for (final mode in ServerSortMode.values)
+                      ExpressiveActionTile(
+                        icon: mode.icon,
+                        title: mode.label(l10n),
+                        selected: mode == current,
+                        onTap: () {
+                          ref.read(serverSortModesProvider.notifier).update(
+                                (m) => {...m, collapseKey: mode.name},
+                              );
+                          Navigator.of(ctx).pop();
+                        },
+                      ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-          ],
+              const SizedBox(height: 16),
+            ],
+          ),
         ),
       );
     },

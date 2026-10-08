@@ -137,6 +137,9 @@ class _BackupRestoreScreenState extends ConsumerState<_BackupRestoreScreen> {
     return showModalBottomSheet<Set<BackupSection>>(
       context: context,
       showDragHandle: true,
+      // Без этого шторка не выше 9/16 экрана: на телевизоре (540dp) и у
+      // лежащего телефона кнопка импорта уезжала за нижний край.
+      isScrollControlled: true,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheet) {
           Widget checkbox({
@@ -164,7 +167,7 @@ class _BackupRestoreScreenState extends ConsumerState<_BackupRestoreScreen> {
           }
 
           return SafeArea(
-            child: Padding(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
               child: Column(
                 mainAxisSize: MainAxisSize.min,

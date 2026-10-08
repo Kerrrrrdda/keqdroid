@@ -874,7 +874,10 @@ class _ServersTabState extends ConsumerState<ServersTab>
     showModalBottomSheet<void>(
       context: ctx,
       showDragHandle: true,
-      builder: (ctx2) => Padding(
+      // Без этого шторка не выше 9/16 экрана: у лежащего телефона и на
+      // телевизоре (540dp) три пункта в неё не влезали и обрезались.
+      isScrollControlled: true,
+      builder: (ctx2) => SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
