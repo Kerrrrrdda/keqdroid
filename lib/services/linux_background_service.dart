@@ -53,30 +53,61 @@ class LinuxBackgroundService with WindowListener, TrayListener {
   String _showLabel = 'Show keqdroid';
   String _quitLabel = 'Quit';
 
-  // Loopback "lock": only one process can bind it; later launches connect to it.
-  static const int _lockPort = 47351;
-
   ServerSocket? _lock;
 
   /// Set by the UI so "Quit" can tear the tunnel down before exiting.
   Future<void> Function()? onQuit;
 
+  /// Замок единственного экземпляра — абстрактный Unix-сокет с uid в имени.
+  ///
+  /// Прежде это был TCP-порт на петле, а петля у всех пользователей машины
+  /// общая: второй вошедший человек упирался в чужой замок, его запуск
+  /// показывал окно первого, а у него самого приложение не открывалось.
+  /// Абстрактный сокет ядро освобождает вместе с процессом, и после падения
+  /// не остаётся файла, мешающего следующему запуску.
+  static InternetAddress _lockAddress() => InternetAddress(
+        '@keqdroid-${_uid() ?? 'user'}',
+        type: InternetAddressType.unix,
+      );
+
+  static int? _uid() {
+    try {
+      for (final line in File('/proc/self/status').readAsLinesSync()) {
+        if (!line.startsWith('Uid:')) continue;
+        return int.tryParse(line.split(RegExp(r'\s+'))[1]);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// `EADDRINUSE`: замок держит уже запущенный экземпляр.
+  static const _addressInUse = 98;
+
   /// Binds the single-instance lock. Returns `false` when another instance
   /// already holds it (after asking that instance to show its window) — the
   /// caller should then `exit(0)`.
   Future<bool> ensureSingleInstance() async {
+    final address = _lockAddress();
     try {
-      _lock = await ServerSocket.bind('127.0.0.1', _lockPort, shared: false);
+      _lock = await ServerSocket.bind(address, 0);
       _lock!.listen((socket) {
         socket.destroy(); // any ping means "another launch happened" -> show
         unawaitedShow();
       });
       return true;
-    } on SocketException {
+    } on SocketException catch (e) {
+      // Замок не взять по другой причине — лучше вторая копия, чем ни одной.
+      if (e.osError?.errorCode != _addressInUse) {
+        AppLogger.instance.warn(
+          'Single-instance lock unavailable, starting without it',
+          error: e,
+        );
+        return true;
+      }
       try {
         final s = await Socket.connect(
-          '127.0.0.1',
-          _lockPort,
+          address,
+          0,
           timeout: const Duration(seconds: 2),
         );
         s.add('show'.codeUnits);
