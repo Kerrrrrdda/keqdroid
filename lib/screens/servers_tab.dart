@@ -12,7 +12,7 @@ import 'package:keqdroid/shared/extensions/build_context_l10n.dart';
 import 'package:keqdroid/shared/ui/app_theme.dart';
 import 'package:keqdroid/shared/ui/expressive.dart';
 import 'package:keqdroid/shared/ui/expressive_group.dart';
-import 'package:keqdroid/shared/ui/exit_ip_flag.dart';
+import 'package:keqdroid/shared/ui/connected_status_chip.dart';
 import 'package:keqdroid/shared/ui/expressive_toggle_button.dart';
 import 'package:keqdroid/shared/ui/haptics.dart';
 import 'package:keqdroid/shared/ui/server_group_anchors.dart';
@@ -82,73 +82,13 @@ Widget _serversStatusText(
     final cleanName = ServerNameUtils.formatForDisplay(
       ServerNameUtils.cleanDisplayName(activeServer.displayName),
     );
-    final scheme = Theme.of(context).colorScheme;
-    // Тональный чип-пилюля вместо обводки: у M3E это штатный вид «активного»
-    // статуса, и он же даёт главному экрану второй цветовой акцент после
-    // кнопки. Тот же secondaryContainer носит активный сервер в списке —
-    // цвет читается как «вот это выбрано» на обоих экранах.
-    //
-    // Чип же и увозит к своему серверу в списке: он единственный на экране
-    // называет активный сервер по имени, а найти его строку среди полусотни
-    // других можно было только свайпами — при том, что приложение и так
-    // знает, где она.
-    final shape = RoundedRectangleBorder(
-      borderRadius: ExpressiveShape.radius(ExpressiveShape.full),
-    );
-    // Флаг страны выхода — ведущим элементом чипа, а не отдельной ячейкой:
-    // полоса показателей ниже стоит ровной сеткой, и пятая ячейка ломала её в
-    // 3+2 с дырой. Флаг выхода бывает не тем, что у сервера в списке (у
-    // цепочек и серверов для белых списков вход свой, выход другой).
-    final exitFlag = exit?.flag;
-    final label = Text(
-      l10n.vpnConnectedTo(cleanName),
-      textAlign: TextAlign.center,
-      maxLines: 2,
-      overflow: TextOverflow.ellipsis,
-      style: _ServersTabState._statusChipTextStyle(textTheme)
-          ?.copyWith(color: scheme.onSecondaryContainer),
-    );
-    return Tooltip(
+    return ConnectedStatusChip(
       key: const ValueKey('connected'),
-      message: l10n.serversJumpToActive,
-      waitDuration: const Duration(milliseconds: 600),
-      child: Material(
-        color: scheme.secondaryContainer,
-        shape: shape,
-        child: InkWell(
-          onTap: onJumpToActive,
-          customBorder: shape,
-          child: Semantics(
-            button: true,
-            child: AnimatedSize(
-              duration: ExpressiveMotion.durationFast,
-              curve: ExpressiveMotion.emphasized,
-              // Кнопка флага выше строки текста на 8dp — на столько же меньше
-              // поля сверху и снизу, и чип с флагом той же высоты, что без.
-              child: Padding(
-                padding: EdgeInsetsDirectional.fromSTEB(
-                  exitFlag != null ? 6 : 16,
-                  _ServersTabState._statusChipVerticalPadding -
-                      (exitFlag != null ? 4 : 0),
-                  16,
-                  _ServersTabState._statusChipVerticalPadding -
-                      (exitFlag != null ? 4 : 0),
-                ),
-                child: exitFlag == null
-                    ? label
-                    : Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          ExitIpFlagButton(exit: exit!, flag: exitFlag),
-                          const SizedBox(width: 6),
-                          Flexible(child: label),
-                        ],
-                      ),
-              ),
-            ),
-          ),
-        ),
-      ),
+      label: l10n.vpnConnectedTo(cleanName),
+      exit: exit,
+      onJumpToActive: onJumpToActive,
+      textStyle: _ServersTabState._statusChipTextStyle(textTheme),
+      verticalPadding: _ServersTabState._statusChipVerticalPadding,
     );
   } else {
     final statusKey = switch (status) {
