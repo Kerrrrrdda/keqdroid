@@ -288,9 +288,9 @@ class _VpnHomeScreenState extends ConsumerState<VpnHomeScreen> {
                 // false, и setState(_navIndex) на середине свайпа не
                 // перестраивает сами вкладки.
                 children: const [
-                  _HomeTabPage(child: ServersTab()),
-                  _HomeTabPage(child: SubscriptionsTab()),
-                  _HomeTabPage(child: SettingsTab()),
+                  _HomeTabPage(index: 0, child: ServersTab()),
+                  _HomeTabPage(index: 1, child: SubscriptionsTab()),
+                  _HomeTabPage(index: 2, child: SettingsTab()),
                 ],
               ),
             ),
@@ -308,15 +308,16 @@ class _VpnHomeScreenState extends ConsumerState<VpnHomeScreen> {
   }
 }
 
-class _HomeTabPage extends StatefulWidget {
+class _HomeTabPage extends ConsumerStatefulWidget {
+  final int index;
   final Widget child;
-  const _HomeTabPage({required this.child});
+  const _HomeTabPage({required this.index, required this.child});
 
   @override
-  State<_HomeTabPage> createState() => _HomeTabPageState();
+  ConsumerState<_HomeTabPage> createState() => _HomeTabPageState();
 }
 
-class _HomeTabPageState extends State<_HomeTabPage>
+class _HomeTabPageState extends ConsumerState<_HomeTabPage>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
@@ -324,8 +325,15 @@ class _HomeTabPageState extends State<_HomeTabPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    // Isolate each page into its own layer so that during a swipe the two
-    // visible pages don't repaint each other.
-    return RepaintBoundary(child: widget.child);
+    // Соседние вкладки живут за краем экрана, и стрелка пульта уводила фокус
+    // туда: ближайшая строка справа от рейки оказывалась на чужой вкладке, а
+    // PageView сам прокручивался к ней.
+    final current = ref.watch(homeTabIndexProvider) == widget.index;
+    return ExcludeFocus(
+      excluding: !current,
+      // Isolate each page into its own layer so that during a swipe the two
+      // visible pages don't repaint each other.
+      child: RepaintBoundary(child: widget.child),
+    );
   }
 }
