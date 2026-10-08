@@ -22,6 +22,7 @@ import 'package:keqdroid/shared/ui/shape_morph.dart';
 import 'package:keqdroid/shared/ui/shape_loading_indicator.dart';
 import 'package:keqdroid/shared/ui/smooth_scroll.dart';
 import 'package:keqdroid/shared/ui/stat_strip.dart';
+import 'package:keqdroid/shared/ui/tv_focus.dart';
 import 'package:keqdroid/shared/ui/update_interval_sheet.dart';
 
 import '../core/app_logger.dart';
@@ -817,12 +818,14 @@ class _ServersTabState extends ConsumerState<ServersTab>
           child: ScrollHiddenFab(
             right: 16,
             bottom: 16 + bottomInset,
-            fab: FloatingActionButton(
-              heroTag: 'servers_add_server_fab',
-              backgroundColor: AppTheme.accentContainer(context),
-              foregroundColor: AppTheme.onAccentContainer(context),
-              onPressed: () => _showAddServerDialog(context),
-              child: const Icon(Icons.add_rounded),
+            fab: TvFocus.fab(
+              (fabContext) => FloatingActionButton(
+                heroTag: 'servers_add_server_fab',
+                backgroundColor: AppTheme.accentContainer(fabContext),
+                foregroundColor: AppTheme.onAccentContainer(fabContext),
+                onPressed: () => _showAddServerDialog(context),
+                child: const Icon(Icons.add_rounded),
+              ),
             ),
             child: Stack(
               fit: StackFit.expand,

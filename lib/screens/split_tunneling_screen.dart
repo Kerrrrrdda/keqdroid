@@ -13,6 +13,7 @@ import 'package:keqdroid/l10n/app_localizations.dart';
 import 'package:keqdroid/shared/ui/app_theme.dart';
 import 'package:keqdroid/shared/ui/shape_loading_indicator.dart';
 import 'package:keqdroid/shared/ui/smooth_scroll.dart';
+import 'package:keqdroid/shared/ui/tv_focus.dart';
 
 import '../models/app_info.dart';
 import '../providers/providers.dart';
@@ -437,10 +438,12 @@ class _SplitTunnelingScreenState extends ConsumerState<SplitTunnelingScreen>
     return Scaffold(
       backgroundColor: AppTheme.bg(context),
       floatingActionButton: showFab
-          ? FloatingActionButton.extended(
-              onPressed: _showAddAppDialog,
-              icon: const Icon(Icons.add_rounded),
-              label: Text(l10n.splitAddApp),
+          ? TvFocus.fab(
+              (_) => FloatingActionButton.extended(
+                onPressed: _showAddAppDialog,
+                icon: const Icon(Icons.add_rounded),
+                label: Text(l10n.splitAddApp),
+              ),
             )
           : null,
       body: FadeTransition(

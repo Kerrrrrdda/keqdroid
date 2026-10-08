@@ -13,6 +13,7 @@ import 'package:keqdroid/shared/ui/expressive.dart';
 import 'package:keqdroid/shared/ui/expressive_elements.dart';
 import 'package:keqdroid/shared/ui/expressive_button_group.dart';
 import 'package:keqdroid/shared/ui/expressive_group.dart';
+import 'package:keqdroid/shared/ui/tv_focus.dart';
 import 'package:keqdroid/shared/ui/update_interval_sheet.dart';
 import 'package:keqdroid/shared/ui/horizontal_mouse_scroll.dart';
 import 'package:keqdroid/shared/ui/shape_loading_indicator.dart';
@@ -48,8 +49,6 @@ class SubscriptionsTab extends ConsumerWidget {
     // кэшируем цвета
     final bgColor = AppTheme.bg(context);
     final textColor = AppTheme.text(context);
-    final accentContainerColor = AppTheme.accentContainer(context);
-    final onAccentContainerColor = AppTheme.onAccentContainer(context);
 
     return Scaffold(
           backgroundColor: bgColor,
@@ -196,13 +195,15 @@ class SubscriptionsTab extends ConsumerWidget {
               ),
             ),
           ),
-          floatingActionButton: FloatingActionButton.extended(
-            heroTag: 'subscriptions_add_fab',
-            backgroundColor: accentContainerColor,
-            foregroundColor: onAccentContainerColor,
-            icon: const Icon(Icons.add_rounded),
-            label: Text(l10n.subscriptionsAddButton),
-            onPressed: () => _showAddSubDialog(context, ref),
+          floatingActionButton: TvFocus.fab(
+            (fabContext) => FloatingActionButton.extended(
+              heroTag: 'subscriptions_add_fab',
+              backgroundColor: AppTheme.accentContainer(fabContext),
+              foregroundColor: AppTheme.onAccentContainer(fabContext),
+              icon: const Icon(Icons.add_rounded),
+              label: Text(l10n.subscriptionsAddButton),
+              onPressed: () => _showAddSubDialog(context, ref),
+            ),
           ),
     );
   }
@@ -1082,13 +1083,13 @@ class _SubCardHeader extends ConsumerWidget {
             ),
             SizedBox(width: isDesktop ? 12 : 4),
             IconButton(
+              style: TvFocus.iconButtonStyle(
+                context,
+                color: hasRefreshError ? redColor : textLightColor,
+              ),
               icon: isRefreshing
                   ? ShapeLoadingIndicator(size: 18, color: accentColor)
-                  : Icon(
-                      Icons.refresh_rounded,
-                      size: 20,
-                      color: hasRefreshError ? redColor : textLightColor,
-                    ),
+                  : const Icon(Icons.refresh_rounded, size: 20),
               onPressed: isRefreshing
                   ? null
                   : () async {
@@ -1120,7 +1121,7 @@ class _SubCardHeader extends ConsumerWidget {
             // ряд с безобидной правкой.
             IconButton(
               icon: const Icon(Icons.more_vert_rounded, size: 20),
-              color: textLightColor,
+              style: TvFocus.iconButtonStyle(context, color: textLightColor),
               tooltip: l10n.subscriptionsCardMenu,
               onPressed: () => onShowMenu(),
               visualDensity: VisualDensity.compact,
@@ -2106,8 +2107,15 @@ class _CardChip extends StatelessWidget {
     this.muted = false,
   });
 
+  // На телевизоре фокус заливает чип (см. TvFocusHighlight), и цвета ниже
+  // берутся уже под его темой — поэтому чип строится внутри обёртки.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => TvFocusHighlight(
+        radius: ExpressiveShape.radius(ExpressiveShape.small),
+        child: Builder(builder: _buildChip),
+      );
+
+  Widget _buildChip(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final bg = muted ? scheme.surfaceContainerHighest : accent.container(scheme);
     final fg = muted ? scheme.onSurfaceVariant : accent.onContainer(scheme);

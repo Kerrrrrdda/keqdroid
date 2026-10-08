@@ -17,6 +17,7 @@ import '../shared/ui/expressive_elements.dart';
 import '../shared/ui/haptics.dart';
 import '../shared/ui/kawaii_decorations.dart';
 import '../shared/ui/server_avatar.dart';
+import '../shared/ui/tv_focus.dart';
 import '../utils/app_locale.dart';
 
 const kSeedFallback = Color(0xFFFFAEBC);
@@ -373,9 +374,17 @@ ThemeData _buildAppTheme(
       ? expressiveText
       : expressiveText.apply(fontFamily: fontFamily);
 
+  // Телевизор: кнопки в фокусе заливаются так же, как строки в
+  // TvFocusHighlight, а не полупрозрачным слоем поверх своего цвета.
+  final tv = TvFocus.enabled;
+  ButtonStyle? tvButtons(ButtonStyle? base) =>
+      tv ? TvFocus.buttonStyle(scheme, base) : base;
+
   return ThemeData(
     colorScheme: scheme,
     useMaterial3: true,
+    iconButtonTheme:
+        tv ? IconButtonThemeData(style: TvFocus.buttonStyle(scheme)) : null,
     // Форма кружков-иконок едет расширением темы: так её видит любой
     // ExpressiveIconBadge, не таща за собой ни настройки, ни провайдеры. Тем же
     // путём — чем красить сервер без флага.
@@ -385,9 +394,13 @@ ThemeData _buildAppTheme(
     ],
     textTheme: textTheme,
     chipTheme: components.chip,
-    filledButtonTheme: components.filledButton,
-    outlinedButtonTheme: components.outlinedButton,
-    textButtonTheme: components.textButton,
+    filledButtonTheme:
+        FilledButtonThemeData(style: tvButtons(components.filledButton.style)),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: tvButtons(components.outlinedButton.style),
+    ),
+    textButtonTheme:
+        TextButtonThemeData(style: tvButtons(components.textButton.style)),
     // Подпись расширенного FAB — `titleMedium`: выразительное обновление увело
     // её с `labelLarge`. Стиль берём из уже собранной шкалы, а не собираем в
     // компонентной теме: там нет ни выбранного шрифта, ни его метрик.

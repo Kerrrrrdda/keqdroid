@@ -376,10 +376,13 @@ const _subCardHeaderIconSize = 32.0;
 const _subCardHeaderActionGap = ExpressiveSpacing.small;
 const _subCardHeaderIntervalGap = ExpressiveSpacing.small;
 
-Widget _subCardHeaderIconButton({
+/// [color] — цвет значка (см. TvFocus.iconButtonStyle).
+Widget _subCardHeaderIconButton(
+  BuildContext context, {
   required String tooltip,
   required VoidCallback? onPressed,
   required Widget icon,
+  Color? color,
 }) {
   return IconButton(
     onPressed: onPressed,
@@ -393,11 +396,15 @@ Widget _subCardHeaderIconButton({
       minHeight: _subCardHeaderIconSize,
       maxHeight: _subCardHeaderIconSize,
     ),
-    style: IconButton.styleFrom(
-      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      minimumSize: const Size(_subCardHeaderIconSize, _subCardHeaderIconSize),
-      fixedSize: const Size(_subCardHeaderIconSize, _subCardHeaderIconSize),
-      padding: EdgeInsets.zero,
+    style: TvFocus.iconButtonStyle(
+      context,
+      color: color,
+      base: IconButton.styleFrom(
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        minimumSize: const Size(_subCardHeaderIconSize, _subCardHeaderIconSize),
+        fixedSize: const Size(_subCardHeaderIconSize, _subCardHeaderIconSize),
+        padding: EdgeInsets.zero,
+      ),
     ),
   );
 }
@@ -616,35 +623,55 @@ class _ServerGroupHeader extends ConsumerWidget {
                       if (sub != null && sub.autoUpdate) ...[
                         // InkWell, а не GestureDetector: чип нажимается,
                         // и до сих пор об этом ничем не сообщал.
-                        Material(
-                          color: accentColor.withValues(alpha: 0.18),
-                          // Маленькая метка-действие у M3E — пилюля,
-                          // как и бейдж протокола в строке сервера.
-                          shape: ExpressiveShape.border(
-                            ExpressiveShape.full,
-                          ),
-                          child: InkWell(
-                            onTap: () =>
-                                showUpdateIntervalSheet(context, ref, sub),
-                            customBorder: ExpressiveShape.border(
-                              ExpressiveShape.full,
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: ExpressiveSpacing.small,
-                                vertical: ExpressiveSpacing.extraSmall,
+                        TvFocusHighlight(
+                          radius: BorderRadius.circular(ExpressiveShape.full),
+                          child: Builder(builder: (context) {
+                            final focusFill =
+                                TvFocusHighlight.containerOf(context);
+                            return Material(
+                              color: focusFill ??
+                                  accentColor.withValues(alpha: 0.18),
+                              // Маленькая метка-действие у M3E — пилюля,
+                              // как и бейдж протокола в строке сервера.
+                              shape: ExpressiveShape.border(
+                                ExpressiveShape.full,
                               ),
-                              child: Text(
-                                context.l10n.subscriptionsIntervalShort(
-                                  sub.updateIntervalHours,
+                              child: InkWell(
+                                onTap: () => showUpdateIntervalSheet(
+                                  context,
+                                  ref,
+                                  sub,
                                 ),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .labelSmall
-                                    ?.copyWith(color: accentColor),
+                                customBorder: ExpressiveShape.border(
+                                  ExpressiveShape.full,
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: ExpressiveSpacing.small,
+                                    vertical: ExpressiveSpacing.extraSmall,
+                                  ),
+                                  child: Text(
+                                    context.l10n.subscriptionsIntervalShort(
+                                      sub.updateIntervalHours,
+                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(
+                                          // В фокусе — цвет текста инверсной
+                                          // темы: акцент на тёмной заливке
+                                          // не читается.
+                                          color: focusFill != null
+                                              ? Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface
+                                              : accentColor,
+                                        ),
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
+                            );
+                          }),
                         ),
                         const SizedBox(
                           width: _subCardHeaderIntervalGap,
@@ -654,29 +681,34 @@ class _ServerGroupHeader extends ConsumerWidget {
                       // остаётся, но на десктопе он неоткрываем мышью
                       // интуитивно — иконка делает функцию видимой.
                       _subCardHeaderIconButton(
+                        context,
                         tooltip:
                             AppLocalizations.of(context)!.serversSortTitle,
-                        onPressed: () => _serverGroupSortMenu(ref, 
+                        onPressed: () => _serverGroupSortMenu(ref,
                           context,
                           collapseKey,
                           sortMode,
                         ),
+                        color: sortMode == ServerSortMode.defaultOrder
+                            ? textLightColor
+                            : accentColor,
                         icon: Icon(
                           sortMode == ServerSortMode.defaultOrder
                               ? Icons.sort_rounded
                               : sortMode.icon,
                           size: ExpressiveIconSize.medium,
-                          color: sortMode == ServerSortMode.defaultOrder
-                              ? textLightColor
-                              : accentColor,
                         ),
                       ),
                       const SizedBox(width: _subCardHeaderActionGap),
                       if (onRefresh != null) ...[
                         _subCardHeaderIconButton(
+                          context,
                           tooltip: AppLocalizations.of(
                             context,
                           )!.serversRefreshSubscription,
+                          color: hasRefreshError
+                              ? AppTheme.red(context)
+                              : textLightColor,
                           onPressed: isRefreshing
                               ? null
                               : () async {
@@ -703,20 +735,19 @@ class _ServerGroupHeader extends ConsumerWidget {
                                   size: ExpressiveIconSize.medium,
                                   color: accentColor,
                                 )
-                              : Icon(
+                              : const Icon(
                                   Icons.refresh_rounded,
                                   size: ExpressiveIconSize.medium,
-                                  color: hasRefreshError
-                                      ? AppTheme.red(context)
-                                      : textLightColor,
                                 ),
                         ),
                         const SizedBox(width: _subCardHeaderActionGap),
                       ],
                       _subCardHeaderIconButton(
+                        context,
                         tooltip: AppLocalizations.of(
                           context,
                         )!.serversPingAll,
+                        color: textLightColor,
                         onPressed: isPingingAll
                             ? null
                             : () async {
@@ -741,10 +772,9 @@ class _ServerGroupHeader extends ConsumerWidget {
                                 size: ExpressiveIconSize.medium,
                                 color: accentColor,
                               )
-                            : Icon(
+                            : const Icon(
                                 Icons.network_ping_rounded,
                                 size: ExpressiveIconSize.medium,
-                                color: textLightColor,
                               ),
                       ),
                     ],

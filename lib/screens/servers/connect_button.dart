@@ -155,7 +155,18 @@ class _ConnectButtonState extends State<_ConnectButton>
 
   @override
   Widget build(BuildContext context) {
+    // На телевизоре фокус пульта заливает кнопку (см. TvFocusHighlight), и
+    // цвета значка берутся уже под её темой — поэтому всё строится внутри.
+    // Заливка обёртки круглая: и выбранная, и нажатая форма её накрывают.
+    return TvFocusHighlight(
+      radius: BorderRadius.circular(_size / 2),
+      child: Builder(builder: _buildButton),
+    );
+  }
+
+  Widget _buildButton(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final focusFill = TvFocusHighlight.containerOf(context);
     // Стиль — filled, по FilledIconButtonTokens: не выбрана SurfaceContainer,
     // выбрана Primary.
     //
@@ -173,7 +184,7 @@ class _ConnectButtonState extends State<_ConnectButton>
       duration: ExpressiveMotion.durationDefault,
       curve: ExpressiveMotion.emphasized,
       builder: (context, phase, child) {
-        final bg = Color.lerp(unselectedBg, selectedBg, phase)!;
+        final bg = focusFill ?? Color.lerp(unselectedBg, selectedBg, phase)!;
 
         return AnimatedBuilder(
           animation: Listenable.merge([_press, _cycle]),
@@ -305,6 +316,12 @@ class _ConnectButtonState extends State<_ConnectButton>
     // Не `isConnecting`, а наличие цикла: после успеха он ещё живёт, пока
     // фигура доезжает до круга (см. _syncCycle).
     final cycle = _cycle;
+    final scheme = Theme.of(context).colorScheme;
+    // В фокусе пульта значок на инверсной заливке — полным цветом, как
+    // содержимое кнопок Material for TV: приглушённый терялся на главной кнопке.
+    final idleIcon = TvFocusHighlight.containerOf(context) != null
+        ? scheme.onSurface
+        : scheme.onSurfaceVariant;
     return AnimatedSwitcher(
       duration: ExpressiveMotion.durationFast,
       switchInCurve: ExpressiveMotion.emphasizedDecelerate,
@@ -329,9 +346,7 @@ class _ConnectButtonState extends State<_ConnectButton>
               size: _iconSize,
               // FilledIconButtonTokens: не выбрана — OnSurfaceVariant,
               // выбрана — OnPrimary.
-              color: widget.isConnected
-                  ? Theme.of(context).colorScheme.onPrimary
-                  : Theme.of(context).colorScheme.onSurfaceVariant,
+              color: widget.isConnected ? scheme.onPrimary : idleIcon,
             ),
     );
   }

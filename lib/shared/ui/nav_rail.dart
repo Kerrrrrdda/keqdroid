@@ -5,6 +5,7 @@ import 'package:keqdroid/l10n/app_localizations.dart';
 import 'package:keqdroid/shared/ui/bottom_nav.dart';
 import 'package:keqdroid/shared/ui/expressive.dart';
 import 'package:keqdroid/shared/ui/haptics.dart';
+import 'package:keqdroid/shared/ui/tv_focus.dart';
 
 /// Навигационная рейка — та же навигация, что [AppBottomNav], но у переднего
 /// края окна шириной от «expanded» (телефон боком, планшет). Обе сразу спека M3
@@ -157,51 +158,59 @@ class _RailItem extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Material(
-                  type: MaterialType.transparency,
-                  shape: shape,
-                  clipBehavior: Clip.antiAlias,
-                  child: InkWell(
-                    onTap: onTap,
-                    customBorder: shape,
-                    child: SizedBox(
-                      width: _indicatorWidth,
-                      height: _indicatorHeight,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          // Индикатор раскрывается от центра значка — так его
-                          // появление описывает спека. Ink, а не Container:
-                          // рисуется на слое Material, и рипл остаётся поверх.
-                          Ink(
-                            width: lerpDouble(
-                              _indicatorHeight,
-                              _indicatorWidth,
-                              t,
-                            ),
-                            height: _indicatorHeight,
-                            decoration: ShapeDecoration(
-                              color: Color.lerp(
-                                Colors.transparent,
-                                cs.secondaryContainer,
-                                tc,
+                // На телевизоре фокус пульта заливает индикатор (см. TvFocusHighlight),
+                // поэтому цвета значка берутся уже под его темой.
+                TvFocusHighlight(
+                  radius: BorderRadius.circular(ExpressiveShape.full),
+                  child: Builder(builder: (context) {
+                    final fcs = Theme.of(context).colorScheme;
+                    return Material(
+                      type: MaterialType.transparency,
+                      shape: shape,
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: onTap,
+                        customBorder: shape,
+                        child: SizedBox(
+                          width: _indicatorWidth,
+                          height: _indicatorHeight,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              // Индикатор раскрывается от центра значка — так его
+                              // появление описывает спека. Ink, а не Container:
+                              // рисуется на слое Material, и рипл остаётся поверх.
+                              Ink(
+                                width: lerpDouble(
+                                  _indicatorHeight,
+                                  _indicatorWidth,
+                                  t,
+                                ),
+                                height: _indicatorHeight,
+                                decoration: ShapeDecoration(
+                                  color: Color.lerp(
+                                    Colors.transparent,
+                                    fcs.secondaryContainer,
+                                    tc,
+                                  ),
+                                  shape: shape,
+                                ),
                               ),
-                              shape: shape,
-                            ),
+                              NavIcon(
+                                icon: icon,
+                                badge: badge,
+                                color: Color.lerp(
+                                  fcs.onSurfaceVariant,
+                                  fcs.onSecondaryContainer,
+                                  tc,
+                                )!,
+                              ),
+                            ],
                           ),
-                          NavIcon(
-                            icon: icon,
-                            badge: badge,
-                            color: Color.lerp(
-                              cs.onSurfaceVariant,
-                              cs.onSecondaryContainer,
-                              tc,
-                            )!,
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  }),
                 ),
                 const SizedBox(height: ExpressiveSpacing.extraSmall),
                 Padding(

@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 
 import 'package:keqdroid/shared/ui/expressive.dart';
 import 'package:keqdroid/shared/ui/expressive_elements.dart';
+import 'package:keqdroid/shared/ui/tv_focus.dart';
 
 /// Стопка сегментов в одном контейнере.
 ///
@@ -72,15 +73,18 @@ class ExpressiveGroup extends StatelessWidget {
       children: [
         for (var i = 0; i < count; i++) ...[
           if (i > 0) SizedBox(height: spacing),
-          _ExpressiveGroupScope(
-            radius: segmentRadius(
+          Builder(builder: (context) {
+            final radius = segmentRadius(
               index: i,
               count: count,
               outerCorner: outerCorner,
               innerCorner: innerCorner,
-            ),
-            child: children[i],
-          ),
+            );
+            return _ExpressiveGroupScope(
+              radius: radius,
+              child: TvFocusHighlight(radius: radius, child: children[i]),
+            );
+          }),
         ],
       ],
     );
@@ -407,7 +411,9 @@ class _ExpressiveGroupTileState extends State<ExpressiveGroupTile>
         );
       },
       child: Material(
-        color: widget.color ?? scheme.surfaceContainerHigh,
+        color: TvFocusHighlight.containerOf(context) ??
+            widget.color ??
+            scheme.surfaceContainerHigh,
         child: InkWell(
           onTap: widget.onTap,
           onLongPress: widget.onLongPress,
@@ -608,32 +614,37 @@ class _ExpressiveListSegmentState extends State<ExpressiveListSegment>
       ExpressiveListSegment.selectedCorner,
     );
 
-    return AnimatedBuilder(
-      animation: Listenable.merge([_shape, _tint]),
-      builder: (context, child) {
-        // Пружина уходит за единицу — форме это лишнее (углы «переморфились» бы
-        // дальше выбранных 16dp), поэтому под лерп значение зажимаем.
-        final shape = _shape.value.clamp(0.0, 1.0);
-        final tint = _tint.value.clamp(0.0, 1.0);
-        return ClipRRect(
-          borderRadius: BorderRadius.lerp(
-            widget.radius,
-            selectedRadius,
-            shape,
-          )!,
-          child: Material(
-            color: Color.lerp(widget.color, widget.selectedColor, tint),
-            child: child,
-          ),
-        );
-      },
-      child: InkWell(
-        onTap: widget.onTap,
-        onLongPress: widget.onLongPress,
-        onSecondaryTap: widget.onSecondaryTap,
-        splashColor: widget.splashColor,
-        highlightColor: widget.highlightColor,
-        child: widget.child,
+    return TvFocusHighlight(
+      radius: widget.radius,
+      child: AnimatedBuilder(
+        animation: Listenable.merge([_shape, _tint]),
+        builder: (context, child) {
+          // Пружина уходит за единицу — форме это лишнее (углы
+          // «переморфились» бы дальше выбранных 16dp), поэтому под лерп
+          // значение зажимаем.
+          final shape = _shape.value.clamp(0.0, 1.0);
+          final tint = _tint.value.clamp(0.0, 1.0);
+          return ClipRRect(
+            borderRadius: BorderRadius.lerp(
+              widget.radius,
+              selectedRadius,
+              shape,
+            )!,
+            child: Material(
+              color: TvFocusHighlight.containerOf(context) ??
+                  Color.lerp(widget.color, widget.selectedColor, tint),
+              child: child,
+            ),
+          );
+        },
+        child: InkWell(
+          onTap: widget.onTap,
+          onLongPress: widget.onLongPress,
+          onSecondaryTap: widget.onSecondaryTap,
+          splashColor: widget.splashColor,
+          highlightColor: widget.highlightColor,
+          child: widget.child,
+        ),
       ),
     );
   }

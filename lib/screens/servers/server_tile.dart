@@ -122,40 +122,46 @@ class _ServerTile extends ConsumerWidget {
     // бейджа с тоном контейнера, и надпись проваливается по контрасту. Поэтому
     // на выбранном сегменте бейдж встаёт на собственную непрозрачную подложку —
     // ту же, на которой живут бейджи остальных строк.
-    final rowBody = ServerRow(
-      server: server,
-      pingMs: pingMs,
-      lastTestedAt: lastTestedAt,
-      pingColorType: pingColorType,
-      foreground: isActive
-          ? (accent?.onContainer ?? scheme.onSecondaryContainer)
-          : null,
-      opaqueBadge: isActive,
-      // Активный сервер отличается весом, а не размером: у M3E это и есть
-      // роль усиленного варианта.
-      emphasizeTitle: isActive,
-      layout: layout,
-      trailing: layout == ServerRowLayout.inline
-          ? _buildTrailing(
-              context,
-              isConnected,
-              isConnecting,
-              isActive,
-              isPinging,
-              accentColor,
-              textLightColor,
-            )
-          : null,
-      status: layout == ServerRowLayout.card
-          ? _buildInlineStatus(
-              context,
-              isConnected,
-              isConnecting,
-              isActive,
-              isPinging,
-              accentColor,
-            )
-          : null,
+    //
+    // В фокусе пульта строка уже на инверсной заливке, и тёмный текст
+    // выбранного сегмента на ней пропадал — там цвета берутся из темы, а она
+    // под фокусом инверсная. Поэтому ряд строится под обёрткой фокуса.
+    final rowBody = Builder(
+      builder: (context) => ServerRow(
+        server: server,
+        pingMs: pingMs,
+        lastTestedAt: lastTestedAt,
+        pingColorType: pingColorType,
+        foreground: isActive && TvFocusHighlight.containerOf(context) == null
+            ? (accent?.onContainer ?? scheme.onSecondaryContainer)
+            : null,
+        opaqueBadge: isActive,
+        // Активный сервер отличается весом, а не размером: у M3E это и есть
+        // роль усиленного варианта.
+        emphasizeTitle: isActive,
+        layout: layout,
+        trailing: layout == ServerRowLayout.inline
+            ? _buildTrailing(
+                context,
+                isConnected,
+                isConnecting,
+                isActive,
+                isPinging,
+                accentColor,
+                textLightColor,
+              )
+            : null,
+        status: layout == ServerRowLayout.card
+            ? _buildInlineStatus(
+                context,
+                isConnected,
+                isConnecting,
+                isActive,
+                isPinging,
+                accentColor,
+              )
+            : null,
+      ),
     );
 
     // Один семантический узел на тайл (имя + протокол + пинг + tap). Сервис
