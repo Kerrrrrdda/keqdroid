@@ -385,6 +385,11 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String settingsLanFirewallHint(Object ports) {
+    return 'Wenn sich andere Geräte nicht verbinden, öffne die Ports $ports in der Firewall:';
+  }
+
+  @override
   String get settingsDeviceIpListTitle => 'IP-Adressen des Geräts im Netzwerk:';
 
   @override

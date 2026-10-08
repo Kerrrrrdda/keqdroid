@@ -10,6 +10,10 @@ class _LanSharingCard extends ConsumerStatefulWidget {
 
 class _LanSharingCardState extends ConsumerState<_LanSharingCard> {
   String? _localIp;
+
+  /// Включённый межсетевой экран Linux: при нём раздача молча не работает,
+  /// пока порты не открыты (см. LinuxFirewalls).
+  LinuxFirewall? _firewall;
   late TextEditingController _socksCtrl;
   late TextEditingController _httpCtrl;
   late TextEditingController _userCtrl;
@@ -25,6 +29,11 @@ class _LanSharingCardState extends ConsumerState<_LanSharingCard> {
     _userCtrl = TextEditingController(text: s.lanUsername);
     _passCtrl = TextEditingController(text: s.lanPassword);
     _fetchLocalIp();
+    if (Platform.isLinux) {
+      unawaited(LinuxFirewalls.detect().then((f) {
+        if (mounted) setState(() => _firewall = f);
+      }));
+    }
   }
 
   @override
@@ -179,6 +188,28 @@ class _LanSharingCardState extends ConsumerState<_LanSharingCard> {
                   _proxyLine(context, 'SOCKS5', ip, settings.lanSocksPort),
                   const SizedBox(height: 2),
                   _proxyLine(context, 'HTTP', ip, settings.lanHttpPort),
+                  if (_firewall != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      l10n.settingsLanFirewallHint(
+                        '${settings.lanSocksPort}, ${settings.lanHttpPort}',
+                      ),
+                      style: textTheme.bodySmall
+                          ?.copyWith(color: AppTheme.textLight(context)),
+                    ),
+                    const SizedBox(height: 2),
+                    // Команда целиком своей строкой: её выделяют и вставляют
+                    // в терминал, а посреди фразы она рвалась переносом.
+                    SelectableText(
+                      LinuxFirewalls.openCommand(_firewall!, [
+                        settings.lanSocksPort,
+                        settings.lanHttpPort,
+                      ]),
+                      textDirection: TextDirection.ltr,
+                      style: textTheme.bodySmall
+                          ?.copyWith(fontFamily: 'monospace'),
+                    ),
+                  ],
                 ],
               ),
             ),

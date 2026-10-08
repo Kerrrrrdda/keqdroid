@@ -30,6 +30,7 @@ import 'package:keqdroid/services/connections_service.dart';
 import 'package:keqdroid/services/debug_log_service.dart';
 import 'package:keqdroid/services/hotkey_service.dart';
 import 'package:keqdroid/services/linux_autostart.dart';
+import 'package:keqdroid/services/linux_firewall.dart';
 import 'package:keqdroid/services/settings_backup_service.dart';
 import 'package:keqdroid/services/vpn_engine.dart';
 import 'package:keqdroid/services/windows_desktop_service.dart';

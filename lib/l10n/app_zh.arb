@@ -185,6 +185,12 @@
       "ip": {}
     }
   },
+  "settingsLanFirewallHint": "如果其他设备无法连接，请在防火墙中开放端口 {ports}：",
+  "@settingsLanFirewallHint": {
+    "placeholders": {
+      "ports": {}
+    }
+  },
   "settingsDeviceIpListTitle": "设备在网络中的 IP 地址：",
   "settingsIpCopied": "IP 已复制",
   "settingsSetupAnotherDeviceTitle": "在其他设备上设置：",

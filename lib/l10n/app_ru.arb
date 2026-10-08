@@ -185,6 +185,12 @@
       "ip": {}
     }
   },
+  "settingsLanFirewallHint": "Если другие устройства не подключаются, откройте порты {ports} в межсетевом экране:",
+  "@settingsLanFirewallHint": {
+    "placeholders": {
+      "ports": {}
+    }
+  },
   "settingsDeviceIpListTitle": "IP-адреса устройства в сети:",
   "settingsIpCopied": "IP скопирован",
   "settingsSetupAnotherDeviceTitle": "Настройка на другом устройстве:",

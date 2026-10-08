@@ -185,6 +185,12 @@
       "ip": {}
     }
   },
+  "settingsLanFirewallHint": "Wenn sich andere Geräte nicht verbinden, öffne die Ports {ports} in der Firewall:",
+  "@settingsLanFirewallHint": {
+    "placeholders": {
+      "ports": {}
+    }
+  },
   "settingsDeviceIpListTitle": "IP-Adressen des Geräts im Netzwerk:",
   "settingsIpCopied": "IP kopiert",
   "settingsSetupAnotherDeviceTitle": "Einrichtung auf einem anderen Gerät:",

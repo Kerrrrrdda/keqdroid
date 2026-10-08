@@ -385,6 +385,11 @@ class AppLocalizationsFa extends AppLocalizations {
   }
 
   @override
+  String settingsLanFirewallHint(Object ports) {
+    return 'اگر دستگاه‌های دیگر وصل نمی‌شوند، پورت‌های $ports را در فایروال باز کنید:';
+  }
+
+  @override
   String get settingsDeviceIpListTitle => 'آدرس‌های آی‌پی دستگاه در شبکه:';
 
   @override

@@ -385,6 +385,11 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String settingsLanFirewallHint(Object ports) {
+    return '如果其他设备无法连接，请在防火墙中开放端口 $ports：';
+  }
+
+  @override
   String get settingsDeviceIpListTitle => '设备在网络中的 IP 地址：';
 
   @override

@@ -185,6 +185,12 @@
       "ip": {}
     }
   },
+  "settingsLanFirewallHint": "If other devices cannot connect, open ports {ports} in the firewall:",
+  "@settingsLanFirewallHint": {
+    "placeholders": {
+      "ports": {}
+    }
+  },
   "settingsDeviceIpListTitle": "Device IP addresses on the network:",
   "settingsIpCopied": "IP copied",
   "settingsSetupAnotherDeviceTitle": "Setup on another device:",

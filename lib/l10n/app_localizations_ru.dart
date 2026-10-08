@@ -387,6 +387,11 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String settingsLanFirewallHint(Object ports) {
+    return 'Если другие устройства не подключаются, откройте порты $ports в межсетевом экране:';
+  }
+
+  @override
   String get settingsDeviceIpListTitle => 'IP-адреса устройства в сети:';
 
   @override

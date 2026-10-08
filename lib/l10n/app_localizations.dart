@@ -791,6 +791,12 @@ abstract class AppLocalizations {
   /// **'Sharing on {ip}'**
   String settingsLanSharingOnIp(Object ip);
 
+  /// No description provided for @settingsLanFirewallHint.
+  ///
+  /// In en, this message translates to:
+  /// **'If other devices cannot connect, open ports {ports} in the firewall:'**
+  String settingsLanFirewallHint(Object ports);
+
   /// No description provided for @settingsDeviceIpListTitle.
   ///
   /// In en, this message translates to:

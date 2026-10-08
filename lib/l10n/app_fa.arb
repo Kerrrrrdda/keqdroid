@@ -115,6 +115,7 @@
   "settingsLanProxyTitle": "پروکسی شبکهٔ محلی",
   "settingsOff": "خاموش",
   "settingsLanSharingOnIp": "در حال اشتراک روی {ip}",
+  "settingsLanFirewallHint": "اگر دستگاه‌های دیگر وصل نمی‌شوند، پورت‌های {ports} را در فایروال باز کنید:",
   "settingsDeviceIpListTitle": "آدرس‌های آی‌پی دستگاه در شبکه:",
   "settingsIpCopied": "آی‌پی کپی شد",
   "settingsSetupAnotherDeviceTitle": "تنظیم روی دستگاه دیگر:",
