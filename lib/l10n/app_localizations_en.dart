@@ -1443,6 +1443,57 @@ class AppLocalizationsEn extends AppLocalizations {
   String get qrNotSubscriptionLink => 'QR code doesn\'t contain a subscription link';
 
   @override
+  String get tvReceiveTitle => 'Receive from phone';
+
+  @override
+  String get tvReceiveSubtitle => 'A subscription from your phone over Wi-Fi';
+
+  @override
+  String get tvReceiveHint => 'Scan the code in keqdroid on your phone. The phone and the TV must be on the same Wi-Fi network.';
+
+  @override
+  String get tvReceiveWaiting => 'Waiting for a subscription…';
+
+  @override
+  String tvReceiveGot(Object name) {
+    return 'Received: $name';
+  }
+
+  @override
+  String tvReceiveFailed(Object error) {
+    return 'Couldn\'t add it: $error';
+  }
+
+  @override
+  String get tvReceiveNoNetwork => 'The TV isn\'t connected to a network';
+
+  @override
+  String get tvSendTitle => 'Send to TV';
+
+  @override
+  String get tvSendPick => 'Which subscription do you want to send?';
+
+  @override
+  String get tvSendAction => 'Send';
+
+  @override
+  String get tvSendDone => 'Subscription sent to the TV';
+
+  @override
+  String get tvSendNothing => 'There are no subscriptions on this phone to send';
+
+  @override
+  String get tvSendUnreachable => 'The TV isn\'t responding. Check that the phone and the TV are on the same Wi-Fi network and the receive screen is open on the TV.';
+
+  @override
+  String get tvSendExpired => 'This code has expired. Reopen the receive screen on the TV and scan the new code.';
+
+  @override
+  String tvSendRejected(Object error) {
+    return 'The TV didn\'t add the subscription: $error';
+  }
+
+  @override
   String get settingsHotkeysTitle => 'Hotkeys';
 
   @override

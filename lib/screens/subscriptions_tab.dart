@@ -29,6 +29,9 @@ import '../services/card_image_service.dart';
 import '../platform/platform_bootstrap.dart';
 import '../providers/providers.dart';
 import 'qr_scan_screen.dart';
+import 'tv_receive_screen.dart';
+import 'tv_send_dialog.dart';
+import '../services/tv_handoff.dart';
 import '../ui/responsive/desktop_page_layout.dart';
 import '../utils/bidi.dart';
 import '../utils/error_messages.dart';
@@ -301,6 +304,19 @@ class SubscriptionsTab extends ConsumerWidget {
                 // у mobile_scanner нет имплементации под Windows/Linux
                 suffix: PlatformBootstrap.isDesktop
                     ? null
+                    // Телевизор: камеры нет, ссылку присылает телефон.
+                    : PlatformBootstrap.isTelevision
+                    ? IconButton(
+                        icon: Icon(
+                          Icons.install_mobile_rounded,
+                          color: AppTheme.accent(context),
+                        ),
+                        tooltip: l10n.tvReceiveTitle,
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          unawaited(TvReceiveScreen.open(context));
+                        },
+                      )
                     : IconButton(
                         icon: Icon(
                           Icons.qr_code_scanner_rounded,
@@ -310,6 +326,16 @@ class SubscriptionsTab extends ConsumerWidget {
                         onPressed: () async {
                           final raw = await QrScanScreen.scan(ctx);
                           if (raw == null || !ctx.mounted) return;
+                          // Код телевизора: шторка добавления тут ни при
+                          // чём, закрываем её и отправляем.
+                          final tv = TvPairing.parse(raw);
+                          if (tv != null) {
+                            Navigator.pop(ctx);
+                            if (context.mounted) {
+                              await sendSubscriptionToTv(context, ref, tv);
+                            }
+                            return;
+                          }
                           final uri = Uri.tryParse(raw);
                           if (uri != null &&
                               (uri.scheme == 'http' ||

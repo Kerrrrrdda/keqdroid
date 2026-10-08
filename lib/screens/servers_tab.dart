@@ -40,6 +40,7 @@ import '../services/auto_server_select.dart';
 import '../services/file_dialog_service.dart';
 import '../services/ping_service.dart';
 import '../services/subscription_accent_service.dart';
+import '../services/tv_handoff.dart';
 import '../services/vpn_engine.dart';
 import '../platform/platform_bootstrap.dart';
 import '../platform/vpn_native_bridge.dart';
@@ -53,6 +54,8 @@ import '../utils/import_payload.dart';
 import '../utils/proxy_chain.dart';
 import '../utils/server_sort.dart';
 import 'qr_scan_screen.dart';
+import 'tv_receive_screen.dart';
+import 'tv_send_dialog.dart';
 import 'servers/chain_editor.dart';
 import 'servers/server_config_editor.dart';
 import 'servers/wave_window.dart';
@@ -563,6 +566,12 @@ class _ServersTabState extends ConsumerState<ServersTab>
 
   Future<void> _importDeepLink(String raw) async {
     if (!mounted) return;
+    // Код телевизора, прочитанный системной камерой.
+    final tv = TvPairing.parse(raw);
+    if (tv != null) {
+      await sendSubscriptionToTv(context, ref, tv);
+      return;
+    }
     final subUrl = subscriptionUrlFromDeepLink(raw);
     if (subUrl != null) {
       await _addSubscriptionFromUrl(context, subUrl);
@@ -915,8 +924,21 @@ class _ServersTabState extends ConsumerState<ServersTab>
                     _importConfigFile(ctx);
                   },
                 ),
+                // Камеры у телевизора нет, а ссылку пультом не набрать —
+                // подписку присылает телефон.
+                if (PlatformBootstrap.isTelevision)
+                  ExpressiveActionTile(
+                    icon: Icons.install_mobile_rounded,
+                    title: l10n.tvReceiveTitle,
+                    subtitle: l10n.tvReceiveSubtitle,
+                    accent: ExpressiveAccent.tertiary,
+                    onTap: () {
+                      Navigator.pop(ctx2);
+                      unawaited(TvReceiveScreen.open(ctx));
+                    },
+                  )
                 // у mobile_scanner нет имплементации под Windows/Linux
-                if (!PlatformBootstrap.isDesktop)
+                else if (!PlatformBootstrap.isDesktop)
                   ExpressiveActionTile(
                     icon: Icons.qr_code_scanner_rounded,
                     title: l10n.qrScanTitle,
@@ -960,6 +982,12 @@ class _ServersTabState extends ConsumerState<ServersTab>
   Future<void> _scanQrAndImport(BuildContext ctx) async {
     final raw = await QrScanScreen.scan(ctx);
     if (raw == null || raw.isEmpty || !ctx.mounted) return;
+
+    final tv = TvPairing.parse(raw);
+    if (tv != null) {
+      await sendSubscriptionToTv(ctx, ref, tv);
+      return;
+    }
 
     final asUri = Uri.tryParse(raw);
     if (asUri != null && (asUri.scheme == 'http' || asUri.scheme == 'https')) {

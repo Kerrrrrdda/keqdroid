@@ -657,6 +657,36 @@
     }
   },
   "qrNotSubscriptionLink": "В QR-коде нет ссылки на подписку",
+  "tvReceiveTitle": "Принять с телефона",
+  "tvReceiveSubtitle": "Подписка с телефона по Wi-Fi",
+  "tvReceiveHint": "Отсканируйте код в keqdroid на телефоне. Телефон и телевизор должны быть в одной сети Wi-Fi.",
+  "tvReceiveWaiting": "Жду подписку…",
+  "tvReceiveGot": "Получено: {name}",
+  "@tvReceiveGot": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "tvReceiveFailed": "Не удалось добавить: {error}",
+  "@tvReceiveFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "tvReceiveNoNetwork": "Телевизор не подключён к сети",
+  "tvSendTitle": "Отправить на телевизор",
+  "tvSendPick": "Какую подписку отправить?",
+  "tvSendAction": "Отправить",
+  "tvSendDone": "Подписка отправлена на телевизор",
+  "tvSendNothing": "На телефоне нет подписок, отправлять нечего",
+  "tvSendUnreachable": "Телевизор не отвечает. Проверьте, что телефон и телевизор в одной сети Wi-Fi и экран приёма на телевизоре открыт.",
+  "tvSendExpired": "Код устарел. Откройте экран приёма на телевизоре заново и отсканируйте новый код.",
+  "tvSendRejected": "Телевизор не принял подписку: {error}",
+  "@tvSendRejected": {
+    "placeholders": {
+      "error": {}
+    }
+  },
   "settingsHotkeysTitle": "Горячие клавиши",
   "settingsHotkeysSubtitle": "Сочетания для подключения, режима и серверов",
   "hotkeysHintGlobal": "Работают из любого окна и даже когда приложение свёрнуто в трей. Пока в строке «Не задано», сочетание не срабатывает.",

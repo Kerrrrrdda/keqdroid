@@ -1443,6 +1443,57 @@ class AppLocalizationsDe extends AppLocalizations {
   String get qrNotSubscriptionLink => 'Der QR-Code enthält keinen Abonnement-Link';
 
   @override
+  String get tvReceiveTitle => 'Vom Smartphone empfangen';
+
+  @override
+  String get tvReceiveSubtitle => 'Abonnement vom Smartphone über WLAN';
+
+  @override
+  String get tvReceiveHint => 'Scanne den Code mit keqdroid auf dem Smartphone. Smartphone und Fernseher müssen im selben WLAN sein.';
+
+  @override
+  String get tvReceiveWaiting => 'Warte auf ein Abonnement…';
+
+  @override
+  String tvReceiveGot(Object name) {
+    return 'Empfangen: $name';
+  }
+
+  @override
+  String tvReceiveFailed(Object error) {
+    return 'Hinzufügen fehlgeschlagen: $error';
+  }
+
+  @override
+  String get tvReceiveNoNetwork => 'Der Fernseher ist mit keinem Netzwerk verbunden';
+
+  @override
+  String get tvSendTitle => 'An Fernseher senden';
+
+  @override
+  String get tvSendPick => 'Welches Abonnement möchtest du senden?';
+
+  @override
+  String get tvSendAction => 'Senden';
+
+  @override
+  String get tvSendDone => 'Abonnement an den Fernseher gesendet';
+
+  @override
+  String get tvSendNothing => 'Auf diesem Smartphone gibt es keine Abonnements zum Senden';
+
+  @override
+  String get tvSendUnreachable => 'Der Fernseher antwortet nicht. Prüfe, ob Smartphone und Fernseher im selben WLAN sind und der Empfangsbildschirm auf dem Fernseher geöffnet ist.';
+
+  @override
+  String get tvSendExpired => 'Dieser Code ist abgelaufen. Öffne den Empfangsbildschirm auf dem Fernseher erneut und scanne den neuen Code.';
+
+  @override
+  String tvSendRejected(Object error) {
+    return 'Der Fernseher hat das Abonnement nicht hinzugefügt: $error';
+  }
+
+  @override
   String get settingsHotkeysTitle => 'Tastenkürzel';
 
   @override

@@ -658,6 +658,36 @@
     }
   },
   "qrNotSubscriptionLink": "QR code doesn't contain a subscription link",
+  "tvReceiveTitle": "Receive from phone",
+  "tvReceiveSubtitle": "A subscription from your phone over Wi-Fi",
+  "tvReceiveHint": "Scan the code in keqdroid on your phone. The phone and the TV must be on the same Wi-Fi network.",
+  "tvReceiveWaiting": "Waiting for a subscription…",
+  "tvReceiveGot": "Received: {name}",
+  "@tvReceiveGot": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "tvReceiveFailed": "Couldn't add it: {error}",
+  "@tvReceiveFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "tvReceiveNoNetwork": "The TV isn't connected to a network",
+  "tvSendTitle": "Send to TV",
+  "tvSendPick": "Which subscription do you want to send?",
+  "tvSendAction": "Send",
+  "tvSendDone": "Subscription sent to the TV",
+  "tvSendNothing": "There are no subscriptions on this phone to send",
+  "tvSendUnreachable": "The TV isn't responding. Check that the phone and the TV are on the same Wi-Fi network and the receive screen is open on the TV.",
+  "tvSendExpired": "This code has expired. Reopen the receive screen on the TV and scan the new code.",
+  "tvSendRejected": "The TV didn't add the subscription: {error}",
+  "@tvSendRejected": {
+    "placeholders": {
+      "error": {}
+    }
+  },
   "settingsHotkeysTitle": "Hotkeys",
   "settingsHotkeysSubtitle": "Shortcuts for connection, mode and servers",
   "hotkeysHintGlobal": "Hotkeys work system-wide, even when the window is hidden in the tray. All hotkeys are disabled until you assign them.",

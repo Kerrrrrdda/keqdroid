@@ -1443,6 +1443,57 @@ class AppLocalizationsFa extends AppLocalizations {
   String get qrNotSubscriptionLink => 'این کد QR لینک اشتراک ندارد';
 
   @override
+  String get tvReceiveTitle => 'دریافت از گوشی';
+
+  @override
+  String get tvReceiveSubtitle => 'اشتراک از گوشی از طریق Wi-Fi';
+
+  @override
+  String get tvReceiveHint => 'این کد را در keqdroid روی گوشی اسکن کنید. گوشی و تلویزیون باید به یک شبکهٔ Wi-Fi وصل باشند.';
+
+  @override
+  String get tvReceiveWaiting => 'در انتظار اشتراک…';
+
+  @override
+  String tvReceiveGot(Object name) {
+    return 'دریافت شد: $name';
+  }
+
+  @override
+  String tvReceiveFailed(Object error) {
+    return 'افزوده نشد: $error';
+  }
+
+  @override
+  String get tvReceiveNoNetwork => 'تلویزیون به شبکه وصل نیست';
+
+  @override
+  String get tvSendTitle => 'ارسال به تلویزیون';
+
+  @override
+  String get tvSendPick => 'کدام اشتراک ارسال شود؟';
+
+  @override
+  String get tvSendAction => 'ارسال';
+
+  @override
+  String get tvSendDone => 'اشتراک به تلویزیون ارسال شد';
+
+  @override
+  String get tvSendNothing => 'روی این گوشی اشتراکی برای ارسال وجود ندارد';
+
+  @override
+  String get tvSendUnreachable => 'تلویزیون پاسخ نمی‌دهد. بررسی کنید گوشی و تلویزیون به یک شبکهٔ Wi-Fi وصل باشند و صفحهٔ دریافت روی تلویزیون باز باشد.';
+
+  @override
+  String get tvSendExpired => 'این کد منقضی شده است. صفحهٔ دریافت را روی تلویزیون دوباره باز کنید و کد جدید را اسکن کنید.';
+
+  @override
+  String tvSendRejected(Object error) {
+    return 'تلویزیون اشتراک را اضافه نکرد: $error';
+  }
+
+  @override
   String get settingsHotkeysTitle => 'کلیدهای میانبر';
 
   @override

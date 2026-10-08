@@ -2819,6 +2819,96 @@ abstract class AppLocalizations {
   /// **'QR code doesn\'t contain a subscription link'**
   String get qrNotSubscriptionLink;
 
+  /// No description provided for @tvReceiveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Receive from phone'**
+  String get tvReceiveTitle;
+
+  /// No description provided for @tvReceiveSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A subscription from your phone over Wi-Fi'**
+  String get tvReceiveSubtitle;
+
+  /// No description provided for @tvReceiveHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan the code in keqdroid on your phone. The phone and the TV must be on the same Wi-Fi network.'**
+  String get tvReceiveHint;
+
+  /// No description provided for @tvReceiveWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for a subscription…'**
+  String get tvReceiveWaiting;
+
+  /// No description provided for @tvReceiveGot.
+  ///
+  /// In en, this message translates to:
+  /// **'Received: {name}'**
+  String tvReceiveGot(Object name);
+
+  /// No description provided for @tvReceiveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t add it: {error}'**
+  String tvReceiveFailed(Object error);
+
+  /// No description provided for @tvReceiveNoNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'The TV isn\'t connected to a network'**
+  String get tvReceiveNoNetwork;
+
+  /// No description provided for @tvSendTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to TV'**
+  String get tvSendTitle;
+
+  /// No description provided for @tvSendPick.
+  ///
+  /// In en, this message translates to:
+  /// **'Which subscription do you want to send?'**
+  String get tvSendPick;
+
+  /// No description provided for @tvSendAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get tvSendAction;
+
+  /// No description provided for @tvSendDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription sent to the TV'**
+  String get tvSendDone;
+
+  /// No description provided for @tvSendNothing.
+  ///
+  /// In en, this message translates to:
+  /// **'There are no subscriptions on this phone to send'**
+  String get tvSendNothing;
+
+  /// No description provided for @tvSendUnreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'The TV isn\'t responding. Check that the phone and the TV are on the same Wi-Fi network and the receive screen is open on the TV.'**
+  String get tvSendUnreachable;
+
+  /// No description provided for @tvSendExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'This code has expired. Reopen the receive screen on the TV and scan the new code.'**
+  String get tvSendExpired;
+
+  /// No description provided for @tvSendRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'The TV didn\'t add the subscription: {error}'**
+  String tvSendRejected(Object error);
+
   /// No description provided for @settingsHotkeysTitle.
   ///
   /// In en, this message translates to:

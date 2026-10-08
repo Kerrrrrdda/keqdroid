@@ -453,6 +453,36 @@
   "serversScanQrHint": "لینک سرور یا لینک اشتراک",
   "qrSubscriptionAdded": "اشتراک اضافه شد: {name}",
   "qrNotSubscriptionLink": "این کد QR لینک اشتراک ندارد",
+  "tvReceiveTitle": "دریافت از گوشی",
+  "tvReceiveSubtitle": "اشتراک از گوشی از طریق Wi-Fi",
+  "tvReceiveHint": "این کد را در keqdroid روی گوشی اسکن کنید. گوشی و تلویزیون باید به یک شبکهٔ Wi-Fi وصل باشند.",
+  "tvReceiveWaiting": "در انتظار اشتراک…",
+  "tvReceiveGot": "دریافت شد: {name}",
+  "@tvReceiveGot": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "tvReceiveFailed": "افزوده نشد: {error}",
+  "@tvReceiveFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "tvReceiveNoNetwork": "تلویزیون به شبکه وصل نیست",
+  "tvSendTitle": "ارسال به تلویزیون",
+  "tvSendPick": "کدام اشتراک ارسال شود؟",
+  "tvSendAction": "ارسال",
+  "tvSendDone": "اشتراک به تلویزیون ارسال شد",
+  "tvSendNothing": "روی این گوشی اشتراکی برای ارسال وجود ندارد",
+  "tvSendUnreachable": "تلویزیون پاسخ نمی‌دهد. بررسی کنید گوشی و تلویزیون به یک شبکهٔ Wi-Fi وصل باشند و صفحهٔ دریافت روی تلویزیون باز باشد.",
+  "tvSendExpired": "این کد منقضی شده است. صفحهٔ دریافت را روی تلویزیون دوباره باز کنید و کد جدید را اسکن کنید.",
+  "tvSendRejected": "تلویزیون اشتراک را اضافه نکرد: {error}",
+  "@tvSendRejected": {
+    "placeholders": {
+      "error": {}
+    }
+  },
   "settingsHotkeysTitle": "کلیدهای میانبر",
   "settingsHotkeysSubtitle": "میانبر برای اتصال، حالت و سرورها",
   "hotkeysHintGlobal": "میانبرها در کل سیستم کار می‌کنند، حتی وقتی پنجره در سینی سیستم پنهان است. تا وقتی میانبری تعیین نکنید، همه غیرفعال‌اند.",

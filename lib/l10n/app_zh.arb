@@ -655,6 +655,36 @@
     }
   },
   "qrNotSubscriptionLink": "二维码不包含订阅链接",
+  "tvReceiveTitle": "从手机接收",
+  "tvReceiveSubtitle": "通过 Wi-Fi 接收手机上的订阅",
+  "tvReceiveHint": "在手机上的 keqdroid 中扫描此二维码。手机和电视需连接同一 Wi-Fi 网络。",
+  "tvReceiveWaiting": "正在等待订阅…",
+  "tvReceiveGot": "已接收：{name}",
+  "@tvReceiveGot": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "tvReceiveFailed": "添加失败：{error}",
+  "@tvReceiveFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "tvReceiveNoNetwork": "电视未连接网络",
+  "tvSendTitle": "发送到电视",
+  "tvSendPick": "要发送哪个订阅？",
+  "tvSendAction": "发送",
+  "tvSendDone": "订阅已发送到电视",
+  "tvSendNothing": "此手机上没有可发送的订阅",
+  "tvSendUnreachable": "电视无响应。请确认手机和电视连接同一 Wi-Fi 网络，并且电视上的接收页面处于打开状态。",
+  "tvSendExpired": "此二维码已失效。请在电视上重新打开接收页面并扫描新的二维码。",
+  "tvSendRejected": "电视未能添加订阅：{error}",
+  "@tvSendRejected": {
+    "placeholders": {
+      "error": {}
+    }
+  },
   "settingsHotkeysTitle": "快捷键",
   "settingsHotkeysSubtitle": "用于连接、模式和服务器的快捷键",
   "hotkeysHintGlobal": "快捷键全局生效，即使窗口已隐藏到托盘。所有快捷键在您分配之前均处于禁用状态。",

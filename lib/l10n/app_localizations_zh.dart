@@ -1443,6 +1443,57 @@ class AppLocalizationsZh extends AppLocalizations {
   String get qrNotSubscriptionLink => '二维码不包含订阅链接';
 
   @override
+  String get tvReceiveTitle => '从手机接收';
+
+  @override
+  String get tvReceiveSubtitle => '通过 Wi-Fi 接收手机上的订阅';
+
+  @override
+  String get tvReceiveHint => '在手机上的 keqdroid 中扫描此二维码。手机和电视需连接同一 Wi-Fi 网络。';
+
+  @override
+  String get tvReceiveWaiting => '正在等待订阅…';
+
+  @override
+  String tvReceiveGot(Object name) {
+    return '已接收：$name';
+  }
+
+  @override
+  String tvReceiveFailed(Object error) {
+    return '添加失败：$error';
+  }
+
+  @override
+  String get tvReceiveNoNetwork => '电视未连接网络';
+
+  @override
+  String get tvSendTitle => '发送到电视';
+
+  @override
+  String get tvSendPick => '要发送哪个订阅？';
+
+  @override
+  String get tvSendAction => '发送';
+
+  @override
+  String get tvSendDone => '订阅已发送到电视';
+
+  @override
+  String get tvSendNothing => '此手机上没有可发送的订阅';
+
+  @override
+  String get tvSendUnreachable => '电视无响应。请确认手机和电视连接同一 Wi-Fi 网络，并且电视上的接收页面处于打开状态。';
+
+  @override
+  String get tvSendExpired => '此二维码已失效。请在电视上重新打开接收页面并扫描新的二维码。';
+
+  @override
+  String tvSendRejected(Object error) {
+    return '电视未能添加订阅：$error';
+  }
+
+  @override
   String get settingsHotkeysTitle => '快捷键';
 
   @override

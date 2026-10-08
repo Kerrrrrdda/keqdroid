@@ -1445,6 +1445,57 @@ class AppLocalizationsRu extends AppLocalizations {
   String get qrNotSubscriptionLink => 'В QR-коде нет ссылки на подписку';
 
   @override
+  String get tvReceiveTitle => 'Принять с телефона';
+
+  @override
+  String get tvReceiveSubtitle => 'Подписка с телефона по Wi-Fi';
+
+  @override
+  String get tvReceiveHint => 'Отсканируйте код в keqdroid на телефоне. Телефон и телевизор должны быть в одной сети Wi-Fi.';
+
+  @override
+  String get tvReceiveWaiting => 'Жду подписку…';
+
+  @override
+  String tvReceiveGot(Object name) {
+    return 'Получено: $name';
+  }
+
+  @override
+  String tvReceiveFailed(Object error) {
+    return 'Не удалось добавить: $error';
+  }
+
+  @override
+  String get tvReceiveNoNetwork => 'Телевизор не подключён к сети';
+
+  @override
+  String get tvSendTitle => 'Отправить на телевизор';
+
+  @override
+  String get tvSendPick => 'Какую подписку отправить?';
+
+  @override
+  String get tvSendAction => 'Отправить';
+
+  @override
+  String get tvSendDone => 'Подписка отправлена на телевизор';
+
+  @override
+  String get tvSendNothing => 'На телефоне нет подписок, отправлять нечего';
+
+  @override
+  String get tvSendUnreachable => 'Телевизор не отвечает. Проверьте, что телефон и телевизор в одной сети Wi-Fi и экран приёма на телевизоре открыт.';
+
+  @override
+  String get tvSendExpired => 'Код устарел. Откройте экран приёма на телевизоре заново и отсканируйте новый код.';
+
+  @override
+  String tvSendRejected(Object error) {
+    return 'Телевизор не принял подписку: $error';
+  }
+
+  @override
   String get settingsHotkeysTitle => 'Горячие клавиши';
 
   @override

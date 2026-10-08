@@ -655,6 +655,36 @@
     }
   },
   "qrNotSubscriptionLink": "Der QR-Code enthält keinen Abonnement-Link",
+  "tvReceiveTitle": "Vom Smartphone empfangen",
+  "tvReceiveSubtitle": "Abonnement vom Smartphone über WLAN",
+  "tvReceiveHint": "Scanne den Code mit keqdroid auf dem Smartphone. Smartphone und Fernseher müssen im selben WLAN sein.",
+  "tvReceiveWaiting": "Warte auf ein Abonnement…",
+  "tvReceiveGot": "Empfangen: {name}",
+  "@tvReceiveGot": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "tvReceiveFailed": "Hinzufügen fehlgeschlagen: {error}",
+  "@tvReceiveFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "tvReceiveNoNetwork": "Der Fernseher ist mit keinem Netzwerk verbunden",
+  "tvSendTitle": "An Fernseher senden",
+  "tvSendPick": "Welches Abonnement möchtest du senden?",
+  "tvSendAction": "Senden",
+  "tvSendDone": "Abonnement an den Fernseher gesendet",
+  "tvSendNothing": "Auf diesem Smartphone gibt es keine Abonnements zum Senden",
+  "tvSendUnreachable": "Der Fernseher antwortet nicht. Prüfe, ob Smartphone und Fernseher im selben WLAN sind und der Empfangsbildschirm auf dem Fernseher geöffnet ist.",
+  "tvSendExpired": "Dieser Code ist abgelaufen. Öffne den Empfangsbildschirm auf dem Fernseher erneut und scanne den neuen Code.",
+  "tvSendRejected": "Der Fernseher hat das Abonnement nicht hinzugefügt: {error}",
+  "@tvSendRejected": {
+    "placeholders": {
+      "error": {}
+    }
+  },
   "settingsHotkeysTitle": "Tastenkürzel",
   "settingsHotkeysSubtitle": "Kürzel für Verbindung, Modus und Server",
   "hotkeysHintGlobal": "Kürzel funktionieren systemweit, auch wenn das Fenster im Infobereich versteckt ist. Alle Kürzel sind inaktiv, bis du sie zuweist.",
