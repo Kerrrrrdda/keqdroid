@@ -7,6 +7,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:open_filex/open_filex.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -607,7 +608,9 @@ class UpdateService {
 
     if (Platform.isLinux && ext == '.appimage') {
       final target = LinuxAppImageUpdater.currentAppImagePath();
-      if (target != null) {
+      // Заменить можно только там, куда можно писать: иначе скрипт после
+      // выхода не заменит файл и молча запустит старую версию.
+      if (target != null && LinuxInstall.isWritableDir(p.dirname(target))) {
         // Running as an AppImage: swap it in place and relaunch.
         return LinuxAppImageUpdater.applyInPlace(
           newAppImage: file.path,
@@ -615,14 +618,19 @@ class UpdateService {
           beforeRestart: beforeRestart,
         );
       }
-      final saved = await LinuxAppImageUpdater.keepDownload(
+      final saved = await LinuxInstall.saveToDownloads(
         file.path,
         info.assetName,
+        executable: true,
       );
       throw StateError(
-        'The AppImage this app was started from has been moved or renamed, '
-        'so it cannot be replaced in place. The new version is saved as '
-        '$saved',
+        target == null
+            ? 'The AppImage this app was started from has been moved or '
+                'renamed, so it cannot be replaced in place. The new version '
+                'is saved as $saved'
+            : 'The AppImage is in ${p.dirname(target)}, where this user '
+                'cannot write, so it cannot be replaced in place. The new '
+                'version is saved as $saved',
       );
     }
 

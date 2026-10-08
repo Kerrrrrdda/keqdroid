@@ -36,7 +36,7 @@ class LinuxInstall {
         appImagePath: LinuxAppImageUpdater.currentAppImagePath(),
         executable: Platform.resolvedExecutable,
         owns: _owns,
-        writable: _isWritableDir,
+        writable: isWritableDir,
       );
 
   /// Пакетный менеджер определяется по владельцу файла, а не по тому, какой
@@ -70,7 +70,7 @@ class LinuxInstall {
     }
   }
 
-  static bool _isWritableDir(String dir) {
+  static bool isWritableDir(String dir) {
     final probe = File(p.join(dir, '.keqdroid_write_probe_$pid'));
     try {
       probe.writeAsStringSync('');
@@ -79,6 +79,48 @@ class LinuxInstall {
     } on FileSystemException {
       return false;
     }
+  }
+
+  /// Система собрана из образа (Fedora Silverblue, Kinoite, Bazzite и
+  /// подобные): `/usr` там только для чтения, и `rpm -U` падает. Файл
+  /// `/run/ostree-booted` ostree создаёт при загрузке.
+  @visibleForTesting
+  static bool Function() imageBasedSystem =
+      () => File('/run/ostree-booted').existsSync();
+
+  /// Почему пакет нельзя поставить самим; null — можно.
+  @visibleForTesting
+  static String? packageInstallBlocker(String package) =>
+      package.endsWith('.rpm') && imageBasedSystem()
+          ? 'This system is built from an image (Fedora Silverblue, Kinoite, '
+              'Bazzite and the like), where packages are layered with '
+              'rpm-ostree, not installed with rpm.'
+          : null;
+
+  /// Кладёт скачанный файл в «Загрузки» под именем [name] и возвращает путь.
+  /// Для случаев, когда заменить установленное нечем или нельзя: человек
+  /// поставит файл сам, а не получит молча ничего.
+  static Future<String> saveToDownloads(
+    String downloaded,
+    String name, {
+    bool executable = false,
+  }) async {
+    var dir = Platform.environment['HOME'] ?? Directory.systemTemp.path;
+    try {
+      final r = await Process.run('xdg-user-dir', ['DOWNLOAD']);
+      final out = '${r.stdout}'.trim();
+      if (r.exitCode == 0 && out.isNotEmpty && Directory(out).existsSync()) {
+        dir = out;
+      }
+    } on ProcessException {
+      // нет xdg-user-dirs — остаётся домашний каталог
+    }
+    final target = p.join(dir, name.isEmpty ? p.basename(downloaded) : name);
+    // /tmp и домашний каталог часто на разных разделах, rename туда не ходит.
+    await File(downloaded).copy(target);
+    await File(downloaded).delete();
+    if (executable) await Process.run('chmod', ['+x', target]);
+    return target;
   }
 
   /// Ставит скачанный deb или rpm через pkexec и перезапускает приложение.
@@ -92,6 +134,11 @@ class LinuxInstall {
     String package, {
     Future<void> Function()? beforeRestart,
   }) async {
+    final blocker = packageInstallBlocker(package);
+    if (blocker != null) {
+      final saved = await saveToDownloads(package, p.basename(package));
+      throw StateError('$blocker The new version is saved as $saved');
+    }
     final command = package.endsWith('.deb')
         ? ['apt-get', 'install', '-y', package]
         : ['rpm', '-U', package];

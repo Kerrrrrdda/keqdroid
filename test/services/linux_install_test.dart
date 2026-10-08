@@ -43,4 +43,24 @@ void main() {
     expect(await classify(), LinuxInstallKind.portable);
     expect(await classify(writable: false), LinuxInstallKind.readOnly);
   });
+
+  group('пакет на системе из образа', () {
+    tearDown(() => LinuxInstall.imageBasedSystem =
+        () => false);
+
+    test('rpm на Silverblue и подобных не ставим через rpm -U', () {
+      LinuxInstall.imageBasedSystem = () => true;
+      expect(
+        LinuxInstall.packageInstallBlocker('/tmp/keqdroid_update.rpm'),
+        contains('rpm-ostree'),
+      );
+    });
+
+    test('на обычной системе и для deb ничего не мешает', () {
+      LinuxInstall.imageBasedSystem = () => false;
+      expect(LinuxInstall.packageInstallBlocker('/tmp/k.rpm'), isNull);
+      LinuxInstall.imageBasedSystem = () => true;
+      expect(LinuxInstall.packageInstallBlocker('/tmp/k.deb'), isNull);
+    });
+  });
 }
