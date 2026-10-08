@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 
@@ -86,7 +87,7 @@ class LinuxCorePaths {
         final dst = File(p.join(dir.path, name));
         if (dst.existsSync() && dst.lengthSync() == src.lengthSync()) continue;
         try {
-          await src.copy(dst.path);
+          await replaceAtomically(dst.path, (tmp) => src.copy(tmp));
         } catch (_) {
           // Занято работающим ядром или нет места: geo-правила не сработают,
           // но подключение важнее — ядро скажет об этом в свой лог.
@@ -179,12 +180,12 @@ class LinuxCorePaths {
     // "Permission denied" (which the UI mis-reported as "VPN permission").
     final fromFlutterBundle = _pathBesideFlutterAssets(fileName);
     if (fromFlutterBundle != null) {
-      return _stageExecutable(fromFlutterBundle, fileName);
+      return stageExecutable(fromFlutterBundle, fileName);
     }
 
     final besideExe = p.join(p.dirname(Platform.resolvedExecutable), fileName);
     if (File(besideExe).existsSync()) {
-      return _stageExecutable(besideExe, fileName);
+      return stageExecutable(besideExe, fileName);
     }
 
     final fromAsset = await _extractAssetToCache(assetKey, fileName);
@@ -198,7 +199,8 @@ class LinuxCorePaths {
 
   /// User-writable cache for runnable core binaries (`~/.cache/keqdroid/cores`).
   static Future<String> _coresCacheDir() async {
-    final base = Platform.environment['XDG_CACHE_HOME'] ??
+    final base = cacheRootOverride ??
+        Platform.environment['XDG_CACHE_HOME'] ??
         p.join(
           Platform.environment['HOME'] ?? Directory.systemTemp.path,
           '.cache',
@@ -208,16 +210,38 @@ class LinuxCorePaths {
     return dir.path;
   }
 
+  /// Раскладки, которые идут прямо сейчас: одна на файл.
+  static final _staging = <String, Future<String>>{};
+
+  /// Каталог кэша вместо `~/.cache` — для тестов.
+  @visibleForTesting
+  static String? cacheRootOverride;
+
   /// Copies [src] into the writable cache (only when missing or a different
   /// size) and marks it executable; returns the runnable path.
-  static Future<String> _stageExecutable(String src, String fileName) async {
+  ///
+  /// Замеры пинга зовут это параллельно, а после обновления ядро другого
+  /// размера и копируется заново. `File.copy` пишет прямо в целевой файл с
+  /// обрезкой (`O_TRUNC`, file_linux.cc в Dart), так что одни замеры
+  /// переписывали ядро, пока другие его запускали. Теперь копия одна на всех,
+  /// и ложится она переименованием готового файла.
+  ///
+  /// Уборка в `whenComplete` — блоком, а не стрелкой: стрелка вернула бы из
+  /// карты эту же раскладку, и `whenComplete` ждал бы сам себя вечно.
+  @visibleForTesting
+  static Future<String> stageExecutable(String src, String fileName) =>
+      _staging[fileName] ??= _stage(src, fileName).whenComplete(() {
+        _staging.remove(fileName);
+      });
+
+  static Future<String> _stage(String src, String fileName) async {
     try {
       final dstPath = p.join(await _coresCacheDir(), fileName);
       final dst = File(dstPath);
       final srcFile = File(src);
       if (!dst.existsSync() ||
           dst.lengthSync() != srcFile.lengthSync()) {
-        await srcFile.copy(dstPath);
+        await replaceAtomically(dstPath, (tmp) => srcFile.copy(tmp));
       }
       await _ensureExecutable(dstPath);
       return dstPath;
@@ -228,6 +252,28 @@ class LinuxCorePaths {
       return src;
     }
   }
+
+  /// Пишет файл рядом под временным именем и переименовывает поверх [path].
+  /// Запущенное ядро на старом файле доработает спокойно: переименование
+  /// меняет только запись в каталоге.
+  @visibleForTesting
+  static Future<void> replaceAtomically(
+    String path,
+    Future<void> Function(String tmpPath) write,
+  ) async {
+    final tmp = '$path.tmp-$pid-${_tmpCounter++}';
+    try {
+      await write(tmp);
+      await File(tmp).rename(path);
+    } catch (_) {
+      try {
+        File(tmp).deleteSync();
+      } catch (_) {}
+      rethrow;
+    }
+  }
+
+  static int _tmpCounter = 0;
 
   /// `build/linux/x64/release/bundle/data/flutter_assets/...`
   static String? _pathBesideFlutterAssets(String fileName) {
@@ -244,7 +290,7 @@ class LinuxCorePaths {
   }
 
   /// Extracts a bundled binary into the stable cores cache (same dir as
-  /// [_stageExecutable]); createTemp-каталог на каждый вызов копил бы мусор.
+  /// [stageExecutable]); createTemp-каталог на каждый вызов копил бы мусор.
   static Future<String?> _extractAssetToCache(
     String assetKey,
     String fileName,
@@ -259,9 +305,12 @@ class LinuxCorePaths {
         return outFile.path;
       }
       try {
-        await outFile.writeAsBytes(bytes, flush: true);
+        await replaceAtomically(
+          outFile.path,
+          (tmp) => File(tmp).writeAsBytes(bytes, flush: true),
+        );
       } on FileSystemException {
-        // бинарь занят запущенным ядром — пользуемся существующей копией
+        // каталог недоступен для записи — пользуемся существующей копией
         if (outFile.existsSync()) return outFile.path;
         rethrow;
       }
