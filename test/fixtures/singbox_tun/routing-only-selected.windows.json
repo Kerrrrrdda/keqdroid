@@ -105,46 +105,6 @@
           "telegram.exe"
         ],
         "outbound": "proxy"
-      },
-      {
-        "domain_suffix": [
-          "ads.example"
-        ],
-        "action": "reject",
-        "method": "drop"
-      },
-      {
-        "ip_cidr": [
-          "198.51.100.10/32"
-        ],
-        "outbound": "direct"
-      },
-      {
-        "domain_suffix": [
-          "direct.example"
-        ],
-        "outbound": "direct"
-      },
-      {
-        "ip_cidr": [
-          "10.10.0.0/16"
-        ],
-        "outbound": "direct"
-      },
-      {
-        "ip_cidr": [
-          "10.0.0.0/8",
-          "172.16.0.0/12",
-          "192.168.0.0/16",
-          "127.0.0.0/8"
-        ],
-        "outbound": "direct"
-      },
-      {
-        "domain_suffix": [
-          "proxy.example"
-        ],
-        "outbound": "proxy"
       }
     ],
     "final": "direct"

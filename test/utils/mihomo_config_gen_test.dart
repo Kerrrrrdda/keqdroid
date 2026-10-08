@@ -1504,18 +1504,26 @@ void main() {
         managed: const ['Telegram.exe'],
       );
       expect(rules.any((r) => r.contains('tailscaled')), isFalse);
-      expect(rules, contains('PROCESS-NAME,Telegram.exe,DIRECT'));
-      // «Всё кроме выбранных» означает, что остальное идёт в туннель.
+      expect(
+        rules,
+        contains(r'PROCESS-NAME-REGEX,^(?:Telegram\x2eexe)$,DIRECT'),
+      );
+      // Остальные приложения идут по спискам и «Всё остальное» (здесь прокси).
       expect(rules.last, 'MATCH,proxy');
     });
 
-    test('«только выбранные» шлёт остальное напрямую', () {
+    // Выбранным — ничего своего: они идут по общим спискам дальше.
+    test('«только выбранные» пускает остальные приложения мимо туннеля', () {
       final rules = rulesFor(
         mode: AppRoutingMode.onlySelected,
         managed: const ['chrome.exe'],
       );
-      expect(rules, contains('PROCESS-NAME,chrome.exe,proxy'));
-      expect(rules.last, 'MATCH,DIRECT');
+      expect(
+        rules,
+        contains(r'PROCESS-NAME-REGEX,^(?!(?:chrome\x2eexe)$),DIRECT'),
+      );
+      expect(rules.any((r) => r.startsWith('PROCESS-NAME,chrome')), isFalse);
+      expect(rules.last, 'MATCH,proxy');
     });
 
     // В локальный инбаунд ходит ровно один процесс — он же был бы

@@ -427,95 +427,106 @@ class SingBoxTunConfigGen {
       }
     }
 
-    if (blockedDomains.isNotEmpty) {
-      addDomainRule(
-        targetRules: rules,
-        sourceDomains: blockedDomains,
-        outbound: 'block',
-      );
-    }
-    // С fake-ip назначение приходит доменом, и правилам по IP сравнивать не с
-    // чем. Настоящий адрес достаём, только если такие правила у пользователя
-    // есть: иначе каждое соединение снова ждало бы DNS, ради отмены которого
-    // fake-ip и включают. Назначением домен при этом остаётся — серверу уходит
-    // имя, а не адрес.
-    if (fakeIp &&
-        (blockedIpsForSingBox.isNotEmpty ||
-            directIpsForSingBox.isNotEmpty ||
-            proxyIpsForSingBox.isNotEmpty)) {
-      rules.add({'action': 'resolve', 'server': 'proxy-dns'});
-    }
-    if (blockedIpsForSingBox.isNotEmpty) {
-      rules.add({'ip_cidr': blockedIpsForSingBox, ...kSingboxBlockAction});
-    }
+    // «Только выбранные»: их трафик правило выше уже отдало встроенному xray,
+    // а списки сайтов и «Всё остальное» он исполняет сам. Сюда доходят только
+    // невыбранные приложения, и они идут мимо туннеля целиком, как на Android,
+    // где VpnService их не берёт. Раньше они шли по спискам ниже и попадали в
+    // VPN по «Через VPN». Без имён процессов (Linux их пока не передаёт)
+    // списки остаются, как было.
+    final selectedOnly = routingMode == AppRoutingMode.onlySelected &&
+        managedProcessNames
+            .any((name) => processNameMatchVariants(name).isNotEmpty);
+    if (!selectedOnly) {
+      if (blockedDomains.isNotEmpty) {
+        addDomainRule(
+          targetRules: rules,
+          sourceDomains: blockedDomains,
+          outbound: 'block',
+        );
+      }
+      // С fake-ip назначение приходит доменом, и правилам по IP сравнивать не с
+      // чем. Настоящий адрес достаём, только если такие правила у пользователя
+      // есть: иначе каждое соединение снова ждало бы DNS, ради отмены которого
+      // fake-ip и включают. Назначением домен при этом остаётся — серверу уходит
+      // имя, а не адрес.
+      if (fakeIp &&
+          (blockedIpsForSingBox.isNotEmpty ||
+              directIpsForSingBox.isNotEmpty ||
+              proxyIpsForSingBox.isNotEmpty)) {
+        rules.add({'action': 'resolve', 'server': 'proxy-dns'});
+      }
+      if (blockedIpsForSingBox.isNotEmpty) {
+        rules.add({'ip_cidr': blockedIpsForSingBox, ...kSingboxBlockAction});
+      }
 
-    // Адрес сервера мимо туннеля — иначе коннект ядра к нему заходит в круг.
-    //
-    // Только настоящий адрес: сюда приезжает результат резолва, а он при
-    // неудаче откатывается на исходную строку сервера, то есть на домен
-    // (`vpn.example.com`). Домен в `ip_cidr` — это `vpn.example.com/32`,
-    // невалидный префикс: sing-box не разбирает такой конфиг вовсе и выходит,
-    // то есть туннель не поднимается совсем. Пропустить правило хуже, чем
-    // уронить ядро, только на первый взгляд: круг ловит правило по имени
-    // процесса выше, а упавшее ядро не ловит ничего.
-    if (_isRoutableIpTarget(serverIpToExclude)) {
-      // Маска по семейству адреса: `/32` на IPv6-адресе — это не «сам сервер»,
-      // а треть интернета (`2a03:…::1/32` → `2a03::/32`), пущенная мимо
-      // туннеля. `ip_cidr` у sing-box принимает и голый адрес, но у нас он
-      // приезжает уже с маской у половины вызовов, так что считаем её сами.
-      final cidrs = serverIpToExclude.contains('/')
-          ? [serverIpToExclude]
-          : ['$serverIpToExclude/${serverIpToExclude.contains(':') ? 128 : 32}'];
-      rules.add({'ip_cidr': cidrs, 'outbound': 'direct'});
-    }
+      // Адрес сервера мимо туннеля — иначе коннект ядра к нему заходит в круг.
+      //
+      // Только настоящий адрес: сюда приезжает результат резолва, а он при
+      // неудаче откатывается на исходную строку сервера, то есть на домен
+      // (`vpn.example.com`). Домен в `ip_cidr` — это `vpn.example.com/32`,
+      // невалидный префикс: sing-box не разбирает такой конфиг вовсе и выходит,
+      // то есть туннель не поднимается совсем. Пропустить правило хуже, чем
+      // уронить ядро, только на первый взгляд: круг ловит правило по имени
+      // процесса выше, а упавшее ядро не ловит ничего.
+      if (_isRoutableIpTarget(serverIpToExclude)) {
+        // Маска по семейству адреса: `/32` на IPv6-адресе — это не «сам сервер»,
+        // а треть интернета (`2a03:…::1/32` → `2a03::/32`), пущенная мимо
+        // туннеля. `ip_cidr` у sing-box принимает и голый адрес, но у нас он
+        // приезжает уже с маской у половины вызовов, так что считаем её сами.
+        final cidrs = serverIpToExclude.contains('/')
+            ? [serverIpToExclude]
+            : ['$serverIpToExclude/${serverIpToExclude.contains(':') ? 128 : 32}'];
+        rules.add({'ip_cidr': cidrs, 'outbound': 'direct'});
+      }
 
-    if (directDomains.isNotEmpty) {
-      addDomainRule(
-        targetRules: rules,
-        sourceDomains: directDomains,
-        outbound: 'direct',
-      );
-    }
+      if (directDomains.isNotEmpty) {
+        addDomainRule(
+          targetRules: rules,
+          sourceDomains: directDomains,
+          outbound: 'direct',
+        );
+      }
 
-    if (directIpsForSingBox.isNotEmpty) {
-      rules.add({'ip_cidr': directIpsForSingBox, 'outbound': 'direct'});
-    }
+      if (directIpsForSingBox.isNotEmpty) {
+        rules.add({'ip_cidr': directIpsForSingBox, 'outbound': 'direct'});
+      }
 
-    rules.add({
-      'ip_cidr': [
-        '10.0.0.0/8',
-        '172.16.0.0/12',
-        '192.168.0.0/16',
-        '127.0.0.0/8',
-        // Локальный IPv6 — только когда мы его вообще забираем: иначе это
-        // мёртвые строки в конфиге у всех.
-        if (captureIpv6) ...kLocalIpv6Cidrs,
-      ],
-      'outbound': 'direct',
-    });
+      rules.add({
+        'ip_cidr': [
+          '10.0.0.0/8',
+          '172.16.0.0/12',
+          '192.168.0.0/16',
+          '127.0.0.0/8',
+          // Локальный IPv6 — только когда мы его вообще забираем: иначе это
+          // мёртвые строки в конфиге у всех.
+          if (captureIpv6) ...kLocalIpv6Cidrs,
+        ],
+        'outbound': 'direct',
+      });
 
-    if (proxyDomains.isNotEmpty) {
-      addDomainRule(
-        targetRules: rules,
-        sourceDomains: proxyDomains,
-        outbound: 'proxy',
-      );
-    }
-    if (proxyIpsForSingBox.isNotEmpty) {
-      rules.add({'ip_cidr': proxyIpsForSingBox, 'outbound': 'proxy'});
-    }
+      if (proxyDomains.isNotEmpty) {
+        addDomainRule(
+          targetRules: rules,
+          sourceDomains: proxyDomains,
+          outbound: 'proxy',
+        );
+      }
+      if (proxyIpsForSingBox.isNotEmpty) {
+        rules.add({'ip_cidr': proxyIpsForSingBox, 'outbound': 'proxy'});
+      }
 
-    // Выход IPv6 наружу закрыт — но после пользовательских правил: явное
-    // IPv6-правило пользователя остаётся сильнее умолчания.
-    //
-    // Смысл именно в закрытии, а не в проксировании: наш DNS отдаёт только
-    // A-записи, значит IPv6-адрес у приложения появляется лишь помимо нас
-    // (свой DoH браузера, литерал в коде). Закрытый выход возвращает такое
-    // соединение на IPv4 мгновенно — Happy Eyeballs делает это за миллисекунды,
-    // — тогда как отправленное в прокси оно висело бы до таймаута на сервере
-    // без IPv6. Локальный IPv6 сюда не попадает: он ушёл в `direct` выше.
-    if (captureIpv6) {
-      rules.add({'ip_cidr': ['::/0'], ...kSingboxBlockAction});
+      // Выход IPv6 наружу закрыт — но после пользовательских правил: явное
+      // IPv6-правило пользователя остаётся сильнее умолчания.
+      //
+      // Смысл именно в закрытии, а не в проксировании: наш DNS отдаёт только
+      // A-записи, значит IPv6-адрес у приложения появляется лишь помимо нас
+      // (свой DoH браузера, литерал в коде). Закрытый выход возвращает такое
+      // соединение на IPv4 мгновенно — Happy Eyeballs делает это за миллисекунды,
+      // — тогда как отправленное в прокси оно висело бы до таймаута на сервере
+      // без IPv6. Локальный IPv6 сюда не попадает: он ушёл в `direct` выше.
+      if (captureIpv6) {
+        rules.add({'ip_cidr': ['::/0'], ...kSingboxBlockAction});
+      }
     }
 
     // Финальное действие (catch-all). При per-app сплите режим сам диктует финал

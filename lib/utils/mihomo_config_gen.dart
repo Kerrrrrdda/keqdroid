@@ -165,12 +165,10 @@ class MihomoConfigGen {
     final processRules = tun != null && !tun.fromFileDescriptor;
 
     // Режим сплита без правил по процессам — это не «сплит не сработал», а
-    // «весь трафик ушёл мимо прокси». Финал у `onlySelected` равен `DIRECT`
-    // («не выбранные приложения идут напрямую»), и держится этот смысл ровно на
-    // правилах `PROCESS-NAME`, которые ставят выбранным приложениям прокси. Там,
-    // где ядро процесс-владельца не знает, правил нет — а финал оставался, и
-    // ядро честно отправляло в `DIRECT` всё: `[TCP] ... match Match using
-    // DIRECT` на каждое соединение при живом «подключено».
+    // «весь трафик ушёл мимо прокси»: «только выбранные» без имён процессов
+    // держит финал `DIRECT` (см. [buildRules]), и ядро честно отправляло в
+    // `DIRECT` всё — `[TCP] ... match Match using DIRECT` на каждое соединение
+    // при живом «подключено».
     //
     // Так ломался десктопный proxy-режим (туннеля у ядра нет, процесс искать
     // негде) — и ровно так же ломался бы Android, где владельца по соединению
@@ -332,7 +330,6 @@ class MihomoConfigGen {
             routingMode: routingMode,
             managedProcessNames: managedProcessNames,
             appProcessName: appProcessName,
-            proxyTarget: clash.primaryTarget,
             windows: windows,
           ),
         ...buildServerDirectRules(
@@ -2076,7 +2073,6 @@ class MihomoConfigGen {
         routingMode: routingMode,
         managedProcessNames: managedProcessNames,
         appProcessName: appProcessName,
-        proxyTarget: proxyTarget,
         windows: windows,
       ),
       ...buildUserRules(settings, blockedOnly: true),
@@ -2096,14 +2092,19 @@ class MihomoConfigGen {
       ),
     ];
 
-    // При пер-аппном сплите финал несёт смысл «остальные приложения идут
-    // мимо/через туннель», и выбор пользователя в «финальном действии» его не
-    // отменяет: он про трафик, а не про приложения.
-    final finalTarget = switch (routingMode) {
-      AppRoutingMode.onlySelected => 'DIRECT',
-      AppRoutingMode.allExceptSelected => proxyTarget,
-      AppRoutingMode.allProxy => _finalTarget(settings.finalOutbound, proxyTarget),
-    };
+    // Сплит решает, чьи соединения вообще идут в туннель (правило по процессам
+    // выше), а финал — что туннель делает с тем, что не попало в списки. Так
+    // же у keqrnel, где финал исполняет встроенный xray, и на Android. Раньше
+    // сплит подменял финал собой, и «Всё остальное» при нём не действовало.
+    //
+    // Исключение — «только выбранные» без единого имени процесса: на Linux
+    // имена в генератор пока не передаются, и там остаётся прежний DIRECT,
+    // иначе сплит молча стал бы «всё через VPN».
+    final unnamedSelection = routingMode == AppRoutingMode.onlySelected &&
+        managedProcessNames.every((name) => name.trim().isEmpty);
+    final finalTarget = unnamedSelection
+        ? 'DIRECT'
+        : _finalTarget(settings.finalOutbound, proxyTarget);
 
     return [...rules, 'MATCH,$finalTarget'];
   }
@@ -2127,14 +2128,13 @@ class MihomoConfigGen {
   /// раньше пользовательского сплита, иначе выбранный «весь трафик кроме…»
   /// режим утащил бы в туннель и наши пинг-сокеты.
   ///
-  /// Имя сравнивается без учёта регистра (`strings.EqualFold` в
-  /// `rules/common/process.go`), поэтому вариантов регистра, как у sing-box с
-  /// его map-lookup'ом, тут не нужно.
+  /// Имя сравнивается без учёта регистра (`strings.EqualFold` и regexp2 с
+  /// IgnoreCase в `rules/common/process.go`), поэтому вариантов регистра, как у
+  /// sing-box с его map-lookup'ом, тут не нужно.
   static List<String> buildProcessRules({
     required AppRoutingMode routingMode,
     required List<String> managedProcessNames,
     required String appProcessName,
-    String proxyTarget = proxyName,
     bool? windows,
   }) {
     final app = appProcessName.trim();
@@ -2175,19 +2175,48 @@ class MihomoConfigGen {
       ],
     ];
 
-    for (final process in managedProcessNames) {
-      final name = process.trim();
-      if (name.isEmpty) continue;
-      switch (routingMode) {
-        case AppRoutingMode.onlySelected:
-          rules.add('PROCESS-NAME,$name,$proxyTarget');
-        case AppRoutingMode.allExceptSelected:
-          rules.add('PROCESS-NAME,$name,DIRECT');
-        case AppRoutingMode.allProxy:
-          break;
-      }
+    // Сплит — одним правилом «мимо туннеля» для тех, кто в туннель не идёт:
+    // невыбранных или исключённых. Остальные проходят дальше по общим спискам,
+    // как на Android, где VpnService просто не берёт чужие приложения. Прежнее
+    // «выбранное приложение — сразу в прокси» стояло раньше списков, и
+    // «Напрямую: ru» на выбранные приложения не действовало вовсе.
+    final names = [
+      for (final process in managedProcessNames)
+        if (process.trim().isNotEmpty) process.trim(),
+    ];
+    if (names.isEmpty) return rules;
+    final anyOf = names.map(_processNamePattern).join('|');
+    switch (routingMode) {
+      case AppRoutingMode.onlySelected:
+        rules.add('PROCESS-NAME-REGEX,^(?!(?:$anyOf)\$),DIRECT');
+      case AppRoutingMode.allExceptSelected:
+        rules.add('PROCESS-NAME-REGEX,^(?:$anyOf)\$,DIRECT');
+      case AppRoutingMode.allProxy:
+        break;
     }
     return rules;
+  }
+
+  /// Имя процесса буквально, внутри регулярки `PROCESS-NAME-REGEX`.
+  ///
+  /// Регулярка, а не `PROCESS-NAME` на каждое имя или `NOT,((OR,…))`: ядро
+  /// режет правило по запятым, а в логических правилах ещё и считает скобки.
+  /// exe с запятой в имени уже ронял разбор всего конфига, и ядро не
+  /// запускалось; скобка уронила бы логическое правило так же. Поэтому всё,
+  /// кроме латиницы и цифр, пишется кодом `\xNN`.
+  static String _processNamePattern(String name) {
+    final out = StringBuffer();
+    for (final rune in name.runes) {
+      final isAsciiAlnum = (rune >= 0x30 && rune <= 0x39) ||
+          (rune >= 0x41 && rune <= 0x5a) ||
+          (rune >= 0x61 && rune <= 0x7a);
+      if (isAsciiAlnum || rune > 0x7f) {
+        out.writeCharCode(rune);
+      } else {
+        out.write('\\x${rune.toRadixString(16).padLeft(2, '0')}');
+      }
+    }
+    return out.toString();
   }
 
   /// Сам сервер — мимо туннеля, иначе обращение к его адресу закольцуется.

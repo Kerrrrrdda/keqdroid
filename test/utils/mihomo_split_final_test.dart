@@ -6,13 +6,11 @@ import 'package:keqdroid/utils/mihomo_config_gen.dart';
 
 /// Режим сплита без правил по процессам отправлял ВЕСЬ трафик мимо прокси.
 ///
-/// Финал у `onlySelected` — `DIRECT` («не выбранные приложения идут
-/// напрямую»), и держится этот смысл на правилах `PROCESS-NAME`, которые ставят
-/// выбранным приложениям прокси. Там, где ядро владельца соединения не знает
-/// (десктопный proxy-режим — туннеля у ядра нет; Android — владельца не отдаёт
-/// система), правил нет, а финал оставался. Ядро честно исполняло его на всём:
-/// `[TCP] ... match Match using DIRECT` на каждое соединение при живом
-/// «подключено», то есть «прокси-режим не работает вообще».
+/// «Только выбранные» без имён процессов держит финал `DIRECT`. Там, где ядро
+/// владельца соединения не знает (десктопный proxy-режим — туннеля у ядра нет;
+/// Android — владельца не отдаёт система), имён нет, и ядро честно исполняло
+/// финал на всём: `[TCP] ... match Match using DIRECT` на каждое соединение
+/// при живом «подключено», то есть «прокси-режим не работает вообще».
 const _link = 'vless://uuid@example.com:443?type=tcp&security=none';
 
 List<String> _rules(Map<String, dynamic> config) =>
@@ -49,7 +47,7 @@ void main() {
     );
   });
 
-  test('TUN-режим: сплит по процессам работает как раньше', () {
+  test('TUN-режим: невыбранные мимо туннеля, финал — «Всё остальное»', () {
     final config = MihomoConfigGen.build(
       _link,
       const AppSettings(),
@@ -64,14 +62,13 @@ void main() {
 
     final rules = _rules(config);
     expect(
-      rules.last,
-      'MATCH,DIRECT',
+      rules,
+      contains(
+        r'PROCESS-NAME-REGEX,^(?!(?:firefox\x2eexe|Discord\x2eexe)$),DIRECT',
+      ),
       reason: 'не выбранные приложения обязаны идти напрямую',
     );
-    expect(
-      rules.where((r) => r.startsWith('PROCESS-NAME,firefox.exe')).length,
-      1,
-    );
+    expect(rules.last, 'MATCH,proxy', reason: '«Всё остальное» по умолчанию');
   });
 
   test('Android (fd-туннель): финал прокси, сплит исполняет VpnService', () {
