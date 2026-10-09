@@ -495,6 +495,13 @@ class _NetworkServerRoutingScreen extends ConsumerWidget {
                   color: AppTheme.textLight(context),
                 ),
               ),
+              const SizedBox(height: 8),
+              Text(
+                l10n.splitTunnelingReconnectHint,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppTheme.textLight(context),
+                ),
+              ),
               const SizedBox(height: 24),
               DropdownButtonFormField<String>(
                 key: ValueKey('wifi-${selectedId(settings.wifiServerId)}'),
