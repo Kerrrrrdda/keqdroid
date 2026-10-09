@@ -182,10 +182,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsNetworkRoutingCellular => "移动数据";
 
   @override
-  String get settingsNetworkRoutingDefault => "使用当前服务器";
+  String get settingsNetworkRoutingDefault => "此网络使用当前服务器";
 
   @override
-  String get settingsNetworkRoutingHint => "仅在 Android VPN 模式下生效。网络切换时会重启核心，连接可能短暂中断。备用服务器必须使用与当前服务器相同的核心。";
+  String get settingsNetworkRoutingHint => "Wi-Fi 和移动数据的服务器选择彼此独立。“此网络使用当前服务器”只应用于当前字段。仅在 Android VPN 模式下生效。网络切换时会重启核心，连接可能短暂中断。备用服务器必须使用与当前服务器相同的核心。";
 
   @override
   String settingsSplitConfigured(int count) {
