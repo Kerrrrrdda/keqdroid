@@ -337,6 +337,78 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String settingsRoutingLinkDomains(int count, String formatted) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$formatted domains from links',
+      one: '1 domain from links',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String settingsRoutingCountWithLinks(String items, String links) {
+    return '$items, $links';
+  }
+
+  @override
+  String ruleListDomainCount(int count, String formatted) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$formatted domains',
+      one: '1 domain',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String ruleListLoaded(String host, String domains, String when) {
+    return '$host — $domains, updated $when';
+  }
+
+  @override
+  String ruleListLoadedStale(String host, String domains, String when) {
+    return '$host — $domains, updated $when; the latest copy did not download';
+  }
+
+  @override
+  String ruleListLoading(String host) {
+    return '$host — downloading…';
+  }
+
+  @override
+  String ruleListFailedNetwork(String host) {
+    return '$host — not downloaded, will retry on the next connection';
+  }
+
+  @override
+  String ruleListFailedInsecure(String host) {
+    return '$host — the link must start with https';
+  }
+
+  @override
+  String ruleListFailedHttp(String host, int code) {
+    return '$host — the server replied $code';
+  }
+
+  @override
+  String ruleListFailedTooLarge(String host) {
+    return '$host — the file is larger than 30 MB';
+  }
+
+  @override
+  String ruleListFailedEmpty(String host) {
+    return '$host — no domains in the file';
+  }
+
+  @override
+  String ruleListMemoryWarning(String limit) {
+    return 'More than $limit domains from links: the core will need much more memory, and the system may close it in the background.';
+  }
+
+  @override
   String settingsAndroidColorsSubtitle(Object mode) {
     return 'Android colors · $mode';
   }

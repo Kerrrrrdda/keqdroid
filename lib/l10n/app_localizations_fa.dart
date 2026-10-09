@@ -337,6 +337,76 @@ class AppLocalizationsFa extends AppLocalizations {
   }
 
   @override
+  String settingsRoutingLinkDomains(int count, String formatted) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$formatted دامنه از لینک‌ها',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String settingsRoutingCountWithLinks(String items, String links) {
+    return '$items، $links';
+  }
+
+  @override
+  String ruleListDomainCount(int count, String formatted) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$formatted دامنه',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String ruleListLoaded(String host, String domains, String when) {
+    return '$host — $domains، به‌روز شده $when';
+  }
+
+  @override
+  String ruleListLoadedStale(String host, String domains, String when) {
+    return '$host — $domains، به‌روز شده $when؛ نسخهٔ تازه دریافت نشد';
+  }
+
+  @override
+  String ruleListLoading(String host) {
+    return '$host — در حال دریافت…';
+  }
+
+  @override
+  String ruleListFailedNetwork(String host) {
+    return '$host — دریافت نشد، در اتصال بعدی دوباره تلاش می‌شود';
+  }
+
+  @override
+  String ruleListFailedInsecure(String host) {
+    return '$host — لینک باید با https شروع شود';
+  }
+
+  @override
+  String ruleListFailedHttp(String host, int code) {
+    return '$host — سرور با کد $code پاسخ داد';
+  }
+
+  @override
+  String ruleListFailedTooLarge(String host) {
+    return '$host — فایل بزرگ‌تر از 30 مگابایت است';
+  }
+
+  @override
+  String ruleListFailedEmpty(String host) {
+    return '$host — در فایل دامنه‌ای نیست';
+  }
+
+  @override
+  String ruleListMemoryWarning(String limit) {
+    return 'بیش از $limit دامنه از لینک‌ها: هسته حافظهٔ خیلی بیشتری لازم دارد و سیستم ممکن است آن را در پس‌زمینه ببندد.';
+  }
+
+  @override
   String settingsAndroidColorsSubtitle(Object mode) {
     return 'رنگ‌های اندروید · $mode';
   }

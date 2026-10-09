@@ -707,6 +707,78 @@ abstract class AppLocalizations {
   /// **'{count, plural, =0{empty} =1{1 entry} other{{count} entries}}'**
   String settingsRoutingItemCount(int count);
 
+  /// No description provided for @settingsRoutingLinkDomains.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 domain from links} other{{formatted} domains from links}}'**
+  String settingsRoutingLinkDomains(int count, String formatted);
+
+  /// No description provided for @settingsRoutingCountWithLinks.
+  ///
+  /// In en, this message translates to:
+  /// **'{items}, {links}'**
+  String settingsRoutingCountWithLinks(String items, String links);
+
+  /// No description provided for @ruleListDomainCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 domain} other{{formatted} domains}}'**
+  String ruleListDomainCount(int count, String formatted);
+
+  /// No description provided for @ruleListLoaded.
+  ///
+  /// In en, this message translates to:
+  /// **'{host} — {domains}, updated {when}'**
+  String ruleListLoaded(String host, String domains, String when);
+
+  /// No description provided for @ruleListLoadedStale.
+  ///
+  /// In en, this message translates to:
+  /// **'{host} — {domains}, updated {when}; the latest copy did not download'**
+  String ruleListLoadedStale(String host, String domains, String when);
+
+  /// No description provided for @ruleListLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'{host} — downloading…'**
+  String ruleListLoading(String host);
+
+  /// No description provided for @ruleListFailedNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'{host} — not downloaded, will retry on the next connection'**
+  String ruleListFailedNetwork(String host);
+
+  /// No description provided for @ruleListFailedInsecure.
+  ///
+  /// In en, this message translates to:
+  /// **'{host} — the link must start with https'**
+  String ruleListFailedInsecure(String host);
+
+  /// No description provided for @ruleListFailedHttp.
+  ///
+  /// In en, this message translates to:
+  /// **'{host} — the server replied {code}'**
+  String ruleListFailedHttp(String host, int code);
+
+  /// No description provided for @ruleListFailedTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'{host} — the file is larger than 30 MB'**
+  String ruleListFailedTooLarge(String host);
+
+  /// No description provided for @ruleListFailedEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'{host} — no domains in the file'**
+  String ruleListFailedEmpty(String host);
+
+  /// No description provided for @ruleListMemoryWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'More than {limit} domains from links: the core will need much more memory, and the system may close it in the background.'**
+  String ruleListMemoryWarning(String limit);
+
   /// No description provided for @settingsAndroidColorsSubtitle.
   ///
   /// In en, this message translates to:

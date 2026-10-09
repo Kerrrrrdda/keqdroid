@@ -337,6 +337,76 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String settingsRoutingLinkDomains(int count, String formatted) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '来自链接的 $formatted 个域名',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String settingsRoutingCountWithLinks(String items, String links) {
+    return '$items，$links';
+  }
+
+  @override
+  String ruleListDomainCount(int count, String formatted) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$formatted 个域名',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String ruleListLoaded(String host, String domains, String when) {
+    return '$host：$domains，$when更新';
+  }
+
+  @override
+  String ruleListLoadedStale(String host, String domains, String when) {
+    return '$host：$domains，$when更新；最新版本下载失败';
+  }
+
+  @override
+  String ruleListLoading(String host) {
+    return '$host：正在下载…';
+  }
+
+  @override
+  String ruleListFailedNetwork(String host) {
+    return '$host：下载失败，将在下次连接时重试';
+  }
+
+  @override
+  String ruleListFailedInsecure(String host) {
+    return '$host：链接必须以 https 开头';
+  }
+
+  @override
+  String ruleListFailedHttp(String host, int code) {
+    return '$host：服务器返回 $code';
+  }
+
+  @override
+  String ruleListFailedTooLarge(String host) {
+    return '$host：文件超过 30 MB';
+  }
+
+  @override
+  String ruleListFailedEmpty(String host) {
+    return '$host：文件中没有域名';
+  }
+
+  @override
+  String ruleListMemoryWarning(String limit) {
+    return '链接中的域名超过 $limit 个：内核会占用明显更多的内存，系统可能会在后台将其关闭。';
+  }
+
+  @override
   String settingsAndroidColorsSubtitle(Object mode) {
     return 'Android 颜色 · $mode';
   }

@@ -6,6 +6,7 @@ import 'package:keqdroid/l10n/app_localizations.dart';
 import 'package:keqdroid/models/app_settings.dart';
 import 'package:keqdroid/providers/providers.dart';
 import 'package:keqdroid/screens/settings_tab.dart';
+import 'package:keqdroid/services/rule_list_service.dart';
 import 'package:keqdroid/services/vpn_engine.dart';
 import 'package:keqdroid/shared/ui/expressive_button_group.dart';
 
@@ -39,12 +40,22 @@ class _FakeVpn extends VpnStateNotifier {
   }
 }
 
+/// Списки по ссылкам без сети и диска: экран только показывает их состояние.
+class _FakeRuleLists extends RuleListsNotifier {
+  _FakeRuleLists(this._statuses);
+  final Map<String, RuleListStatus> _statuses;
+
+  @override
+  Map<String, RuleListStatus> build() => _statuses;
+}
+
 late _FakeVpn _vpn;
 
 Future<ProviderContainer> _pump(
   WidgetTester tester, {
   VpnStatus status = VpnStatus.disconnected,
   AppSettings settings = const AppSettings(directRules: 'vk.com'),
+  Map<String, RuleListStatus> ruleLists = const {},
 }) async {
   tester.view.physicalSize = const Size(1080, 2400);
   tester.view.devicePixelRatio = 2.625;
@@ -57,6 +68,7 @@ Future<ProviderContainer> _pump(
       storageProvider.overrideWithValue(storage),
       settingsNotifierProvider.overrideWith(() => _FakeSettings(settings)),
       vpnStateProvider.overrideWith(() => _vpn),
+      ruleListsProvider.overrideWith(() => _FakeRuleLists(ruleLists)),
       vpnEngineProvider.overrideWithValue(
         VpnEngine.withBackend(FakeTunnelBackend()),
       ),
@@ -153,6 +165,82 @@ void main() {
       (tester) async {
     await _pump(tester);
     expect(find.text('Переподключить'), findsNothing);
+  });
+
+  group('списки по ссылкам', () {
+    const ads = 'https://adguardteam.github.io/filter.txt';
+    const big = 'https://big.oisd.nl/';
+    const local = 'https://lists.example/hosts';
+
+    testWidgets('под полем строка на каждую ссылку, в подписи их домены',
+        (tester) async {
+      await _pump(
+        tester,
+        settings: const AppSettings(
+          directRules: 'vk.com',
+          blockedRules: 'doubleclick.net, $ads\n$big\n$local',
+        ),
+        ruleLists: {
+          ads: RuleListStatus(
+            url: ads,
+            domains: 82341,
+            updatedAt: DateTime.now().subtract(const Duration(hours: 3)),
+          ),
+          big: const RuleListStatus(
+            url: big,
+            failure: RuleListFailure.network,
+          ),
+          local: RuleListStatus(
+            url: local,
+            domains: 120,
+            updatedAt: DateTime.now().subtract(const Duration(days: 2)),
+            failure: RuleListFailure.http,
+            httpStatus: 404,
+          ),
+        },
+      );
+
+      String plain(String s) => s.replaceAll(RegExp('[\u2066-\u2069]'), '');
+      final texts = tester
+          .widgetList<Text>(find.byType(Text))
+          .map((t) => plain(t.data ?? ''))
+          .toList();
+
+      expect(texts, contains('1 запись, 82\u00a0461 домен по ссылкам'));
+      expect(
+        texts,
+        contains('adguardteam.github.io — 82\u00a0341 домен, обновлён 3ч назад'),
+      );
+      expect(
+        texts,
+        contains(
+          'big.oisd.nl — не загрузился, повтор при следующем подключении',
+        ),
+      );
+      // Скачанное раньше остаётся в силе — строка об этом, а не об ошибке.
+      expect(
+        texts,
+        contains(
+          'lists.example — 120 доменов, обновлён 2д назад, '
+          'свежий не загрузился',
+        ),
+      );
+    });
+
+    testWidgets('пока ничего не скачано, ссылка — обычная запись',
+        (tester) async {
+      await _pump(
+        tester,
+        settings: const AppSettings(blockedRules: ads),
+        ruleLists: {ads: const RuleListStatus(url: ads, loading: true)},
+      );
+      final texts = tester
+          .widgetList<Text>(find.byType(Text))
+          .map((t) => (t.data ?? '').replaceAll(RegExp('[\u2066-\u2069]'), ''))
+          .toList();
+      expect(texts, contains('1 запись'));
+      expect(texts, contains('adguardteam.github.io — загружается…'));
+    });
   });
 
   test('счётчик записей склоняется и для 21, 22, 25', () {

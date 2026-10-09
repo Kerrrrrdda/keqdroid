@@ -156,6 +156,126 @@
       }
     }
   },
+  "settingsRoutingLinkDomains": "{count, plural, other{来自链接的 {formatted} 个域名}}",
+  "@settingsRoutingLinkDomains": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "formatted": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsRoutingCountWithLinks": "{items}，{links}",
+  "@settingsRoutingCountWithLinks": {
+    "placeholders": {
+      "items": {
+        "type": "String"
+      },
+      "links": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListDomainCount": "{count, plural, other{{formatted} 个域名}}",
+  "@ruleListDomainCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "formatted": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListLoaded": "{host}：{domains}，{when}更新",
+  "@ruleListLoaded": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      },
+      "domains": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListLoadedStale": "{host}：{domains}，{when}更新；最新版本下载失败",
+  "@ruleListLoadedStale": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      },
+      "domains": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListLoading": "{host}：正在下载…",
+  "@ruleListLoading": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListFailedNetwork": "{host}：下载失败，将在下次连接时重试",
+  "@ruleListFailedNetwork": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListFailedInsecure": "{host}：链接必须以 https 开头",
+  "@ruleListFailedInsecure": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListFailedHttp": "{host}：服务器返回 {code}",
+  "@ruleListFailedHttp": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      },
+      "code": {
+        "type": "int"
+      }
+    }
+  },
+  "ruleListFailedTooLarge": "{host}：文件超过 30 MB",
+  "@ruleListFailedTooLarge": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListFailedEmpty": "{host}：文件中没有域名",
+  "@ruleListFailedEmpty": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListMemoryWarning": "链接中的域名超过 {limit} 个：内核会占用明显更多的内存，系统可能会在后台将其关闭。",
+  "@ruleListMemoryWarning": {
+    "placeholders": {
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
   "settingsAndroidColorsSubtitle": "Android 颜色 · {mode}",
   "@settingsAndroidColorsSubtitle": {
     "placeholders": {

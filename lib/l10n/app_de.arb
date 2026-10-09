@@ -156,6 +156,126 @@
       }
     }
   },
+  "settingsRoutingLinkDomains": "{count, plural, =1{1 Domain aus Links} other{{formatted} Domains aus Links}}",
+  "@settingsRoutingLinkDomains": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "formatted": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsRoutingCountWithLinks": "{items}, {links}",
+  "@settingsRoutingCountWithLinks": {
+    "placeholders": {
+      "items": {
+        "type": "String"
+      },
+      "links": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListDomainCount": "{count, plural, =1{1 Domain} other{{formatted} Domains}}",
+  "@ruleListDomainCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "formatted": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListLoaded": "{host} – {domains}, aktualisiert {when}",
+  "@ruleListLoaded": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      },
+      "domains": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListLoadedStale": "{host} – {domains}, aktualisiert {when}; die neue Fassung wurde nicht geladen",
+  "@ruleListLoadedStale": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      },
+      "domains": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListLoading": "{host} – wird geladen…",
+  "@ruleListLoading": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListFailedNetwork": "{host} – nicht geladen, neuer Versuch bei der nächsten Verbindung",
+  "@ruleListFailedNetwork": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListFailedInsecure": "{host} – der Link muss mit https beginnen",
+  "@ruleListFailedInsecure": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListFailedHttp": "{host} – der Server antwortete mit {code}",
+  "@ruleListFailedHttp": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      },
+      "code": {
+        "type": "int"
+      }
+    }
+  },
+  "ruleListFailedTooLarge": "{host} – die Datei ist größer als 30 MB",
+  "@ruleListFailedTooLarge": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListFailedEmpty": "{host} – keine Domains in der Datei",
+  "@ruleListFailedEmpty": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListMemoryWarning": "Mehr als {limit} Domains aus Links: Der Kern braucht deutlich mehr Speicher, und das System kann ihn im Hintergrund beenden.",
+  "@ruleListMemoryWarning": {
+    "placeholders": {
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
   "settingsAndroidColorsSubtitle": "Android-Farben · {mode}",
   "@settingsAndroidColorsSubtitle": {
     "placeholders": {

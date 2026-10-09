@@ -156,6 +156,126 @@
       }
     }
   },
+  "settingsRoutingLinkDomains": "{count, plural, =1{1 domain from links} other{{formatted} domains from links}}",
+  "@settingsRoutingLinkDomains": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "formatted": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsRoutingCountWithLinks": "{items}, {links}",
+  "@settingsRoutingCountWithLinks": {
+    "placeholders": {
+      "items": {
+        "type": "String"
+      },
+      "links": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListDomainCount": "{count, plural, =1{1 domain} other{{formatted} domains}}",
+  "@ruleListDomainCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "formatted": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListLoaded": "{host} — {domains}, updated {when}",
+  "@ruleListLoaded": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      },
+      "domains": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListLoadedStale": "{host} — {domains}, updated {when}; the latest copy did not download",
+  "@ruleListLoadedStale": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      },
+      "domains": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListLoading": "{host} — downloading…",
+  "@ruleListLoading": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListFailedNetwork": "{host} — not downloaded, will retry on the next connection",
+  "@ruleListFailedNetwork": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListFailedInsecure": "{host} — the link must start with https",
+  "@ruleListFailedInsecure": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListFailedHttp": "{host} — the server replied {code}",
+  "@ruleListFailedHttp": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      },
+      "code": {
+        "type": "int"
+      }
+    }
+  },
+  "ruleListFailedTooLarge": "{host} — the file is larger than 30 MB",
+  "@ruleListFailedTooLarge": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListFailedEmpty": "{host} — no domains in the file",
+  "@ruleListFailedEmpty": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListMemoryWarning": "More than {limit} domains from links: the core will need much more memory, and the system may close it in the background.",
+  "@ruleListMemoryWarning": {
+    "placeholders": {
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
   "settingsAndroidColorsSubtitle": "Android colors · {mode}",
   "@settingsAndroidColorsSubtitle": {
     "placeholders": {

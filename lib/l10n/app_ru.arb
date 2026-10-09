@@ -156,6 +156,126 @@
       }
     }
   },
+  "settingsRoutingLinkDomains": "{count, plural, one{{formatted} домен по ссылкам} few{{formatted} домена по ссылкам} many{{formatted} доменов по ссылкам} other{{formatted} домена по ссылкам}}",
+  "@settingsRoutingLinkDomains": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "formatted": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsRoutingCountWithLinks": "{items}, {links}",
+  "@settingsRoutingCountWithLinks": {
+    "placeholders": {
+      "items": {
+        "type": "String"
+      },
+      "links": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListDomainCount": "{count, plural, one{{formatted} домен} few{{formatted} домена} many{{formatted} доменов} other{{formatted} домена}}",
+  "@ruleListDomainCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "formatted": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListLoaded": "{host} — {domains}, обновлён {when}",
+  "@ruleListLoaded": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      },
+      "domains": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListLoadedStale": "{host} — {domains}, обновлён {when}, свежий не загрузился",
+  "@ruleListLoadedStale": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      },
+      "domains": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListLoading": "{host} — загружается…",
+  "@ruleListLoading": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListFailedNetwork": "{host} — не загрузился, повтор при следующем подключении",
+  "@ruleListFailedNetwork": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListFailedInsecure": "{host} — нужна ссылка, начинающаяся с https",
+  "@ruleListFailedInsecure": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListFailedHttp": "{host} — сервер ответил {code}",
+  "@ruleListFailedHttp": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      },
+      "code": {
+        "type": "int"
+      }
+    }
+  },
+  "ruleListFailedTooLarge": "{host} — файл больше 30 МБ",
+  "@ruleListFailedTooLarge": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListFailedEmpty": "{host} — в файле нет доменов",
+  "@ruleListFailedEmpty": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleListMemoryWarning": "Больше {limit} доменов по ссылкам: ядру понадобится заметно больше памяти, и в фоне система может его закрыть.",
+  "@ruleListMemoryWarning": {
+    "placeholders": {
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
   "settingsAndroidColorsSubtitle": "Цвета Android · {mode}",
   "@settingsAndroidColorsSubtitle": {
     "placeholders": {

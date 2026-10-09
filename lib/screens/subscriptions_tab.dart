@@ -39,6 +39,7 @@ import '../utils/bidi.dart';
 import '../utils/error_messages.dart';
 import '../utils/external_link.dart';
 import '../utils/identity_presets.dart';
+import '../utils/time_ago.dart';
 
 part 'subscriptions/card_look_sheet.dart';
 part 'subscriptions/identity_sheet.dart';
@@ -544,15 +545,8 @@ class _SubsErrorView extends StatelessWidget {
 ///
 /// Функция верхнего уровня, а не метод состояния: тем же самым пользуются
 /// вынесенные плашки, а состояния карточки у них нет.
-String _subFormatDate(BuildContext context, DateTime dt) {
-  final l10n = AppLocalizations.of(context)!;
-  final now = DateTime.now();
-  final diff = now.difference(dt);
-  if (diff.inMinutes < 1) return l10n.subscriptionsJustNow;
-  if (diff.inHours < 1) return l10n.subscriptionsMinutesAgo(diff.inMinutes);
-  if (diff.inDays < 1) return l10n.subscriptionsHoursAgo(diff.inHours);
-  return l10n.subscriptionsDaysAgo(diff.inDays);
-}
+String _subFormatDate(BuildContext context, DateTime dt) =>
+    timeAgo(AppLocalizations.of(context)!, dt);
 
 /// Объявление провайдера на карточке подписки.
 ///

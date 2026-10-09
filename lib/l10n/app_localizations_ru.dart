@@ -339,6 +339,82 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String settingsRoutingLinkDomains(int count, String formatted) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$formatted домена по ссылкам',
+      many: '$formatted доменов по ссылкам',
+      few: '$formatted домена по ссылкам',
+      one: '$formatted домен по ссылкам',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String settingsRoutingCountWithLinks(String items, String links) {
+    return '$items, $links';
+  }
+
+  @override
+  String ruleListDomainCount(int count, String formatted) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$formatted домена',
+      many: '$formatted доменов',
+      few: '$formatted домена',
+      one: '$formatted домен',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String ruleListLoaded(String host, String domains, String when) {
+    return '$host — $domains, обновлён $when';
+  }
+
+  @override
+  String ruleListLoadedStale(String host, String domains, String when) {
+    return '$host — $domains, обновлён $when, свежий не загрузился';
+  }
+
+  @override
+  String ruleListLoading(String host) {
+    return '$host — загружается…';
+  }
+
+  @override
+  String ruleListFailedNetwork(String host) {
+    return '$host — не загрузился, повтор при следующем подключении';
+  }
+
+  @override
+  String ruleListFailedInsecure(String host) {
+    return '$host — нужна ссылка, начинающаяся с https';
+  }
+
+  @override
+  String ruleListFailedHttp(String host, int code) {
+    return '$host — сервер ответил $code';
+  }
+
+  @override
+  String ruleListFailedTooLarge(String host) {
+    return '$host — файл больше 30 МБ';
+  }
+
+  @override
+  String ruleListFailedEmpty(String host) {
+    return '$host — в файле нет доменов';
+  }
+
+  @override
+  String ruleListMemoryWarning(String limit) {
+    return 'Больше $limit доменов по ссылкам: ядру понадобится заметно больше памяти, и в фоне система может его закрыть.';
+  }
+
+  @override
   String settingsAndroidColorsSubtitle(Object mode) {
     return 'Цвета Android · $mode';
   }

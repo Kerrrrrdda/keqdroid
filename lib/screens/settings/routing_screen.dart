@@ -205,11 +205,33 @@ class _RoutingScreenState extends ConsumerState<_RoutingScreen> {
       };
 
 
-  static int _countEntries(String raw) => raw
-      .split(RegExp(r'[\n,]'))
-      .map((e) => e.trim())
-      .where((e) => e.isNotEmpty)
-      .length;
+  /// Подпись строки: записи поля, а со скачанными списками ещё и их домены.
+  /// Пока ни один список не скачан, ссылка считается обычной записью, иначе
+  /// поле с одной ссылкой называлось бы пустым.
+  String _listSubtitle(
+    AppLocalizations l10n,
+    List<String> entries,
+    int linkedDomains,
+  ) {
+    if (linkedDomains == 0) return l10n.settingsRoutingItemCount(entries.length);
+    final plain = entries.where((e) => !isRuleListUrl(e)).length;
+    final links = l10n.settingsRoutingLinkDomains(
+      linkedDomains,
+      _groupedCount(linkedDomains),
+    );
+    if (plain == 0) return links;
+    return l10n.settingsRoutingCountWithLinks(
+      l10n.settingsRoutingItemCount(plain),
+      links,
+    );
+  }
+
+  /// Тысячи разделены по-местному, но цифры латинские и в фарси: остальные
+  /// числа в приложении печатает код, и персидские стояли бы одни на экране.
+  String _groupedCount(int n) {
+    final lang = Localizations.localeOf(context).languageCode;
+    return NumberFormat.decimalPattern(lang == 'fa' ? 'en' : lang).format(n);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -759,13 +781,21 @@ class _RoutingScreenState extends ConsumerState<_RoutingScreen> {
     required GeoAssetIndex geoIndex,
   }) {
     final unknown = unknownGeoTokens(controller.text, geoIndex);
+    final entries = routingEntries(controller.text);
+    // Статус есть только у сохранённых ссылок: недопечатанная ещё не ушла в
+    // настройки, и строки под ней пока нет.
+    final statuses = ref.watch(ruleListsProvider);
+    final lists = [
+      for (final url in ruleListUrls(controller.text)) ?statuses[url],
+    ];
+    final linkedDomains = lists.fold(0, (sum, s) => sum + s.domains);
     return _row(
       label: _rowLabel(
         icon: icon,
         background: color.withValues(alpha: 0.16),
         foreground: color,
         title: title,
-        subtitle: l10n.settingsRoutingItemCount(_countEntries(controller.text)),
+        subtitle: _listSubtitle(l10n, entries, linkedDomains),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -777,10 +807,92 @@ class _RoutingScreenState extends ConsumerState<_RoutingScreen> {
             field: field,
             geoIndex: geoIndex,
           ),
+          if (lists.isNotEmpty) ...[
+            const SizedBox(height: ExpressiveSpacing.small),
+            for (final status in lists) _ruleListLine(l10n, status),
+          ],
+          if (Platform.isAndroid &&
+              linkedDomains > ruleListPhoneDomainBudget &&
+              ref.watch(activeVpnBackendProvider) == VpnBackend.xray) ...[
+            const SizedBox(height: ExpressiveSpacing.small),
+            ExpressiveNotice(
+              color: AppTheme.orange(context),
+              icon: Icons.memory_rounded,
+              text: l10n.ruleListMemoryWarning(
+                _groupedCount(ruleListPhoneDomainBudget),
+              ),
+            ),
+          ],
           if (unknown.isNotEmpty) ...[
             const SizedBox(height: ExpressiveSpacing.small),
             _unknownGeoWarning(context, l10n, unknown),
           ],
+        ],
+      ),
+    );
+  }
+
+  /// Одна строка под полем на каждую ссылку: сколько в списке доменов и когда
+  /// он обновился, либо почему не скачался. Скачанное раньше при неудаче
+  /// остаётся в силе, поэтому такая строка не красная, а предупреждающая.
+  Widget _ruleListLine(AppLocalizations l10n, RuleListStatus s) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final parsedHost = Uri.tryParse(s.url)?.host ?? '';
+    final host = ltrIsolate(parsedHost.isEmpty ? s.url : parsedHost);
+    String domains() =>
+        l10n.ruleListDomainCount(s.domains, _groupedCount(s.domains));
+    String when() => timeAgo(l10n, s.updatedAt!);
+    final (IconData icon, Color color, String text) = switch (s) {
+      _ when s.loading || (!s.loaded && s.failure == null) => (
+          Icons.cloud_sync_outlined,
+          scheme.onSurfaceVariant,
+          l10n.ruleListLoading(host),
+        ),
+      _ when s.loaded && s.failure == null => (
+          Icons.cloud_done_outlined,
+          scheme.onSurfaceVariant,
+          l10n.ruleListLoaded(host, domains(), when()),
+        ),
+      _ when s.loaded => (
+          Icons.cloud_off_outlined,
+          AppTheme.orange(context),
+          l10n.ruleListLoadedStale(host, domains(), when()),
+        ),
+      _ => (
+          Icons.error_outline_rounded,
+          scheme.error,
+          switch (s.failure) {
+            RuleListFailure.insecure => l10n.ruleListFailedInsecure(host),
+            RuleListFailure.http =>
+              l10n.ruleListFailedHttp(host, s.httpStatus ?? 0),
+            RuleListFailure.tooLarge => l10n.ruleListFailedTooLarge(host),
+            RuleListFailure.empty => l10n.ruleListFailedEmpty(host),
+            RuleListFailure.network || null =>
+              l10n.ruleListFailedNetwork(host),
+          },
+        ),
+    };
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 1),
+            child: Icon(icon, size: 16, color: color),
+          ),
+          const SizedBox(width: ExpressiveSpacing.small),
+          Expanded(
+            child: Text(
+              text,
+              // Оранжевый текст на светлой теме не проходит по контрасту, его
+              // несёт иконка; красный проходит и остаётся у ошибки целиком.
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: color == scheme.error ? color : scheme.onSurfaceVariant,
+              ),
+            ),
+          ),
         ],
       ),
     );

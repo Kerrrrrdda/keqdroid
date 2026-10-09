@@ -337,6 +337,78 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String settingsRoutingLinkDomains(int count, String formatted) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$formatted Domains aus Links',
+      one: '1 Domain aus Links',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String settingsRoutingCountWithLinks(String items, String links) {
+    return '$items, $links';
+  }
+
+  @override
+  String ruleListDomainCount(int count, String formatted) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$formatted Domains',
+      one: '1 Domain',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String ruleListLoaded(String host, String domains, String when) {
+    return '$host – $domains, aktualisiert $when';
+  }
+
+  @override
+  String ruleListLoadedStale(String host, String domains, String when) {
+    return '$host – $domains, aktualisiert $when; die neue Fassung wurde nicht geladen';
+  }
+
+  @override
+  String ruleListLoading(String host) {
+    return '$host – wird geladen…';
+  }
+
+  @override
+  String ruleListFailedNetwork(String host) {
+    return '$host – nicht geladen, neuer Versuch bei der nächsten Verbindung';
+  }
+
+  @override
+  String ruleListFailedInsecure(String host) {
+    return '$host – der Link muss mit https beginnen';
+  }
+
+  @override
+  String ruleListFailedHttp(String host, int code) {
+    return '$host – der Server antwortete mit $code';
+  }
+
+  @override
+  String ruleListFailedTooLarge(String host) {
+    return '$host – die Datei ist größer als 30 MB';
+  }
+
+  @override
+  String ruleListFailedEmpty(String host) {
+    return '$host – keine Domains in der Datei';
+  }
+
+  @override
+  String ruleListMemoryWarning(String limit) {
+    return 'Mehr als $limit Domains aus Links: Der Kern braucht deutlich mehr Speicher, und das System kann ihn im Hintergrund beenden.';
+  }
+
+  @override
   String settingsAndroidColorsSubtitle(Object mode) {
     return 'Android-Farben · $mode';
   }
