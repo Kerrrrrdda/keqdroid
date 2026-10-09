@@ -1083,6 +1083,12 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
               appServerAssignments: settings.appServerAssignments,
               appServerPorts: appServerPorts,
               activeServerId: server.id,
+              includePackages: routingMode == AppRoutingMode.onlySelected
+                  ? includePkgs
+                  : const [],
+              excludePackages: routingMode == AppRoutingMode.allExceptSelected
+                  ? excludePkgs
+                  : const [],
             )
           : null;
       // Молчаливого отката быть не должно: у mihomo туннель свой, и наш
