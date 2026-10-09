@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- libbox itself needs API 26; the app remains installable on older Android.
+         Per-app owner lookup is gated separately to API 29+. -->
+    <uses-sdk tools:overrideLibrary="io.nekohasekai.libbox" />
 
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- registerDefaultNetworkCallback в KeqdisVpnService: без него смена
