@@ -934,8 +934,8 @@ class KeqdisVpnService : VpnService() {
     /// 145, то есть туннель подложкой самому себе.
     ///
     /// Поэтому запрос с `NOT_VPN`: он приносит события по КАЖДОЙ физической
-    /// сети, а какая из них сейчас несёт трафик, выводим из порядка событий —
-    /// см. [liveNetworks].
+    /// сети. Выбираем сеть по актуальным capabilities (валидирован ли интернет;
+    /// при равных условиях предпочитаем Wi-Fi), а не по порядку callback'ов.
     private fun startNetworkWatch() {
         if (networkCallback != null) return
         val cm = getSystemService(ConnectivityManager::class.java) ?: return
