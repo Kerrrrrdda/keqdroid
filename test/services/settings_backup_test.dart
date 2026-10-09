@@ -95,6 +95,11 @@ void main() {
         themePresetId: 'ocean',
         appLanguageCode: 'ru',
         showTrafficStats: false,
+        wifiServerId: 'wifi-server',
+        cellularServerId: 'cellular-server',
+        appServerAssignments: const {
+          'com.spotify.music': 'spotify-server',
+        },
         // машинное — не должно доехать
         localPort: 3080,
         lanPassword: 'hunter2',
@@ -148,6 +153,12 @@ void main() {
       expect(saved!.themePresetId, 'ocean');
       expect(saved!.appLanguageCode, 'ru');
       expect(saved!.showTrafficStats, isFalse);
+      expect(saved!.wifiServerId, 'wifi-server');
+      expect(saved!.cellularServerId, 'cellular-server');
+      expect(
+        saved!.appServerAssignments,
+        const {'com.spotify.music': 'spotify-server'},
+      );
 
       expect(saved!.localPort, 9090);
       expect(saved!.lanPassword, 'local-secret');
