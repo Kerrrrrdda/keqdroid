@@ -354,6 +354,18 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
     }
   }
 
+  /// Правка настроек, сделанная по ходу подключения, ложится на сохранённые
+  /// настройки, а не на `settings` из connect(): там списки уже в виде для
+  /// ядра — со сложенными структурными правилами и без неизвестных geo-кодов.
+  /// На диске этот вид навсегда приклеил бы правила к полям: выключенное
+  /// правило продолжало бы работать, а включённое дописывалось бы ещё раз.
+  Future<void> _saveDuringConnect(
+    AppSettings Function(AppSettings saved) change,
+  ) async {
+    final saved = await ref.read(settingsNotifierProvider.future);
+    await ref.read(settingsNotifierProvider.notifier).save(change(saved));
+  }
+
   Future<void> connect({bool autostartTunFallback = false}) async {
     if (_connectInFlight) {
       AppLogger.instance.debug('VPN connect() ignored: connect already in progress');
@@ -478,11 +490,11 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
             // Персистим фактический режим, чтобы sidebar/tray показывали Proxy,
             // а не TUN. Иначе UI остаётся в TUN, и повторный выбор TUN не
             // срабатывает (next == current), вынуждая делать proxy→tun вручную.
-            await ref.read(settingsNotifierProvider.notifier).save(
-                  settings.copyWith(
-                    connectionMode: ConnectionMode.proxy.storageValue,
-                  ),
-                );
+            await _saveDuringConnect(
+              (saved) => saved.copyWith(
+                connectionMode: ConnectionMode.proxy.storageValue,
+              ),
+            );
           } else {
             AppLogger.instance.warn(
               'TUN mode: app is not elevated. sing-box may fail to create routes.',
@@ -497,11 +509,8 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
       // запрещён (WSAEACCES). Раньше любой из этих случаев заканчивался отказом
       // подключаться — снаружи «прокси/TUN не работает», а чинить надо руками и
       // в другом месте. Теперь порт подбирается рабочий; расхождение с
-      // настройкой идёт в лог, а сами настройки не переписываются.
-      //
-      // Ставить это раньше нельзя: выше есть ветка, которая сохраняет
-      // `settings` в хранилище (автостарт без прав → Proxy), и подменённые
-      // порты уехали бы в постоянные настройки.
+      // настройкой идёт в лог, а сами настройки не переписываются: на диск по
+      // ходу подключения уходят только точечные правки (_saveDuringConnect).
       if (Platform.isWindows || Platform.isLinux) {
         final portPlan = await LocalPortResolver.resolve(settings);
         for (final change in portPlan.changes) {
@@ -529,9 +538,9 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
           user = randomProxyToken(12);
           pass = randomProxyToken(20);
           settings = settings.copyWith(proxyModeUser: user, proxyModePass: pass);
-          await ref
-              .read(settingsNotifierProvider.notifier)
-              .save(settings);
+          await _saveDuringConnect(
+            (saved) => saved.copyWith(proxyModeUser: user, proxyModePass: pass),
+          );
         }
         Socks5Credentials().init(user, pass);
       } else {
@@ -713,7 +722,6 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
 
       // xray и sing-box получают скачанные домены прямо в полях; у mihomo они
       // уже в его конфиге набором (см. MihomoConfigGen.buildRuleListProviders).
-      // Только для генераторов: `settings` выше уходит и на диск.
       final listedSettings =
           mihomoPicked ? settings : ruleLists.expand(settings);
 
