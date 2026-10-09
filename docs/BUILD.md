@@ -45,6 +45,31 @@ flutter build apk --release
 - After changing the Kotlin version in `android/settings.gradle.kts`, run `flutter clean`:
   the stale incremental cache otherwise causes "Unresolved reference" errors in plugins.
 
+#### Android signing
+
+A checkout without `android/key.properties` uses the local Android debug key for
+`flutter build apk --release`. This is suitable for local testing, but the resulting APK
+cannot update an installation signed with another key. The release packaging script refuses
+to package an APK unless a real release keystore is configured.
+
+To create a new keystore for your own releases, run once from the repository root:
+
+```powershell
+keytool -genkeypair -v -keystore android/app/upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+```
+
+Create `android/key.properties` with these four properties, using the passwords you chose:
+
+```properties
+storePassword=YOUR_KEYSTORE_PASSWORD
+keyPassword=YOUR_KEY_PASSWORD
+keyAlias=upload
+storeFile=upload-keystore.jks
+```
+
+Keep both files private and back them up securely. Do not generate a replacement key for an
+app that is already published; future updates must use the same signing key.
+
 ### Windows
 
 ```bash
@@ -257,6 +282,31 @@ flutter build apk --release
   приложение собирается и работает, но без отчётов о падениях.
 - После смены версии Kotlin в `android/settings.gradle.kts` выполни `flutter clean`:
   иначе устаревший инкрементальный кэш даёт ошибки «Unresolved reference» в плагинах.
+
+#### Подпись Android
+
+Если в копии проекта нет `android/key.properties`, команда `flutter build apk --release`
+использует локальный debug-ключ. Это подходит для проверки, но такой APK нельзя установить
+поверх приложения, подписанного другим ключом. Скрипт упаковки релиза не выпустит APK без
+настоящего релизного keystore.
+
+Чтобы создать собственный ключ для релизов, один раз выполни из корня репозитория:
+
+```powershell
+keytool -genkeypair -v -keystore android/app/upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+```
+
+Создай `android/key.properties` с четырьмя параметрами, подставив выбранные пароли:
+
+```properties
+storePassword=YOUR_KEYSTORE_PASSWORD
+keyPassword=YOUR_KEY_PASSWORD
+keyAlias=upload
+storeFile=upload-keystore.jks
+```
+
+Храни оба файла в безопасности и сделай резервную копию. Если приложение уже опубликовано,
+не создавай новый ключ: обновления должны быть подписаны тем же ключом.
 
 ### Windows
 
