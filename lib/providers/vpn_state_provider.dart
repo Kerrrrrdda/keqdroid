@@ -354,6 +354,121 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
     }
   }
 
+  /// Builds alternate Android VPN configs for the selected physical networks.
+  ///
+  /// Android gives the app one VpnService/TUN, so network routing is implemented
+  /// by restarting the same core with a different config when Wi-Fi/cellular
+  /// changes. We deliberately require the alternate server to resolve to the
+  /// same core backend as the primary session: switching the native engine in
+  /// the middle of a live TUN session is a separate lifecycle problem.
+  Future<Map<String, Map<String, String>>> _buildNetworkRouteConfigs({
+    required ServerItem activeServer,
+    required List<ServerItem> servers,
+    required AppSettings settings,
+    required VpnBackend primaryBackend,
+    required ConnectionMode connectionMode,
+    required AppRoutingMode routingMode,
+    required List<String> processNames,
+    required bool localInboundsNoAuth,
+    required int mihomoApiPort,
+    required String mihomoApiSecret,
+    required RuleListDomains ruleLists,
+  }) async {
+    if (!Platform.isAndroid || connectionMode != ConnectionMode.tun) {
+      return const {};
+    }
+
+    final byId = {for (final server in servers) server.id: server};
+    final selected = <String, String>{
+      'wifi': settings.wifiServerId,
+      'cellular': settings.cellularServerId,
+    };
+    final result = <String, Map<String, String>>{};
+
+    for (final entry in selected.entries) {
+      final id = entry.value.trim();
+      if (id.isEmpty || id == activeServer.id) continue;
+
+      final server = byId[id];
+      if (server == null) {
+        AppLogger.instance.warn(
+          'Network routing: saved ${entry.key} server $id no longer exists; '
+          'using the active server for this network.',
+        );
+        continue;
+      }
+
+      try {
+        final choice = resolveVpnBackend(
+          config: server.config,
+          preference: settings.vpnCore,
+          mihomoAvailable: mihomoShipsHere,
+        );
+        if (choice.backend != primaryBackend) {
+          AppLogger.instance.warn(
+            'Network routing: skipping ${entry.key} server '
+            '"${server.displayName}" because it needs '
+            '${choice.backend.wireValue}, while the active session uses '
+            '${primaryBackend.wireValue}. Choose a compatible server/core.',
+          );
+          continue;
+        }
+
+        final serverIp =
+            await _resolveFirstAddress(server.address) ?? server.address;
+        final String config;
+        if (primaryBackend == VpnBackend.mihomo) {
+          config = MihomoConfigGen.generate(
+            server.config,
+            settings,
+            socksPort: settings.localPort,
+            httpPort: settings.httpPort,
+            resolvedServerIp: serverIp,
+            localInboundsNoAuth: localInboundsNoAuth,
+            apiPort: mihomoApiPort,
+            apiSecret: mihomoApiSecret,
+            tun: const MihomoTunOptions(
+              fromFileDescriptor: true,
+              stack: TunSettings.stackGvisor,
+              autoRoute: false,
+            ),
+            routingMode: routingMode,
+            // On Android process matching is handled outside the core.
+            managedProcessNames: const [],
+            appProcessName: '',
+            ruleLists: ruleLists,
+          );
+        } else {
+          final geoIndex =
+              server.protocol == 'custom' ? await GeoAssetService.index() : null;
+          config = ConfigGeneratorV2.generateConfig(
+            server.config,
+            ruleLists.expand(settings),
+            resolvedServerIp: serverIp,
+            localInboundsNoAuth: localInboundsNoAuth,
+            geoIndex: geoIndex,
+            nativeTunInbound: true,
+          );
+        }
+
+        result[entry.key] = {
+          'config': config,
+          'backend': primaryBackend.wireValue,
+          'serverName': server.displayName,
+        };
+      } catch (e, st) {
+        // A bad alternate must not prevent the primary server from connecting.
+        AppLogger.instance.warn(
+          'Network routing: could not generate ${entry.key} config for '
+          '"${server.displayName}"; the active server will be used instead.',
+          error: e,
+          stackTrace: st,
+        );
+      }
+    }
+    return result;
+  }
+
   /// Правка настроек, сделанная по ходу подключения, ложится на сохранённые
   /// настройки, а не на `settings` из connect(): там списки уже в виде для
   /// ядра — со сложенными структурными правилами и без неизвестных geo-кодов.
@@ -736,6 +851,23 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
               nativeTunInbound: nativeTun,
             );
 
+      // Pre-generate alternate configs while all server/rule/core choices are
+      // still known. Android's native service can then switch between files
+      // without depending on the Flutter activity staying alive.
+      final networkConfigs = await _buildNetworkRouteConfigs(
+        activeServer: server,
+        servers: ref.read(serversProvider).servers,
+        settings: settings,
+        primaryBackend: vpnBackend,
+        connectionMode: connectionMode,
+        routingMode: routingMode,
+        processNames: processNames,
+        localInboundsNoAuth: proxyModeNoAuth,
+        mihomoApiPort: mihomoApi.port,
+        mihomoApiSecret: mihomoApi.secret,
+        ruleLists: ruleLists,
+      );
+
       // Забирать ли IPv6 в туннель. Спрашиваем машину, а не только настройку:
       // IPv6-адрес на TUN-интерфейсе там, где IPv6 в системе выключен, роняет
       // sing-box на старте («set ipv6 dns: Access is denied»), то есть чинил бы
@@ -795,6 +927,7 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
         includeProcesses: routingMode == AppRoutingMode.onlySelected
             ? processNames
             : const [],
+        networkConfigs: networkConfigs,
         routingMode: routingMode,
         serverName: server.displayName,
         modeOverride: connectionMode,
