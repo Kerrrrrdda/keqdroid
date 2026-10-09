@@ -447,14 +447,18 @@ class _NetworkServerRoutingScreen extends ConsumerWidget {
     final settingsAsync = ref.watch(settingsNotifierProvider);
 
     Future<void> saveSelection(
-      AppSettings settings,
       String profile,
       String value,
     ) async {
+      // Read the latest value so fast changes to Wi-Fi and cellular don't
+      // overwrite each other with two snapshots of the same old settings.
+      final latest = ref.read(settingsNotifierProvider).valueOrNull ?? 
+          settingsAsync.valueOrNull;
+      if (latest == null) return;
       try {
         final next = profile == 'wifi'
-            ? settings.copyWith(wifiServerId: value)
-            : settings.copyWith(cellularServerId: value);
+            ? latest.copyWith(wifiServerId: value)
+            : latest.copyWith(cellularServerId: value);
         await ref.read(settingsNotifierProvider.notifier).save(next);
       } catch (error) {
         if (!context.mounted) return;
@@ -512,7 +516,7 @@ class _NetworkServerRoutingScreen extends ConsumerWidget {
                 ),
                 items: items(),
                 onChanged: (value) {
-                  unawaited(saveSelection(settings, 'wifi', value ?? ''));
+                  unawaited(saveSelection('wifi', value ?? ''));
                 },
               ),
               const SizedBox(height: 20),
@@ -527,7 +531,7 @@ class _NetworkServerRoutingScreen extends ConsumerWidget {
                 ),
                 items: items(),
                 onChanged: (value) {
-                  unawaited(saveSelection(settings, 'cellular', value ?? ''));
+                  unawaited(saveSelection('cellular', value ?? ''));
                 },
               ),
             ],
