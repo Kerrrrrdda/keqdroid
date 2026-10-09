@@ -645,13 +645,17 @@ class KeqdisVpnService : VpnService() {
         // станет true через несколько мс. Ветка ниже — только для убийства
         // сервиса без stopVpn() (force kill).
         if (!cleanupDone) {
-            // быстрая очистка PID, без wait на процессы
+            // Быстрая очистка без ожидания процессов: onDestroy — main thread.
+            runCatching { appRoutingRuntime?.close() }
+            appRoutingRuntime = null
             runCatching {
-                if (xrayPid > 0) {
-                    try { android.os.Process.killProcess(xrayPid) } catch (_: Exception) {}
-                }
-                try { tunInterface?.close() } catch (_: Exception) {}
+                appServerCorePids.values.forEach { android.os.Process.killProcess(it) }
+                appServerCorePids.clear()
+                if (xrayPid > 0) android.os.Process.killProcess(xrayPid)
+                tunInterface?.close()
             }
+            appRoutingActive = false
+            appRoutingConfigPath = null
         }
         unregisterNotificationReceiver()
         serviceScope.cancel()
@@ -943,6 +947,24 @@ class KeqdisVpnService : VpnService() {
     private suspend fun cleanup() {
         stopNetworkWatch()
 
+        // Close libbox before its proxy outbounds disappear and before the TUN FD
+        // is closed. It owns the system interface in per-app routing mode.
+        runCatching { appRoutingRuntime?.close() }
+            .onFailure { NativeLog.w("KEQDIS", "app routing runtime close failed: ${it.message}") }
+        appRoutingRuntime = null
+        for ((serverId, pid) in appServerCorePids.toMap()) {
+            runCatching { android.os.Process.killProcess(pid) }
+            withContext(Dispatchers.IO) {
+                withTimeoutOrNull(2_000) {
+                    while (File("/proc/$pid").exists()) delay(100)
+                }
+            }
+            NativeLog.d("KEQDIS", "app routing: stopped server=$serverId pid=$pid")
+        }
+        appServerCorePids.clear()
+        appRoutingActive = false
+        appRoutingConfigPath = null
+
         try { tunInterface?.close() } catch (_: Exception) {}
         tunInterface = null
 
@@ -1197,6 +1219,7 @@ class KeqdisVpnService : VpnService() {
     }
 
     private suspend fun applyNetworkRoute(resetIfUnchanged: Boolean) {
+        if (appRoutingActive) return
         if (status != VpnRunStatus.RUNNING || lastTunnelMode != TUNNEL_MODE_VPN) return
         val network = preferredPhysicalNetwork() ?: return
         val profile = physicalNetworkProfile(network) ?: return
@@ -1954,19 +1977,17 @@ class KeqdisVpnService : VpnService() {
         coreKind: String = CORE_KIND_XRAY,
         tunFd: Int = -1,
         freshLog: Boolean = true,
+        logName: String = CORE_LOG_FILE,
     ): Int {
         // NativeHelper.startCore: fork+execv из nativeLibraryDir, дублирует вывод ядра
-        // в logcat (KEQDIS_XRAY) и в файл CORE_LOG_FILE (его читает getXrayLogs).
+        // в logcat (KEQDIS_XRAY) и в файл логов этой сессии.
         // Возвращает: pid > 0 — успех, -1 binary not found, -2 config not found, -4 crashed immediately
         XrayGeoAssets.ensure(this, filesDir)
-        // Свежий лог ядра на каждую сессию (ping пишет в свой файл/никуда — не мешает).
-        // Перезапуск внутри сессии его не трогает: строки перед перезапуском и
-        // объясняют, зачем он понадобился.
-        if (freshLog) runCatching { File(filesDir, CORE_LOG_FILE).writeText("") }
+        if (freshLog) runCatching { File(filesDir, logName).writeText("") }
         tunReadyFrom = NativeHelper.tunReadyCount()
         val pid = NativeHelper.startCore(
             binary, sessionConfigFor(config, coreKind), filesDir.absolutePath,
-            CORE_LOG_FILE, coreKind, tunFd,
+            logName, coreKind, tunFd,
         )
         when {
             pid == -1 -> throw IllegalStateException("Xray binary not found: $binary")
