@@ -93,6 +93,12 @@
     }
   },
   "settingsRoutingSubtitle": "Direct / proxy / block rules and presets",
+  "settingsNetworkRoutingTitle": "Server per network",
+  "settingsNetworkRoutingSubtitle": "Choose which server to use on Wi-Fi and mobile data",
+  "settingsNetworkRoutingWifi": "Wi-Fi",
+  "settingsNetworkRoutingCellular": "Mobile data",
+  "settingsNetworkRoutingDefault": "Use active server",
+  "settingsNetworkRoutingHint": "In Android VPN mode, a network change restarts the core and may briefly interrupt connections. Alternate servers must use the same core as the active server.",
   "settingsResetRoutingTitle": "Reset routing to defaults",
   "settingsRoutingResetDone": "Routing rules reset",
   "settingsRoutingPresetsTitle": "Ready-made lists",
