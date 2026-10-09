@@ -686,8 +686,8 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
       final ruleLists = await _cachedRuleLists(settings);
 
       final split = ref.read(splitTunnelingProvider);
-      final excludePkgs = split.excludePackages.toList();
-      final includePkgs = split.includePackages.toList();
+      var excludePkgs = split.excludePackages.toList();
+      var includePkgs = split.includePackages.toList();
       final routingMode = routingModeFromSplit(
         includePackages: split.includePackages,
         excludePackages: split.excludePackages,
@@ -703,6 +703,37 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
           : const <String>[];
 
       var connectionMode = TunnelSessionBuilder.resolveMode(settings);
+
+      final availableServers = ref.read(serversProvider).servers;
+      final appServerConfigs = await _buildAppServerProxyConfigs(
+        activeServer: server,
+        servers: availableServers,
+        settings: settings,
+        connectionMode: connectionMode,
+      );
+      final appRoutingEnabled = appServerConfigs.isNotEmpty;
+      final assignedPackages = settings.appServerAssignments.entries
+          .where((entry) =>
+              entry.key.trim().isNotEmpty &&
+              (entry.value == server.id ||
+                  appServerConfigs.containsKey(entry.value)))
+          .map((entry) => entry.key.trim())
+          .toSet();
+
+      // App assignments take precedence over the OS split-tunnel package
+      // filter: an assigned app must reach the TUN even when it was not in the
+      // include list, and must not remain excluded in "all except selected".
+      if (Platform.isAndroid &&
+          connectionMode == ConnectionMode.tun &&
+          assignedPackages.isNotEmpty) {
+        if (routingMode == AppRoutingMode.onlySelected) {
+          includePkgs = {...includePkgs, ...assignedPackages}.toList();
+        } else if (routingMode == AppRoutingMode.allExceptSelected) {
+          excludePkgs = excludePkgs
+              .where((pkg) => !assignedPackages.contains(pkg))
+              .toList();
+        }
+      }
 
       // Разрешение на VPN — только если сессия и правда поднимет интерфейс.
       // В режиме «прокси» на Android establish() не вызывается, и системный
@@ -845,12 +876,22 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
         mihomoApi.clear();
       }
 
-      // Туннель принадлежит самому mihomo: адаптер, маршруты и перехват DNS —
-      // его, а не sing-box'а. Различие платформ ровно одно: на
-      // десктопе ядро создаёт устройство само, на Android получает готовый
-      // дескриптор от VpnService (и потому не трогает ни адреса, ни маршруты).
+      // When app-specific servers are assigned, libbox owns the one Android
+      // TUN and routes packages to independent proxy-only core processes.
+      // Without such assignments, retain the existing Xray/mihomo TUN path.
+      final proxyCoreSettings = appRoutingEnabled
+          ? settings.copyWith(
+              directRules: '',
+              proxyRules: '',
+              blockedRules: '',
+              finalOutbound: AppSettings.finalOutboundProxy,
+            )
+          : settings;
+
       final MihomoTunOptions? mihomoTun;
       if (!mihomoPicked) {
+        mihomoTun = null;
+      } else if (appRoutingEnabled) {
         mihomoTun = null;
       } else if (Platform.isAndroid) {
         mihomoTun = const MihomoTunOptions(
@@ -877,7 +918,7 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
       final mihomoConfig = mihomoPicked
           ? MihomoConfigGen.generate(
               server.config,
-              settings,
+              proxyCoreSettings,
               socksPort: settings.localPort,
               // HTTP-инбаунд нужен и на Android, а не только на десктопе: под
               // туннель ядро читает само, но приложение ходит в него
@@ -891,8 +932,12 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
               apiPort: mihomoApi.port,
               apiSecret: mihomoApi.secret,
               tun: mihomoTun,
-              routingMode: routingMode,
-              managedProcessNames: switch (routingMode) {
+              routingMode: appRoutingEnabled
+                  ? AppRoutingMode.allProxy
+                  : routingMode,
+              managedProcessNames: switch (appRoutingEnabled
+                  ? AppRoutingMode.allProxy
+                  : routingMode) {
                 AppRoutingMode.onlySelected ||
                 AppRoutingMode.allExceptSelected =>
                   processNames,
@@ -901,7 +946,9 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
               appProcessName: Platform.isAndroid
                   ? ''
                   : p.basename(Platform.resolvedExecutable),
-              ruleLists: ruleLists,
+              ruleLists: appRoutingEnabled
+                  ? RuleListDomains.none
+                  : ruleLists,
             )
           : null;
 
@@ -963,12 +1010,14 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
       // интерфейса нет вовсе, у mihomo туннель свой.
       final nativeTun = Platform.isAndroid &&
           connectionMode == ConnectionMode.tun &&
-          !mihomoPicked;
+          !mihomoPicked &&
+          !appRoutingEnabled;
 
-      // xray и sing-box получают скачанные домены прямо в полях; у mihomo они
-      // уже в его конфиге набором (см. MihomoConfigGen.buildRuleListProviders).
-      final listedSettings =
-          mihomoPicked ? settings : ruleLists.expand(settings);
+      // App routing owns all app-level rules in the TUN router, not once again
+      // in every proxy-only core. The normal path keeps its previous generators.
+      final listedSettings = appRoutingEnabled
+          ? proxyCoreSettings
+          : (mihomoPicked ? settings : ruleLists.expand(settings));
 
       final xrayConfig = mihomoPicked
           ? ''
@@ -984,29 +1033,58 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
       // Pre-generate alternate configs while all server/rule/core choices are
       // still known. Android's native service can then switch between files
       // without depending on the Flutter activity staying alive.
-      final networkConfigs = await _buildNetworkRouteConfigs(
-        activeServer: server,
-        servers: ref.read(serversProvider).servers,
-        settings: settings,
-        primaryBackend: vpnBackend,
-        connectionMode: connectionMode,
-        routingMode: routingMode,
-        localInboundsNoAuth: proxyModeNoAuth,
-        mihomoApiPort: mihomoApi.port,
-        mihomoApiSecret: mihomoApi.secret,
-        ruleLists: ruleLists,
-      );
+      final networkConfigs = appRoutingEnabled
+          ? const <String, Map<String, String>>{}
+          : await _buildNetworkRouteConfigs(
+              activeServer: server,
+              servers: availableServers,
+              settings: settings,
+              primaryBackend: vpnBackend,
+              connectionMode: connectionMode,
+              routingMode: routingMode,
+              localInboundsNoAuth: proxyModeNoAuth,
+              mihomoApiPort: mihomoApi.port,
+              mihomoApiSecret: mihomoApi.secret,
+              ruleLists: ruleLists,
+            );
 
       // Забирать ли IPv6 в туннель. Спрашиваем машину, а не только настройку:
       // IPv6-адрес на TUN-интерфейсе там, где IPv6 в системе выключен, роняет
       // sing-box на старте («set ipv6 dns: Access is denied»), то есть чинил бы
       // утечку ценой неработающего TUN. См. [TunSettings.blockIpv6Leak].
       final hostHasIpv6 = connectionMode == ConnectionMode.tun &&
-              (Platform.isWindows || Platform.isLinux) &&
               settings.tun.blockIpv6Leak &&
-              !mihomoPicked
-          ? await hostHasGlobalIpv6(excludeInterfaceName: kTunInterfaceName)
+              (Platform.isAndroid || Platform.isWindows || Platform.isLinux)
+          ? (Platform.isAndroid
+                ? true
+                : (!mihomoPicked
+                    ? await hostHasGlobalIpv6(
+                        excludeInterfaceName: kTunInterfaceName,
+                      )
+                    : false))
           : false;
+
+      final appServerPorts = <String, int>{
+        for (final entry in appServerConfigs.entries)
+          entry.key: entry.value['socksPort'] as int,
+      };
+      final appRoutingConfig = appRoutingEnabled
+          ? SingBoxTunConfigGen.generate(
+              localSocksPort: settings.localPort,
+              socksUsername: creds.username,
+              socksPassword: creds.password,
+              serverIpToExclude: serverIp,
+              settings: ruleLists.expand(settings),
+              routingMode: routingMode,
+              managedProcessNames: const [],
+              appProcessName: '',
+              windows: false,
+              hostHasIpv6: hostHasIpv6,
+              appServerAssignments: settings.appServerAssignments,
+              appServerPorts: appServerPorts,
+              activeServerId: server.id,
+            )
+          : null;
       // Молчаливого отката быть не должно: у mihomo туннель свой, и наш
       // sing-box-инбаунд с его IPv6-адресом в этой схеме не участвует вовсе.
       if (mihomoPicked &&
@@ -1057,6 +1135,8 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
             ? processNames
             : const [],
         networkConfigs: networkConfigs,
+        appRoutingConfig: appRoutingConfig,
+        appServerConfigs: appServerConfigs,
         routingMode: routingMode,
         serverName: server.displayName,
         modeOverride: connectionMode,
