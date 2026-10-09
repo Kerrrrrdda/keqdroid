@@ -169,6 +169,23 @@ class AppLocalizationsFa extends AppLocalizations {
 
   @override
   String get settingsRoutingTitle => 'قوانین مسیریابی';
+  @override
+  String get settingsNetworkRoutingTitle => "سرور برای هر شبکه";
+
+  @override
+  String get settingsNetworkRoutingSubtitle => "سرور Wi-Fi و دادهٔ تلفن همراه را انتخاب کنید";
+
+  @override
+  String get settingsNetworkRoutingWifi => "Wi-Fi";
+
+  @override
+  String get settingsNetworkRoutingCellular => "دادهٔ همراه";
+
+  @override
+  String get settingsNetworkRoutingDefault => "استفاده از سرور فعال";
+
+  @override
+  String get settingsNetworkRoutingHint => "در حالت VPN اندروید اعمال می‌شود. با تغییر شبکه هسته دوباره راه‌اندازی می‌شود و اتصال ممکن است لحظه‌ای قطع شود. سرورهای جایگزین باید از همان هستهٔ سرور فعال استفاده کنند.";
 
   @override
   String settingsSplitConfigured(int count) {
