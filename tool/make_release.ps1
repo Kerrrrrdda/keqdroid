@@ -174,6 +174,212 @@ if ($LASTEXITCODE -ne 0) { throw "flutter pub get failed" }
 # its engine and the Dart AOT snapshot for the other ABIs (22.5 MB of 87.5 in
 # a published APK), and app/build.gradle.kts picks the APK's ABI from it.
 if (-not $SkipAndroid) {
+  # Local flutter builds can use the debug key when no signing keystore is
+  # present, but a published release must never silently use that key.
+  $keyPropertiesPath = Join-Path $repoRoot 'android\key.properties'
+  if (-not (Test-Path -LiteralPath $keyPropertiesPath -PathType Leaf)) {
+    throw "Android release signing is not configured. Create android\key.properties and android\app\upload-keystore.jks first."
+  }
+  $signingProperties = @{}
+  foreach ($line in Get-Content -LiteralPath $keyPropertiesPath) {
+    if ($line -match '^\s*([^#!][^=]*)=(.*)    @{ Platform = 'android-arm64'; Abi = 'arm64-v8a';   Name = "keqdroid-$version-android.apk" },
+    @{ Platform = 'android-arm';   Abi = 'armeabi-v7a'; Name = "keqdroid-$version-armeabi-v7a-android.apk" }
+  )
+  if ([string]::Compare($apks[0].Name, $apks[1].Name, [StringComparison]::OrdinalIgnoreCase) -ge 0) {
+    throw "$($apks[1].Name) must sort after $($apks[0].Name): older updaters take the first APK"
+  }
+
+  $apkSrc = Join-Path $repoRoot 'build\app\outputs\flutter-apk\app-release.apk'
+  foreach ($apk in $apks) {
+    Write-Step "Building Android APK ($($apk.Abi))"
+    # Gone before the build, so a build that silently produced nothing cannot
+    # ship the previous ABI's APK under this name.
+    if (Test-Path -LiteralPath $apkSrc) { Remove-Item -LiteralPath $apkSrc -Force }
+    flutter build apk --release --target-platform $apk.Platform
+    if ($LASTEXITCODE -ne 0) { throw "flutter build apk failed for $($apk.Abi)" }
+    if (-not (Test-Path -LiteralPath $apkSrc)) { throw "APK not found at $apkSrc" }
+    Assert-ApkAbi $apkSrc $apk.Abi
+
+    $apkOut = Join-Path $outDir $apk.Name
+    Copy-Item -LiteralPath $apkSrc -Destination $apkOut -Force
+    Write-Host "    $($apk.Name) ($([math]::Round((Get-Item -LiteralPath $apkOut).Length / 1MB, 1)) MB)"
+  }
+}
+
+# --- Windows ---------------------------------------------------------------
+if (-not $SkipWindows) {
+  Write-Step "Syncing Windows plugins (strip Firebase)"
+  powershell -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'sync_windows_plugins.ps1')
+  if ($LASTEXITCODE -ne 0) { throw "sync_windows_plugins.ps1 failed" }
+
+  Write-Step "Building Windows (Release)"
+  flutter build windows --release
+  if ($LASTEXITCODE -ne 0) { throw "flutter build windows failed" }
+
+  $relDir = Join-Path $repoRoot 'build\windows\x64\runner\Release'
+  if (-not (Test-Path -LiteralPath (Join-Path $relDir 'keqdroid.exe'))) {
+    throw "keqdroid.exe not found in $relDir"
+  }
+  foreach ($geo in @('geoip.dat', 'geosite.dat')) {
+    $geoPath = Join-Path $relDir $geo
+    if (-not (Test-Path -LiteralPath $geoPath)) {
+      throw "Missing $geo in Windows build output ($relDir). CMake should copy assets/bin/windows/*.dat."
+    }
+    $size = (Get-Item -LiteralPath $geoPath).Length
+    if ($size -lt 1MB) {
+      throw "$geo looks truncated ($size bytes) in $relDir"
+    }
+    Write-Host "    $geo OK ($([math]::Round($size / 1MB, 1)) MB)"
+  }
+  # Fail closed if the cores are missing: a zip without them generates a valid
+  # sha256 but ships a broken app (no cores, no TUN adapter).
+  # CMake copies assets/bin/windows/*.{exe,dll} next to keqdroid.exe.
+  foreach ($core in @('keqrnel.exe', 'mihomo.exe', 'wintun.dll')) {
+    $corePath = Join-Path $relDir $core
+    if (-not (Test-Path -LiteralPath $corePath)) {
+      throw "Missing $core in Windows build output ($relDir). CMake should copy assets/bin/windows/. Did you build the core?"
+    }
+    $size = (Get-Item -LiteralPath $corePath).Length
+    if ($size -lt 100KB) {
+      throw "$core looks truncated ($size bytes) in $relDir"
+    }
+    Write-Host "    $core OK ($([math]::Round($size / 1MB, 1)) MB)"
+  }
+
+  # Гео-базы в бандле лежат ДВАЖДЫ, и вторая копия — мёртвый груз.
+  #
+  # Рядом с exe их кладёт CMake, оттуда их и читает ядро (GeoAssetService._geoDir
+  # на Windows возвращает каталог рядом с исполняемым файлом). Вторая копия
+  # приезжает во flutter_assets: базы объявлены ассетами Flutter ради ANDROID —
+  # там их достаёт XrayGeoAssets через AssetManager, — а Flutter пакует ассеты во
+  # все платформы разом. На десктопе этот путь не читает никто.
+  #
+  # Цена дубля: 6.0 МБ в zip и 27.5 МБ на диске после установки. Linux-упаковщик
+  # вырезает его давно (tool/package_linux.sh), Windows — не вырезал.
+  foreach ($dup in @('data\flutter_assets\assets\bin\windows',
+                     'data\flutter_assets\assets\geo')) {
+    $dupPath = Join-Path $relDir $dup
+    if (Test-Path -LiteralPath $dupPath) {
+      Remove-Item -LiteralPath $dupPath -Recurse -Force
+      Write-Host "    pruned $dup"
+    }
+  }
+
+  # Шрифт иконок десктопная сборка Flutter не ужимает (флаг уходит в кавычках,
+  # см. шапку скрипта): без этого шага в пакете весь 1.6 МБ вместо 26 КБ.
+  Write-Step "Tree-shaking the icon font"
+  powershell -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'shake_icon_font.ps1') -BundleDir $relDir
+  if ($LASTEXITCODE -ne 0) { throw "shake_icon_font.ps1 failed" }
+
+  $zipOut = Join-Path $outDir "keqdroid-windows-x64-$version.zip"
+  if (Test-Path -LiteralPath $zipOut) { Remove-Item -LiteralPath $zipOut -Force }
+  # Zip the contents so keqdroid.exe sits at the archive root (the updater's
+  # findPayloadRoot expects keqdroid.exe at root or in a single subfolder).
+  Compress-Archive -Path (Join-Path $relDir '*') -DestinationPath $zipOut
+  Write-Host "    $(Split-Path $zipOut -Leaf) ($([math]::Round((Get-Item -LiteralPath $zipOut).Length / 1MB, 1)) MB)"
+}
+
+# --- Linux (in WSL) ----------------------------------------------------------
+if (-not $SkipLinux) {
+  Write-Step "Building Linux packages in WSL ($WslDistro)"
+  $root = $repoRoot.Path
+  $wslRepo = '/mnt/' + $root.Substring(0, 1).ToLower() + $root.Substring(2).Replace('\', '/')
+  wsl -d $WslDistro -e bash "$wslRepo/tool/build_linux_native.sh"
+  if ($LASTEXITCODE -ne 0) { throw "Linux build in WSL failed" }
+  foreach ($f in @(
+      "keqdroid-$version-x86_64.AppImage",
+      "keqdroid_$($version)_amd64.deb",
+      "keqdroid-$version-1.x86_64.rpm",
+      "keqdroid-$version-linux-x64.tar.gz",
+      'PKGBUILD',
+      'aur\PKGBUILD',
+      'aur\.SRCINFO')) {
+    if (-not (Test-Path -LiteralPath (Join-Path $outDir $f))) {
+      throw "The Linux build did not produce $f"
+    }
+  }
+}
+
+# --- Full geo database ------------------------------------------------------
+# The APK carries a trimmed geoip.dat (four codes, 0.6 MB) — see
+# tool/geo_lite.dart. GeoBaseDownloader fetches the full one from the LATEST
+# release, so every release has to carry it. Its own .sha256 stays: the
+# downloader in 0.15.0 - 0.18.0 knows no other place to look.
+Write-Step "Publishing the full geo database"
+$geoSrc = Join-Path $repoRoot 'assets\bin\windows\geoip.dat'
+if (-not (Test-Path -LiteralPath $geoSrc)) { throw "full geoip.dat not found at $geoSrc" }
+$geoOut = Join-Path $outDir 'geoip.dat'
+Copy-Item -LiteralPath $geoSrc -Destination $geoOut -Force
+Write-AsciiLf "$geoOut.sha256" @(Get-Sha256 $geoOut)
+Write-Host ("    geoip.dat OK ({0} MB)" -f [math]::Round((Get-Item -LiteralPath $geoOut).Length / 1MB, 1))
+
+# --- SHA256SUMS --------------------------------------------------------------
+Write-Step "Writing SHA256SUMS"
+$sumsPath = Join-Path $outDir 'SHA256SUMS'
+$assets = Get-ChildItem -LiteralPath $outDir -File |
+  Where-Object { $_.Name -ne 'SHA256SUMS' -and $_.Extension -ne '.sha256' } |
+  Sort-Object Name
+Write-AsciiLf $sumsPath @($assets | ForEach-Object { '{0}  {1}' -f (Get-Sha256 $_.FullName), $_.Name })
+
+Write-Step "Verifying checksums"
+$sumLines = Get-Content -LiteralPath $sumsPath
+foreach ($line in $sumLines) {
+  $hash, $name = $line -split '  ', 2
+  if ((Get-Sha256 (Join-Path $outDir $name)) -ne $hash) { throw "SHA256SUMS mismatch for $name" }
+  # Every updater so far takes the first line that CONTAINS the asset name. A
+  # name that is part of another line would hand it someone else's hash.
+  $hits = @($sumLines | Where-Object { $_.ToLower().Contains($name.ToLower()) })
+  if ($hits.Count -ne 1) { throw "Asset name $name appears in $($hits.Count) lines of SHA256SUMS" }
+}
+if ((Get-Content -LiteralPath "$geoOut.sha256" -Raw).Trim() -ne (Get-Sha256 $geoOut)) {
+  throw "geoip.dat.sha256 mismatch"
+}
+Write-Host "    $($sumLines.Count) assets OK"
+
+Write-Host ""
+Write-Step "Artifacts in $outDir"
+Get-ChildItem -LiteralPath $outDir -File | Select-Object Name, Length | Format-Table -AutoSize
+
+# --- Publish ---------------------------------------------------------------
+if ($Publish) {
+  $gh = Get-Command gh -ErrorAction SilentlyContinue
+  if (-not $gh) { throw "gh CLI not found on PATH; install it or upload manually." }
+
+  # Top-level files only: aur\ is pushed to AUR by tool/publish_aur.sh, and a
+  # release asset named .SRCINFO would be renamed by GitHub anyway.
+  $files = Get-ChildItem -LiteralPath $outDir -File | ForEach-Object { $_.FullName }
+  $ghArgs = @('release', 'create', $tag) + $files + @('--title', $tag)
+  if ($NotesFile -and (Test-Path -LiteralPath $NotesFile)) {
+    $ghArgs += @('--notes-file', $NotesFile)
+  } else {
+    $ghArgs += @('--generate-notes')
+  }
+
+  Write-Step "Creating GitHub release $tag"
+  & gh @ghArgs
+  if ($LASTEXITCODE -ne 0) { throw "gh release create failed" }
+  Write-Host "    published $tag" -ForegroundColor Green
+} else {
+  Write-Host ""
+  Write-Host "Not published. Upload every file in $outDir (not the aur folder) to the $tag release." -ForegroundColor Yellow
+}
+) {
+      $signingProperties[$Matches[1].Trim()] = $Matches[2].Trim()
+    }
+  }
+  $missingSigningValues = @('keyAlias', 'keyPassword', 'storePassword', 'storeFile') |
+    Where-Object { -not $signingProperties.ContainsKey($_) -or [string]::IsNullOrWhiteSpace($signingProperties[$_]) }
+  if ($missingSigningValues.Count -gt 0) {
+    throw "android\key.properties is missing: $($missingSigningValues -join ', ')"
+  }
+  $keystorePath = $signingProperties['storeFile']
+  if (-not [System.IO.Path]::IsPathRooted($keystorePath)) {
+    $keystorePath = Join-Path (Join-Path $repoRoot 'android\app') $keystorePath
+  }
+  if (-not (Test-Path -LiteralPath $keystorePath -PathType Leaf)) {
+    throw "Android release keystore not found: $keystorePath"
+  }
+
   $apks = @(
     @{ Platform = 'android-arm64'; Abi = 'arm64-v8a';   Name = "keqdroid-$version-android.apk" },
     @{ Platform = 'android-arm';   Abi = 'armeabi-v7a'; Name = "keqdroid-$version-armeabi-v7a-android.apk" }
