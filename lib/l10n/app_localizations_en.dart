@@ -169,6 +169,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsRoutingTitle => 'Routing Rules';
+  @override
+  String get settingsNetworkRoutingTitle => "Server per network";
+
+  @override
+  String get settingsNetworkRoutingSubtitle => "Choose which server to use on Wi-Fi and mobile data";
+
+  @override
+  String get settingsNetworkRoutingWifi => "Wi-Fi";
+
+  @override
+  String get settingsNetworkRoutingCellular => "Mobile data";
+
+  @override
+  String get settingsNetworkRoutingDefault => "Use active server";
+
+  @override
+  String get settingsNetworkRoutingHint => "In Android VPN mode, a network change restarts the core and may briefly interrupt connections. Alternate servers must use the same core as the active server.";
 
   @override
   String settingsSplitConfigured(int count) {
