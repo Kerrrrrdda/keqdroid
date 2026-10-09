@@ -424,6 +424,8 @@ class MainActivity : FlutterFragmentActivity() {
                                 ?.filterIsInstance<String>() ?: emptyList()
                             val includePackages = call.argument<List<*>>("includePackages")
                                 ?.filterIsInstance<String>() ?: emptyList()
+                            val networkConfigs = call.argument<Map<*, *>>("networkConfigs")
+                                ?: emptyMap<Any, Any>()
                             // Отсутствующий режим — это старый Dart или чужой
                             // вызов: поднимаем VPN, как было всегда.
                             val tunnelMode =
@@ -451,6 +453,7 @@ class MainActivity : FlutterFragmentActivity() {
                                         result,
                                         coreEngine,
                                         tunnelMode = tunnelMode,
+                                        networkConfigs = networkConfigs,
                                     )
                                 }
                                 KeqdisVpnService.VPN_BACKEND_MIHOMO -> {
@@ -472,6 +475,7 @@ class MainActivity : FlutterFragmentActivity() {
                                         // Ядро читает YAML; наш JSON — его подмножество.
                                         "mihomo_config.yaml",
                                         tunnelMode = tunnelMode,
+                                        networkConfigs = networkConfigs,
                                     )
                                 }
                                 else -> result.error("UNSUPPORTED_BACKEND", "Unsupported VPN backend: $backend", null)
@@ -882,6 +886,7 @@ class MainActivity : FlutterFragmentActivity() {
         backend: String = KeqdisVpnService.VPN_BACKEND_XRAY,
         configFileName: String = "xray_config.json",
         tunnelMode: String = KeqdisVpnService.TUNNEL_MODE_VPN,
+        networkConfigs: Map<*, *> = emptyMap<Any, Any>(),
     ) {
         // Разрешение на VPN спрашиваем ТОЛЬКО когда собираемся поднимать
         // интерфейс. В режиме прокси establish() не вызывается вовсе, а значит
@@ -916,6 +921,48 @@ class MainActivity : FlutterFragmentActivity() {
                 return@launch
             }
 
+            // Persist alternate configs beside the primary config. A unique
+            // suffix keeps a live service from racing a new connection attempt.
+            val storedNetworkConfigs = org.json.JSONObject()
+            val networkSessionId = java.util.UUID.randomUUID().toString()
+                .replace("-", "").take(12)
+            try {
+                for (profile in listOf("wifi", "cellular")) {
+                    val descriptor = networkConfigs[profile] as? Map<*, *> ?: continue
+                    val content = descriptor["config"] as? String ?: continue
+                    val alternateBackend = descriptor["backend"] as? String ?: backend
+                    if (alternateBackend != backend) {
+                        result.error(
+                            "INVALID_NETWORK_CONFIG",
+                            "The $profile server must use the active core ($backend).",
+                            null,
+                        )
+                        return@launch
+                    }
+                    val alternateName = descriptor["serverName"] as? String ?: profile
+                    val extension = configFileName.substringAfterLast('.', "json")
+                    val stem = configFileName.substringBeforeLast('.', configFileName)
+                    val alternateFile =
+                        "${stem}_network_${profile}_${networkSessionId}.${extension}"
+                    val alternatePath = withContext(Dispatchers.IO) {
+                        writeConfig(content, alternateFile)
+                    }
+                    storedNetworkConfigs.put(
+                        profile,
+                        org.json.JSONObject()
+                            .put("configPath", alternatePath)
+                            .put("serverName", alternateName),
+                    )
+                }
+            } catch (e: IOException) {
+                result.error(
+                    "IO_ERROR",
+                    "Failed to write network-specific config: ${e.message}",
+                    null,
+                )
+                return@launch
+            }
+
             NativeLog.d("KEQDIS", "startVpn: sending credentials to service")
 
             // Сохраняем порт в SharedPreferences чтобы WorkManager-изолят мог его прочитать
@@ -929,6 +976,12 @@ class MainActivity : FlutterFragmentActivity() {
                 action = KeqdisVpnService.ACTION_START
                 putExtra(KeqdisVpnService.EXTRA_VPN_BACKEND, backend)
                 putExtra(KeqdisVpnService.EXTRA_XRAY_CONFIG, xrayPath)
+                if (storedNetworkConfigs.length() > 0) {
+                    putExtra(
+                        KeqdisVpnService.EXTRA_NETWORK_CONFIGS,
+                        storedNetworkConfigs.toString(),
+                    )
+                }
                 putExtra(KeqdisVpnService.EXTRA_CORE_ENGINE, coreEngine)
                 putExtra(KeqdisVpnService.EXTRA_TUNNEL_MODE, tunnelMode)
                 putExtra("socks_port", socksPort)
