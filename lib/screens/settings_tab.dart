@@ -452,8 +452,8 @@ class _NetworkServerRoutingScreen extends ConsumerWidget {
     ) async {
       // Read the latest value so fast changes to Wi-Fi and cellular don't
       // overwrite each other with two snapshots of the same old settings.
-      final latest = ref.read(settingsNotifierProvider).valueOrNull ?? 
-          settingsAsync.valueOrNull;
+      final latest = ref.read(settingsNotifierProvider).value ??
+          settingsAsync.value;
       if (latest == null) return;
       try {
         final next = profile == 'wifi'
