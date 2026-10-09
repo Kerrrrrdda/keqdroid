@@ -23,6 +23,59 @@ Map<String, dynamic>? _processRule(List<Map<String, dynamic>> rules, String name
 }
 
 void main() {
+  test('app-server routing keeps per-app outbounds and package filters', () {
+    final json = SingBoxTunConfigGen.generate(
+      localSocksPort: 2080,
+      socksUsername: 'u',
+      socksPassword: 'p',
+      serverIpToExclude: '1.2.3.4',
+      settings: const AppSettings(),
+      appServerAssignments: const {
+        'com.spotify.music': 'secondary',
+        'org.telegram.messenger': 'primary',
+      },
+      appServerPorts: const {'secondary': 42000},
+      activeServerId: 'primary',
+      includePackages: const ['com.spotify.music', 'org.telegram.messenger'],
+    );
+    final map = jsonDecode(json) as Map<String, dynamic>;
+    final inbound = (map['inbounds'] as List).first as Map<String, dynamic>;
+    expect(inbound['include_package'], [
+      'com.spotify.music',
+      'org.telegram.messenger',
+    ]);
+    expect(inbound.containsKey('exclude_package'), isFalse);
+
+    final rules = _rules(json);
+    final spotifyRule = rules.firstWhere(
+      (rule) => (rule['package_name'] as List?)?.contains('com.spotify.music') == true,
+    );
+    final telegramRule = rules.firstWhere(
+      (rule) => (rule['package_name'] as List?)?.contains('org.telegram.messenger') == true,
+    );
+    expect(spotifyRule['outbound'], 'app-server-0');
+    expect(telegramRule['outbound'], 'proxy');
+
+    final outbounds = (map['outbounds'] as List).cast<Map<String, dynamic>>();
+    final secondary = outbounds.firstWhere((outbound) => outbound['tag'] == 'app-server-0');
+    expect(secondary['server_port'], 42000);
+  });
+
+  test('app-server TUN can exclude split-tunnel packages', () {
+    final json = SingBoxTunConfigGen.generate(
+      localSocksPort: 2080,
+      socksUsername: 'u',
+      socksPassword: 'p',
+      serverIpToExclude: '1.2.3.4',
+      settings: const AppSettings(),
+      excludePackages: const ['org.telegram.messenger'],
+    );
+    final map = jsonDecode(json) as Map<String, dynamic>;
+    final inbound = (map['inbounds'] as List).first as Map<String, dynamic>;
+    expect(inbound['exclude_package'], ['org.telegram.messenger']);
+    expect(inbound.containsKey('include_package'), isFalse);
+  });
+
   test('TUN inbound uses route sniff action, not legacy inbound sniff fields', () {
     final json = SingBoxTunConfigGen.generate(
       localSocksPort: 10808,
