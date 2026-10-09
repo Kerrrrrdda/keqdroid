@@ -160,6 +160,11 @@ class SingBoxTunConfigGen {
     /// Server id -> local SOCKS port for extra proxy-only core processes.
     Map<String, int> appServerPorts = const {},
     String? activeServerId,
+    /// Android per-app routing still honours the selected split-tunnel filter.
+    /// These are written to the TUN inbound so libbox can apply the filter
+    /// while it establishes VpnService's single interface.
+    List<String> includePackages = const [],
+    List<String> excludePackages = const [],
   }) {
     final isWindows = windows ?? Platform.isWindows;
     // Разделители — и запятая, и перевод строки: UI обещает «по одному в
@@ -711,6 +716,12 @@ class SingBoxTunConfigGen {
     // OpenAdapter(имя) — мы молча забираем чужой адаптер и настраиваем на нём
     // свои адреса и маршруты. Отсюда и «TUN запустился, ошибок нет, трафика
     // нет», и падения через раз на машинах, где стоит второй такой клиент.
+    if (includePackages.isNotEmpty) {
+      tunInbound['include_package'] = includePackages;
+    }
+    if (excludePackages.isNotEmpty) {
+      tunInbound['exclude_package'] = excludePackages;
+    }
     tunInbound['interface_name'] = kTunInterfaceName;
 
     // `final` у sing-box — только тег выхода, действия туда не записать. Блок
