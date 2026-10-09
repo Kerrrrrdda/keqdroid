@@ -12,7 +12,10 @@ void main() {
     // платформы штатно, а не по недоразумению.
     test('виндовый путь', () {
       expect(
-        normalizeProcessName(r'C:\Program Files\Discord\Discord.exe'),
+        normalizeProcessName(
+          r'C:\Program Files\Discord\Discord.exe',
+          windows: true,
+        ),
         'Discord.exe',
       );
     });
@@ -25,17 +28,23 @@ void main() {
     });
 
     test('смешанные разделители — берём последний любой', () {
-      expect(normalizeProcessName(r'C:/Games\Steam/steam.exe'), 'steam.exe');
+      expect(
+        normalizeProcessName(r'C:/Games\Steam/steam.exe', windows: true),
+        'steam.exe',
+      );
     });
 
     test('кавычки вокруг пути снимаются', () {
-      expect(normalizeProcessName(r'"C:\Apps\Foo.exe"'), 'Foo.exe');
+      expect(
+        normalizeProcessName(r'"C:\Apps\Foo.exe"', windows: true),
+        'Foo.exe',
+      );
     });
   });
 
   group('normalizeProcessName прочее', () {
     test('регистр сохраняется: sing-box сравнивает без приведения', () {
-      expect(normalizeProcessName('Telegram.exe'), 'Telegram.exe');
+      expect(normalizeProcessName('Telegram.exe', windows: true), 'Telegram.exe');
     });
 
     test('имя без расширения получает .exe', () {
@@ -43,7 +52,7 @@ void main() {
     });
 
     test('уже .exe второй раз не дописывается, регистр расширения не важен', () {
-      expect(normalizeProcessName('Foo.EXE'), 'Foo.EXE');
+      expect(normalizeProcessName('Foo.EXE', windows: true), 'Foo.EXE');
     });
 
     test('пусто остаётся пустым', () {
@@ -63,6 +72,13 @@ void main() {
         normalizeProcessName('/usr/lib/firefox/firefox', windows: false),
         'firefox',
       );
+    });
+
+    // Прежняя версия приписывала `.exe` к вписанному руками на любой системе,
+    // и такие записи лежат в сохранённых списках.
+    test('сохранённый с .exe снимается до имени файла', () {
+      expect(normalizeProcessName('firefox.exe', windows: false), 'firefox');
+      expect(normalizeProcessName('Firefox.EXE', windows: false), 'Firefox');
     });
   });
 

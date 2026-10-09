@@ -359,7 +359,8 @@ class SingBoxTunConfigGen {
     //  - <app>.exe: our dart tcp-ping sockets, so latency reflects the local pc
     // placed before split-tunnel rules so it wins regardless of routing mode.
     // Windows process names carry `.exe`; on Linux they are the bare binary
-    // basename (sing-box's find_process matches the comm name). Keep Windows
+    // basename (sing-box takes it from the /proc/<pid>/exe path, not from
+    // comm, so long names are not cut at 15 characters). Keep Windows
     // output byte-identical by only appending the suffix there.
     final exe = isWindows ? '.exe' : '';
     final bypassProcessNames = <String>{

@@ -22,7 +22,9 @@ String normalizeProcessPath(String raw, {bool? windows}) {
 /// его занизить — правило не совпадёт и трафик уйдёт мимо прокси.
 ///
 /// `.exe` дописывается только на Windows: на Linux имя процесса — имя файла
-/// как есть (`firefox`), и с суффиксом правило не совпадало ни разу.
+/// как есть (`firefox`), и с суффиксом правило не совпадало ни разу. Там же
+/// `.exe` и снимается: прежняя версия приписывала его к вписанному руками на
+/// любой системе, и сохранённый `firefox.exe` иначе не совпал бы ни с чем.
 String normalizeProcessName(String raw, {bool? windows}) {
   var s = raw.trim();
   if (s.isEmpty) return '';
@@ -38,8 +40,11 @@ String normalizeProcessName(String raw, {bool? windows}) {
     // схлопываться с «Discord.exe» и превращалась во второе приложение в списке.
     s = s.substring(cut + 1);
   }
-  if ((windows ?? Platform.isWindows) && !s.toLowerCase().endsWith('.exe')) {
-    s = '$s.exe';
+  final hasExe = s.toLowerCase().endsWith('.exe');
+  if (windows ?? Platform.isWindows) {
+    if (!hasExe) s = '$s.exe';
+  } else if (hasExe) {
+    s = s.substring(0, s.length - 4);
   }
   return s;
 }
