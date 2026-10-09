@@ -188,6 +188,31 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsNetworkRoutingHint => "Wi-Fi 和移动数据的服务器选择彼此独立。“此网络使用当前服务器”只应用于当前字段。仅在 Android VPN 模式下生效。网络切换时会重启核心，连接可能短暂中断。备用服务器必须使用与当前服务器相同的核心。";
 
   @override
+  String get settingsAppServerRoutingTitle => "按应用选择服务器";
+
+  @override
+  String get settingsAppServerRoutingSubtitle => "为每个 Android 应用指定独立服务器";
+
+  @override
+  String get settingsAppServerRoutingHint => "仅支持 Android 10 及以上版本的 VPN 模式。已指定服务器的应用会通过该服务器传输流量，其他应用继续使用主服务器。重新连接后生效。";
+
+  @override
+  String get settingsAppServerRoutingSearch => "搜索应用";
+
+  @override
+  String get settingsAppServerRoutingShowSystemApps => "显示系统应用";
+
+  @override
+  String get settingsAppServerRoutingNoApps => "未找到应用";
+
+  @override
+  String get settingsAppServerRoutingServer => "服务器";
+
+  @override
+  String get settingsAppServerRoutingDefault => "使用主服务器";
+
+
+  @override
   String settingsSplitConfigured(int count) {
     return '已配置 $count 个应用';
   }
