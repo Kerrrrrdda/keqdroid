@@ -188,6 +188,31 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settingsNetworkRoutingHint => "Серверы для Wi‑Fi и мобильной сети выбираются независимо. «Основной сервер для этой сети» применяется только к тому полю, где выбран этот пункт. Работает в режиме Android VPN. При смене сети ядро перезапускается, возможна короткая пауза. Альтернативные серверы должны работать на том же ядре, что и основной.";
 
   @override
+  String get settingsAppServerRoutingTitle => "Сервер для каждого приложения";
+
+  @override
+  String get settingsAppServerRoutingSubtitle => "Назначьте отдельный сервер каждому приложению Android";
+
+  @override
+  String get settingsAppServerRoutingHint => "Работает в режиме VPN на Android 10 и новее. Приложения с назначенным сервером отправляют трафик через него, остальные используют основной сервер. Изменения применяются после переподключения.";
+
+  @override
+  String get settingsAppServerRoutingSearch => "Поиск приложений";
+
+  @override
+  String get settingsAppServerRoutingShowSystemApps => "Показывать системные приложения";
+
+  @override
+  String get settingsAppServerRoutingNoApps => "Приложения не найдены";
+
+  @override
+  String get settingsAppServerRoutingServer => "Сервер";
+
+  @override
+  String get settingsAppServerRoutingDefault => "Основной сервер";
+
+
+  @override
   String settingsSplitConfigured(int count) {
     return 'Настроено приложений: $count';
   }
