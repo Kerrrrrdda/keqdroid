@@ -169,6 +169,23 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get settingsRoutingTitle => 'Routing-Regeln';
+  @override
+  String get settingsNetworkRoutingTitle => "Server je Netzwerk";
+
+  @override
+  String get settingsNetworkRoutingSubtitle => "Server für WLAN und mobile Daten auswählen";
+
+  @override
+  String get settingsNetworkRoutingWifi => "WLAN";
+
+  @override
+  String get settingsNetworkRoutingCellular => "Mobile Daten";
+
+  @override
+  String get settingsNetworkRoutingDefault => "Aktiven Server verwenden";
+
+  @override
+  String get settingsNetworkRoutingHint => "Im Android-VPN-Modus wird das Kernprogramm beim Netzwerkwechsel neu gestartet; Verbindungen können kurz pausieren. Alternative Server müssen dasselbe Kernprogramm wie der aktive Server verwenden.";
 
   @override
   String settingsSplitConfigured(int count) {
