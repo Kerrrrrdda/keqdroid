@@ -12,6 +12,7 @@ import 'package:intl/intl.dart' show NumberFormat;
 import 'package:keqtris/keqtris.dart';
 import 'package:keqdroid/l10n/app_localizations.dart';
 import 'package:keqdroid/models/app_font.dart';
+import 'package:keqdroid/models/app_info.dart';
 import 'package:keqdroid/models/app_settings.dart';
 import 'package:keqdroid/models/app_internals.dart';
 import 'package:keqdroid/models/connection_entry.dart';
@@ -141,7 +142,7 @@ class SettingsTab extends ConsumerWidget {
                         children: [
                           _LanSharingCard(settingsAsync: settingsAsync),
                           const _SplitTunnelingSettingsCard(),
-                          if (Platform.isAndroid) const _NetworkRoutingSettingsCard(),
+                          if (Platform.isAndroid) const _AppServerRoutingSettingsCard(),
                           if (Platform.isWindows || Platform.isLinux)
                             _SettingsCard(
                               title: Platform.isLinux
@@ -416,123 +417,226 @@ class _SplitTunnelingSettingsCard extends ConsumerWidget {
   }
 }
 
-class _NetworkRoutingSettingsCard extends ConsumerWidget {
-  const _NetworkRoutingSettingsCard();
+class _AppServerRoutingSettingsCard extends ConsumerWidget {
+  const _AppServerRoutingSettingsCard();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     return _SettingsCard(
-      title: l10n.settingsNetworkRoutingTitle,
-      subtitle: l10n.settingsNetworkRoutingSubtitle,
-      icon: Icons.swap_horiz_rounded,
+      title: l10n.settingsAppServerRoutingTitle,
+      subtitle: l10n.settingsAppServerRoutingSubtitle,
+      icon: Icons.alt_route_rounded,
       accent: ExpressiveAccent.secondary,
       onTap: () => Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const _NetworkServerRoutingScreen()),
+        MaterialPageRoute(builder: (_) => const _AppServerRoutingScreen()),
       ),
     );
   }
 }
 
-/// Selects server config overrides for Android's current physical transport.
-/// Empty selection deliberately means "use the currently active server".
-class _NetworkServerRoutingScreen extends ConsumerWidget {
-  const _NetworkServerRoutingScreen();
+/// Assigns an independent server to each installed Android package.
+class _AppServerRoutingScreen extends ConsumerStatefulWidget {
+  const _AppServerRoutingScreen();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context)!;
-    final servers = ref.watch(serversProvider).servers;
-    final settingsAsync = ref.watch(settingsNotifierProvider);
+  ConsumerState<_AppServerRoutingScreen> createState() =>
+      _AppServerRoutingScreenState();
+}
 
-    Future<void> saveSelection(
-      String profile,
-      String value,
-    ) async {
-      // Read the latest value so fast changes to Wi-Fi and cellular don't
-      // overwrite each other with two snapshots of the same old settings.
-      final latest = ref.read(settingsNotifierProvider).value ??
-          settingsAsync.value;
-      if (latest == null) return;
-      try {
-        final next = profile == 'wifi'
-            ? latest.copyWith(wifiServerId: value)
-            : latest.copyWith(cellularServerId: value);
-        await ref.read(settingsNotifierProvider.notifier).save(next);
-      } catch (error) {
-        if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error.toString())),
-        );
-      }
+class _AppServerRoutingScreenState
+    extends ConsumerState<_AppServerRoutingScreen> {
+  final _searchController = TextEditingController();
+  String _query = '';
+  bool _showSystemApps = false;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _saveAssignment(AppInfo app, String? serverId) async {
+    final latest = ref.read(settingsNotifierProvider).value;
+    if (latest == null) return;
+
+    final assignments = Map<String, String>.from(
+      latest.appServerAssignments,
+    );
+    if (serverId == null || serverId.isEmpty) {
+      assignments.remove(app.packageName);
+    } else {
+      assignments[app.packageName] = serverId;
     }
 
-    List<DropdownMenuItem<String>> items() => [
-      DropdownMenuItem<String>(
-        value: '',
-        child: Text(l10n.settingsNetworkRoutingDefault),
-      ),
-      for (final server in servers)
-        DropdownMenuItem<String>(
-          value: server.id,
-          child: Text(server.displayName, overflow: TextOverflow.ellipsis),
-        ),
-    ];
+    try {
+      await ref.read(settingsNotifierProvider.notifier).save(
+            latest.copyWith(appServerAssignments: assignments),
+          );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString())),
+      );
+    }
+  }
 
-    String selectedId(String value) =>
-        value.isNotEmpty && servers.any((server) => server.id == value)
-            ? value
-            : '';
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final settingsAsync = ref.watch(settingsNotifierProvider);
+    final appsAsync = ref.watch(installedAppsProvider(_showSystemApps));
+    final servers = ref.watch(serversProvider).servers;
 
     return Scaffold(
       backgroundColor: AppTheme.bg(context),
-      appBar: AppBar(title: Text(l10n.settingsNetworkRoutingTitle)),
+      appBar: AppBar(title: Text(l10n.settingsAppServerRoutingTitle)),
       body: settingsAsync.when(
         data: (settings) => SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          child: Column(
             children: [
-              Text(
-                l10n.settingsNetworkRoutingHint,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.textLight(context),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.settingsAppServerRoutingHint,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppTheme.textLight(context),
+                          ),
+                    ),
+                    const SizedBox(height: 14),
+                    TextField(
+                      controller: _searchController,
+                      onChanged: (value) => setState(() => _query = value),
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.search_rounded),
+                        labelText: l10n.settingsAppServerRoutingSearch,
+                        suffixIcon: _query.isEmpty
+                            ? null
+                            : IconButton(
+                                tooltip: MaterialLocalizations.of(context)
+                                    .deleteButtonTooltip,
+                                icon: const Icon(Icons.close_rounded),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  setState(() => _query = '');
+                                },
+                              ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                l10n.splitTunnelingReconnectHint,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppTheme.textLight(context),
-                ),
+              SwitchListTile.adaptive(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+                title: Text(l10n.settingsAppServerRoutingShowSystemApps),
+                value: _showSystemApps,
+                onChanged: (value) => setState(() => _showSystemApps = value),
               ),
-              const SizedBox(height: 24),
-              DropdownButtonFormField<String>(
-                key: ValueKey('wifi-${selectedId(settings.wifiServerId)}'),
-                value: selectedId(settings.wifiServerId),
-                isExpanded: true,
-                decoration: InputDecoration(
-                  labelText: l10n.settingsNetworkRoutingWifi,
+              const Divider(height: 1),
+              Expanded(
+                child: appsAsync.when(
+                  data: (apps) {
+                    final query = _query.trim().toLowerCase();
+                    final filtered = apps.where((app) {
+                      if (query.isEmpty) return true;
+                      return app.appName.toLowerCase().contains(query) ||
+                          app.packageName.toLowerCase().contains(query);
+                    }).toList();
+
+                    if (filtered.isEmpty) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(l10n.settingsAppServerRoutingNoApps),
+                        ),
+                      );
+                    }
+
+                    return ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
+                      itemCount: filtered.length,
+                      separatorBuilder: (_, __) =>
+                          const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final app = filtered[index];
+                        final savedId =
+                            settings.appServerAssignments[app.packageName];
+                        final selectedId = savedId != null &&
+                                servers.any((server) => server.id == savedId)
+                            ? savedId
+                            : '';
+                        return Card(
+                          clipBehavior: Clip.antiAlias,
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  leading: CircleAvatar(
+                                    child: Icon(
+                                      app.isSystem
+                                          ? Icons.settings_rounded
+                                          : Icons.android_rounded,
+                                    ),
+                                  ),
+                                  title: Text(
+                                    app.appName,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  subtitle: Text(
+                                    app.packageName,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                DropdownButtonFormField<String>(
+                                  key: ValueKey(
+                                    '${app.packageName}:$selectedId',
+                                  ),
+                                  value: selectedId,
+                                  isExpanded: true,
+                                  decoration: InputDecoration(
+                                    isDense: true,
+                                    labelText:
+                                        l10n.settingsAppServerRoutingServer,
+                                  ),
+                                  items: [
+                                    DropdownMenuItem<String>(
+                                      value: '',
+                                      child: Text(
+                                        l10n.settingsAppServerRoutingDefault,
+                                      ),
+                                    ),
+                                    for (final server in servers)
+                                      DropdownMenuItem<String>(
+                                        value: server.id,
+                                        child: Text(
+                                          server.displayName,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                  ],
+                                  onChanged: (value) =>
+                                      unawaited(_saveAssignment(app, value)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (error, _) => Center(child: Text(error.toString())),
                 ),
-                items: items(),
-                onChanged: (value) {
-                  unawaited(saveSelection('wifi', value ?? ''));
-                },
-              ),
-              const SizedBox(height: 20),
-              DropdownButtonFormField<String>(
-                key: ValueKey(
-                  'cellular-${selectedId(settings.cellularServerId)}',
-                ),
-                value: selectedId(settings.cellularServerId),
-                isExpanded: true,
-                decoration: InputDecoration(
-                  labelText: l10n.settingsNetworkRoutingCellular,
-                ),
-                items: items(),
-                onChanged: (value) {
-                  unawaited(saveSelection('cellular', value ?? ''));
-                },
               ),
             ],
           ),
