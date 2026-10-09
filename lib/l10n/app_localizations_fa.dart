@@ -188,6 +188,31 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsNetworkRoutingHint => "انتخاب سرور برای Wi-Fi و دادهٔ همراه مستقل است. گزینهٔ «استفاده از سرور فعال برای این شبکه» فقط برای همان فیلد اعمال می‌شود. در حالت VPN اندروید، با تغییر شبکه هسته دوباره راه‌اندازی می‌شود و اتصال ممکن است لحظه‌ای قطع شود. سرورهای جایگزین باید از همان هستهٔ سرور فعال استفاده کنند.";
 
   @override
+  String get settingsAppServerRoutingTitle => "سرور برای هر برنامه";
+
+  @override
+  String get settingsAppServerRoutingSubtitle => "برای هر برنامهٔ اندروید یک سرور جدا انتخاب کنید";
+
+  @override
+  String get settingsAppServerRoutingHint => "در حالت VPN اندروید ۱۰ و بالاتر کار می‌کند. برنامه‌هایی که سرور مشخص دارند ترافیک خود را از همان سرور می‌فرستند؛ بقیه از سرور اصلی استفاده می‌کنند. تغییرات پس از اتصال دوباره اعمال می‌شود.";
+
+  @override
+  String get settingsAppServerRoutingSearch => "جست‌وجوی برنامه‌ها";
+
+  @override
+  String get settingsAppServerRoutingShowSystemApps => "نمایش برنامه‌های سیستمی";
+
+  @override
+  String get settingsAppServerRoutingNoApps => "برنامه‌ای پیدا نشد";
+
+  @override
+  String get settingsAppServerRoutingServer => "سرور";
+
+  @override
+  String get settingsAppServerRoutingDefault => "استفاده از سرور اصلی";
+
+
+  @override
   String settingsSplitConfigured(int count) {
     return '$count برنامه تنظیم شده';
   }
