@@ -408,6 +408,15 @@ abstract class AppLocalizations {
   String get settingsNetworkRoutingDefault;
   String get settingsNetworkRoutingHint;
 
+  String get settingsAppServerRoutingTitle;
+  String get settingsAppServerRoutingSubtitle;
+  String get settingsAppServerRoutingHint;
+  String get settingsAppServerRoutingSearch;
+  String get settingsAppServerRoutingShowSystemApps;
+  String get settingsAppServerRoutingNoApps;
+  String get settingsAppServerRoutingServer;
+  String get settingsAppServerRoutingDefault;
+
   /// No description provided for @settingsSplitConfigured.
   ///
   /// In en, this message translates to:
