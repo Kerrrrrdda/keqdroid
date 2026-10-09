@@ -182,10 +182,10 @@ class AppLocalizationsFa extends AppLocalizations {
   String get settingsNetworkRoutingCellular => "دادهٔ همراه";
 
   @override
-  String get settingsNetworkRoutingDefault => "استفاده از سرور فعال";
+  String get settingsNetworkRoutingDefault => "استفاده از سرور فعال برای این شبکه";
 
   @override
-  String get settingsNetworkRoutingHint => "در حالت VPN اندروید اعمال می‌شود. با تغییر شبکه هسته دوباره راه‌اندازی می‌شود و اتصال ممکن است لحظه‌ای قطع شود. سرورهای جایگزین باید از همان هستهٔ سرور فعال استفاده کنند.";
+  String get settingsNetworkRoutingHint => "انتخاب سرور برای Wi-Fi و دادهٔ همراه مستقل است. گزینهٔ «استفاده از سرور فعال برای این شبکه» فقط برای همان فیلد اعمال می‌شود. در حالت VPN اندروید، با تغییر شبکه هسته دوباره راه‌اندازی می‌شود و اتصال ممکن است لحظه‌ای قطع شود. سرورهای جایگزین باید از همان هستهٔ سرور فعال استفاده کنند.";
 
   @override
   String settingsSplitConfigured(int count) {
