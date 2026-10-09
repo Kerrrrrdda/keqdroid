@@ -154,6 +154,9 @@ class SettingsBackupService {
     'proxyRules',
     'blockedRules',
     'finalOutbound',
+    'wifiServerId',
+    'cellularServerId',
+    'appServerAssignments',
     // ядро и DNS
     'xrayCore',
     'vpnCore',
