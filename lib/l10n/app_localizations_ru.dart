@@ -169,6 +169,23 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get settingsRoutingTitle => 'Правила маршрутизации';
+  @override
+  String get settingsNetworkRoutingTitle => "Сервер для каждой сети";
+
+  @override
+  String get settingsNetworkRoutingSubtitle => "Выберите сервер для Wi-Fi и мобильной сети";
+
+  @override
+  String get settingsNetworkRoutingWifi => "Wi-Fi";
+
+  @override
+  String get settingsNetworkRoutingCellular => "Мобильная сеть";
+
+  @override
+  String get settingsNetworkRoutingDefault => "Использовать активный сервер";
+
+  @override
+  String get settingsNetworkRoutingHint => "Работает в режиме Android VPN. При смене сети ядро перезапускается, возможна короткая пауза. Альтернативные серверы должны работать на том же ядре, что и основной.";
 
   @override
   String settingsSplitConfigured(int count) {
