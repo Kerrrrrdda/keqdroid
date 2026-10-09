@@ -468,6 +468,137 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
     return result;
   }
 
+  /// Builds independent proxy-only cores for server IDs assigned to apps.
+  ///
+  /// The single Android TUN will be owned by sing-box/libbox. Each assigned
+  /// server gets its own loopback SOCKS listener, so a package route can select
+  /// a different server without restarting the tunnel when apps change.
+  Future<Map<String, Map<String, dynamic>>> _buildAppServerProxyConfigs({
+    required ServerItem activeServer,
+    required List<ServerItem> servers,
+    required AppSettings settings,
+    required ConnectionMode connectionMode,
+  }) async {
+    if (!Platform.isAndroid || connectionMode != ConnectionMode.tun) {
+      return const {};
+    }
+
+    final byId = {for (final server in servers) server.id: server};
+    final assignedServerIds = settings.appServerAssignments.values
+        .map((id) => id.trim())
+        .where((id) => id.isNotEmpty && id != activeServer.id)
+        .toSet()
+        .toList()
+      ..sort();
+    if (assignedServerIds.isEmpty) return const {};
+
+    // App-level direct/proxy/block lists are evaluated by the TUN router before
+    // selecting a server. Don't apply those rules a second time inside each
+    // proxy core; a selected app must actually reach its assigned server.
+    final coreSettings = settings.copyWith(
+      directRules: '',
+      proxyRules: '',
+      blockedRules: '',
+      finalOutbound: AppSettings.finalOutboundProxy,
+    );
+
+    final result = <String, Map<String, dynamic>>{};
+    final occupiedPorts = <int>{settings.localPort, settings.httpPort};
+    var nextPort = 42000;
+
+    for (final serverId in assignedServerIds) {
+      final server = byId[serverId];
+      if (server == null) {
+        AppLogger.instance.warn(
+          'App server routing: saved server $serverId no longer exists; '
+          'apps assigned to it will use the active server.',
+        );
+        continue;
+      }
+
+      final choice = resolveVpnBackend(
+        config: server.config,
+        preference: settings.vpnCore,
+        mihomoAvailable: mihomoShipsHere,
+      );
+      if (choice.skip != null) {
+        AppLogger.instance.warn(
+          'App server routing: ${server.displayName} core selection note: '
+          '${vpnCoreSkipLogReason(choice.skip!)}.',
+        );
+      }
+
+      while (occupiedPorts.contains(nextPort) ||
+          occupiedPorts.contains(nextPort + 1)) {
+        nextPort += 2;
+      }
+      if (nextPort >= 65534) {
+        throw StateError('Too many app-assigned servers to allocate local ports.');
+      }
+      final socksPort = nextPort;
+      final httpPort = nextPort + 1;
+      occupiedPorts.add(socksPort);
+      occupiedPorts.add(httpPort);
+      nextPort += 2;
+
+      final serverSettings = coreSettings.copyWith(
+        localPort: socksPort,
+        httpPort: httpPort,
+      );
+      final serverIp =
+          await _resolveFirstAddress(server.address) ?? server.address;
+
+      try {
+        final String config;
+        if (choice.backend == VpnBackend.mihomo) {
+          config = MihomoConfigGen.generate(
+            server.config,
+            serverSettings,
+            socksPort: socksPort,
+            httpPort: httpPort,
+            resolvedServerIp: serverIp,
+            localInboundsNoAuth: true,
+            apiPort: null,
+            apiSecret: '',
+            tun: null,
+            routingMode: AppRoutingMode.allProxy,
+            managedProcessNames: const [],
+            appProcessName: '',
+            ruleLists: RuleListDomains.none,
+          );
+        } else {
+          final geoIndex =
+              server.protocol == 'custom' ? await GeoAssetService.index() : null;
+          config = ConfigGeneratorV2.generateConfig(
+            server.config,
+            serverSettings,
+            resolvedServerIp: serverIp,
+            localInboundsNoAuth: true,
+            geoIndex: geoIndex,
+            nativeTunInbound: false,
+          );
+        }
+
+        result[serverId] = {
+          'serverId': serverId,
+          'config': config,
+          'backend': choice.backend.wireValue,
+          'serverName': server.displayName,
+          'socksPort': socksPort,
+        };
+      } catch (e, st) {
+        AppLogger.instance.error(
+          'Could not generate proxy config for app-assigned server '
+          '"${server.displayName}".',
+          error: e,
+          stackTrace: st,
+        );
+        rethrow;
+      }
+    }
+    return result;
+  }
+
   /// Правка настроек, сделанная по ходу подключения, ложится на сохранённые
   /// настройки, а не на `settings` из connect(): там списки уже в виде для
   /// ядра — со сложенными структурными правилами и без неизвестных geo-кодов.
