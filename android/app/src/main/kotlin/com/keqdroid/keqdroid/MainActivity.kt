@@ -426,6 +426,9 @@ class MainActivity : FlutterFragmentActivity() {
                                 ?.filterIsInstance<String>() ?: emptyList()
                             val networkConfigs = call.argument<Map<*, *>>("networkConfigs")
                                 ?: emptyMap<Any, Any>()
+                            val appRoutingConfig = call.argument<String>("appRoutingConfig")
+                            val appServerConfigs = call.argument<Map<*, *>>("appServerConfigs")
+                                ?: emptyMap<Any, Any>()
                             // Отсутствующий режим — это старый Dart или чужой
                             // вызов: поднимаем VPN, как было всегда.
                             val tunnelMode =
@@ -454,6 +457,8 @@ class MainActivity : FlutterFragmentActivity() {
                                         coreEngine,
                                         tunnelMode = tunnelMode,
                                         networkConfigs = networkConfigs,
+                                        appRoutingConfig = appRoutingConfig,
+                                        appServerConfigs = appServerConfigs,
                                     )
                                 }
                                 KeqdisVpnService.VPN_BACKEND_MIHOMO -> {
@@ -887,6 +892,8 @@ class MainActivity : FlutterFragmentActivity() {
         configFileName: String = "xray_config.json",
         tunnelMode: String = KeqdisVpnService.TUNNEL_MODE_VPN,
         networkConfigs: Map<*, *> = emptyMap<Any, Any>(),
+        appRoutingConfig: String? = null,
+        appServerConfigs: Map<*, *> = emptyMap<Any, Any>(),
     ) {
         // Разрешение на VPN спрашиваем ТОЛЬКО когда собираемся поднимать
         // интерфейс. В режиме прокси establish() не вызывается вовсе, а значит
@@ -963,6 +970,76 @@ class MainActivity : FlutterFragmentActivity() {
                 return@launch
             }
 
+            val storedAppServerConfigs = org.json.JSONObject()
+            var storedAppRoutingPath: String? = null
+            try {
+                if (!appRoutingConfig.isNullOrBlank()) {
+                    storedAppRoutingPath = withContext(Dispatchers.IO) {
+                        writeConfig(appRoutingConfig, "app_routing_${networkSessionId}.json")
+                    }
+                }
+                for ((rawServerId, rawDescriptor) in appServerConfigs) {
+                    val serverId = rawServerId as? String ?: continue
+                    val descriptor = rawDescriptor as? Map<*, *> ?: continue
+                    val content = descriptor["config"] as? String ?: continue
+                    val alternateBackend = descriptor["backend"] as? String ?: backend
+                    if (alternateBackend != KeqdisVpnService.VPN_BACKEND_XRAY &&
+                        alternateBackend != KeqdisVpnService.VPN_BACKEND_MIHOMO
+                    ) {
+                        result.error(
+                            "INVALID_APP_SERVER_CONFIG",
+                            "Unsupported backend for app-assigned server: $alternateBackend",
+                            null,
+                        )
+                        return@launch
+                    }
+                    val socksPort = (descriptor["socksPort"] as? Number)?.toInt()
+                        ?: run {
+                            result.error(
+                                "INVALID_APP_SERVER_CONFIG",
+                                "Missing SOCKS port for app-assigned server $serverId",
+                                null,
+                            )
+                            return@launch
+                        }
+                    if (socksPort !in 1..65535) {
+                        result.error(
+                            "INVALID_APP_SERVER_CONFIG",
+                            "Invalid SOCKS port for app-assigned server $serverId",
+                            null,
+                        )
+                        return@launch
+                    }
+                    val safeId = serverId.replace(Regex("[^A-Za-z0-9_-]"), "_").take(48)
+                    val extension = if (alternateBackend == KeqdisVpnService.VPN_BACKEND_MIHOMO) "yaml" else "json"
+                    val fileName = "app_server_${safeId}_${networkSessionId}.${extension}"
+                    val configPath = withContext(Dispatchers.IO) { writeConfig(content, fileName) }
+                    storedAppServerConfigs.put(
+                        serverId,
+                        org.json.JSONObject()
+                            .put("configPath", configPath)
+                            .put("backend", alternateBackend)
+                            .put("serverName", descriptor["serverName"] as? String ?: safeId)
+                            .put("socksPort", socksPort),
+                    )
+                }
+            } catch (e: Exception) {
+                result.error(
+                    "IO_ERROR",
+                    "Failed to write per-app routing config: ${e.message}",
+                    null,
+                )
+                return@launch
+            }
+            if (appRoutingConfig.isNullOrBlank() && storedAppServerConfigs.length() > 0) {
+                result.error(
+                    "INVALID_APP_SERVER_CONFIG",
+                    "App-assigned servers require an app-routing TUN config.",
+                    null,
+                )
+                return@launch
+            }
+
             NativeLog.d("KEQDIS", "startVpn: sending credentials to service")
 
             // Сохраняем порт в SharedPreferences чтобы WorkManager-изолят мог его прочитать
@@ -980,6 +1057,13 @@ class MainActivity : FlutterFragmentActivity() {
                     putExtra(
                         KeqdisVpnService.EXTRA_NETWORK_CONFIGS,
                         storedNetworkConfigs.toString(),
+                    )
+                }
+                if (!storedAppRoutingPath.isNullOrBlank()) {
+                    putExtra(KeqdisVpnService.EXTRA_APP_ROUTING_CONFIG, storedAppRoutingPath)
+                    putExtra(
+                        KeqdisVpnService.EXTRA_APP_SERVER_CONFIGS,
+                        storedAppServerConfigs.toString(),
                     )
                 }
                 putExtra(KeqdisVpnService.EXTRA_CORE_ENGINE, coreEngine)
