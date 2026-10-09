@@ -93,6 +93,12 @@
     }
   },
   "settingsRoutingSubtitle": "直连 / 代理 / 阻止规则及预设",
+  "settingsNetworkRoutingTitle": "按网络选择服务器",
+  "settingsNetworkRoutingSubtitle": "选择 Wi-Fi 和移动数据使用的服务器",
+  "settingsNetworkRoutingWifi": "Wi-Fi",
+  "settingsNetworkRoutingCellular": "移动数据",
+  "settingsNetworkRoutingDefault": "使用当前服务器",
+  "settingsNetworkRoutingHint": "仅在 Android VPN 模式下生效。网络切换时会重启核心，连接可能短暂中断。备用服务器必须使用与当前服务器相同的核心。",
   "settingsResetRoutingTitle": "重置路由为默认值",
   "settingsRoutingResetDone": "路由规则已重置",
   "settingsRoutingPresetsTitle": "现成列表",
