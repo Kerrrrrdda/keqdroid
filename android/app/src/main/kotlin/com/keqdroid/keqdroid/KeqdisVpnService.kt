@@ -39,6 +39,8 @@ class KeqdisVpnService : VpnService() {
         const val ACTION_TOGGLE         = "com.keqdis.vpn.TOGGLE"
         const val EXTRA_XRAY_CONFIG    = "xray_config_path"
         const val EXTRA_NETWORK_CONFIGS = "network_configs"
+        const val EXTRA_APP_ROUTING_CONFIG = "app_routing_config"
+        const val EXTRA_APP_SERVER_CONFIGS = "app_server_configs"
         const val EXTRA_SOCKS_USERNAME = "socks_username"
         const val EXTRA_SOCKS_PASSWORD = "socks_password"
         const val EXTRA_SERVER_NAME    = "server_name"
@@ -129,6 +131,8 @@ class KeqdisVpnService : VpnService() {
         const val KEY_QS_BASE_XRAY_CONFIG = "qs_base_xray_config"
         const val KEY_QS_BASE_SERVER_NAME = "qs_base_server_name"
         const val KEY_QS_LAST_NETWORK_CONFIGS = "qs_last_network_configs"
+        const val KEY_QS_LAST_APP_ROUTING_CONFIG = "qs_last_app_routing_config"
+        const val KEY_QS_LAST_APP_SERVER_CONFIGS = "qs_last_app_server_configs"
         const val KEY_QS_LAST_SOCKS_USERNAME = "qs_last_socks_username"
         const val KEY_QS_LAST_SOCKS_PASSWORD = "qs_last_socks_password"
         const val KEY_QS_LAST_SOCKS_PORT = "qs_last_socks_port"
@@ -175,6 +179,8 @@ class KeqdisVpnService : VpnService() {
             val config = prefs.getString(KEY_QS_BASE_XRAY_CONFIG, null)
                 ?: prefs.getString(KEY_QS_LAST_XRAY_CONFIG, null)
             val networkConfigs = prefs.getString(KEY_QS_LAST_NETWORK_CONFIGS, null)
+            val appRoutingConfig = prefs.getString(KEY_QS_LAST_APP_ROUTING_CONFIG, null)
+            val appServerConfigs = prefs.getString(KEY_QS_LAST_APP_SERVER_CONFIGS, null)
             val user = prefs.getString(KEY_QS_LAST_SOCKS_USERNAME, null)
             val pass = prefs.getString(KEY_QS_LAST_SOCKS_PASSWORD, null)
             if (config.isNullOrBlank() || user.isNullOrBlank() || pass.isNullOrBlank() ||
@@ -201,6 +207,12 @@ class KeqdisVpnService : VpnService() {
                 putExtra(EXTRA_XRAY_CONFIG, config)
                 if (!networkConfigs.isNullOrBlank()) {
                     putExtra(EXTRA_NETWORK_CONFIGS, networkConfigs)
+                }
+                if (!appRoutingConfig.isNullOrBlank() && File(appRoutingConfig).isFile) {
+                    putExtra(EXTRA_APP_ROUTING_CONFIG, appRoutingConfig)
+                    if (!appServerConfigs.isNullOrBlank()) {
+                        putExtra(EXTRA_APP_SERVER_CONFIGS, appServerConfigs)
+                    }
                 }
                 putExtra("socks_port", prefs.getInt(KEY_QS_LAST_SOCKS_PORT, 2080))
                 putStringArrayListExtra("exclude_packages", ArrayList(exclude))
@@ -241,6 +253,18 @@ class KeqdisVpnService : VpnService() {
         val configPath: String,
         val serverName: String,
     )
+
+    private data class AppServerProxyConfig(
+        val configPath: String,
+        val backend: String,
+        val serverName: String,
+        val socksPort: Int,
+    )
+
+    @Volatile private var appRoutingActive = false
+    @Volatile private var appRoutingConfigPath: String? = null
+    @Volatile private var appRoutingRuntime: AppRoutingLibboxRuntime? = null
+    private val appServerCorePids = LinkedHashMap<String, Int>()
 
     // The primary config is the fallback; active config can temporarily point
     // at the Wi-Fi/cellular variant selected by the physical-network watcher.
@@ -465,6 +489,25 @@ class KeqdisVpnService : VpnService() {
 
         val networkConfigsJson = intent.getStringExtra(EXTRA_NETWORK_CONFIGS).orEmpty()
         networkRouteConfigs = parseNetworkRouteConfigs(networkConfigsJson)
+        val appRoutePath = intent.getStringExtra(EXTRA_APP_ROUTING_CONFIG)
+        if (!appRoutePath.isNullOrBlank()) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                NativeLog.e("KEQDIS", "per-app server routing requires Android 10+")
+                return START_NOT_STICKY
+            }
+            if (!File(appRoutePath).isFile) {
+                NativeLog.e("KEQDIS", "per-app routing config is missing: $appRoutePath")
+                return START_NOT_STICKY
+            }
+            if (!File(applicationInfo.nativeLibraryDir, "libbox.so").isFile) {
+                NativeLog.e("KEQDIS", "per-app routing requested but libbox.so is not installed for this ABI")
+                return START_NOT_STICKY
+            }
+        }
+        appRoutingConfigPath = appRoutePath?.takeIf { it.isNotBlank() }
+        appRoutingActive = appRoutingConfigPath != null
+        val appServerConfigsJson = intent.getStringExtra(EXTRA_APP_SERVER_CONFIGS).orEmpty()
+        val appServerConfigs = parseAppServerProxyConfigs(appServerConfigsJson)
 
         val configPath = intent.getStringExtra(EXTRA_XRAY_CONFIG) ?: run {
             NativeLog.e("KEQDIS", "onStartCommand: missing EXTRA_XRAY_CONFIG")
@@ -526,6 +569,8 @@ class KeqdisVpnService : VpnService() {
                 .putString(KEY_QS_BASE_XRAY_CONFIG, configPath)
                 .putString(KEY_QS_BASE_SERVER_NAME, currentServerName)
                 .putString(KEY_QS_LAST_NETWORK_CONFIGS, networkConfigsJson)
+                .putString(KEY_QS_LAST_APP_ROUTING_CONFIG, appRoutingConfigPath)
+                .putString(KEY_QS_LAST_APP_SERVER_CONFIGS, appServerConfigsJson)
                 .putInt(KEY_QS_LAST_SOCKS_PORT, socksPort)
                 .putString(KEY_QS_LAST_SOCKS_USERNAME, socksUsername)
                 .putString(KEY_QS_LAST_SOCKS_PASSWORD, socksPassword)
@@ -569,7 +614,10 @@ class KeqdisVpnService : VpnService() {
                 startVpnWithXray(
                     startId, configPath, socksPort, excludePkgs, includePkgs,
                     socksNoAuth = false, coreEngine = coreEngine, coreKind = coreKind,
-                    tunnelMode = tunnelMode, logNote = logNote,
+                    tunnelMode = if (appRoutingActive) TUNNEL_MODE_PROXY else tunnelMode,
+                    logNote = logNote,
+                    appRoutingPath = appRoutingConfigPath,
+                    appServerConfigs = appServerConfigs,
                 )
             }
         }
