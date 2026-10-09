@@ -182,10 +182,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsNetworkRoutingCellular => "Mobile Daten";
 
   @override
-  String get settingsNetworkRoutingDefault => "Aktiven Server verwenden";
+  String get settingsNetworkRoutingDefault => "Aktiven Server für dieses Netzwerk verwenden";
 
   @override
-  String get settingsNetworkRoutingHint => "Im Android-VPN-Modus wird das Kernprogramm beim Netzwerkwechsel neu gestartet; Verbindungen können kurz pausieren. Alternative Server müssen dasselbe Kernprogramm wie der aktive Server verwenden.";
+  String get settingsNetworkRoutingHint => "WLAN und mobile Daten haben unabhängige Serverauswahlen. „Aktiven Server für dieses Netzwerk verwenden“ gilt nur für das jeweilige Feld. Im Android-VPN-Modus wird das Kernprogramm beim Netzwerkwechsel neu gestartet; Verbindungen können kurz pausieren. Alternative Server müssen dasselbe Kernprogramm wie der aktive Server verwenden.";
 
   @override
   String settingsSplitConfigured(int count) {
