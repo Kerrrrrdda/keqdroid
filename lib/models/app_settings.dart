@@ -126,6 +126,11 @@ class AppSettings {
   /// Ядро, исполняющее сервер: `xray` (дефолт) или `mihomo`.
   final String vpnCore;
 
+  /// Optional server overrides for Android's current physical network.
+  /// Empty means use the primary/active server for that transport.
+  final String wifiServerId;
+  final String cellularServerId;
+
   /// Отдавать системе подменные адреса вместо настоящих (fake-ip) — одна
   /// настройка на оба ядра.
   ///
@@ -244,6 +249,8 @@ class AppSettings {
     this.serverIconThemeColors = true,
     this.coreEngine = coreEngineKeqrnel,
     this.vpnCore = vpnCoreAuto,
+    this.wifiServerId = '',
+    this.cellularServerId = '',
     this.fakeIp = false,
     this.hotkeys = const {},
     this.serversTwoColumns = false,
@@ -301,6 +308,8 @@ class AppSettings {
     'serverIconThemeColors': serverIconThemeColors,
     'coreEngine': coreEngine,
     'vpnCore': vpnCore,
+    'wifiServerId': wifiServerId,
+    'cellularServerId': cellularServerId,
     'fakeIp': fakeIp,
     'hotkeys': hotkeys,
     'serversTwoColumns': serversTwoColumns,
@@ -388,6 +397,8 @@ class AppSettings {
       serverIconThemeColors: json['serverIconThemeColors'] as bool? ?? true,
       coreEngine: normalizeCoreEngine(json['coreEngine'] as String?),
       vpnCore: normalizeVpnCore(json['vpnCore'] as String?),
+      wifiServerId: json['wifiServerId'] as String? ?? '',
+      cellularServerId: json['cellularServerId'] as String? ?? '',
       // До 26.09.2026 настройка была только у mihomo и хранилась под старым
       // именем — его и дочитываем, чтобы включённое не выключилось само.
       fakeIp: json['fakeIp'] as bool? ?? json['mihomoFakeIp'] as bool? ?? false,
@@ -568,6 +579,8 @@ class AppSettings {
     bool? serverIconThemeColors,
     String? coreEngine,
     String? vpnCore,
+    String? wifiServerId,
+    String? cellularServerId,
     bool? fakeIp,
     Map<String, String>? hotkeys,
     bool? serversTwoColumns,
@@ -626,6 +639,8 @@ class AppSettings {
             serverIconThemeColors ?? this.serverIconThemeColors,
         coreEngine: coreEngine ?? this.coreEngine,
         vpnCore: vpnCore ?? this.vpnCore,
+        wifiServerId: wifiServerId ?? this.wifiServerId,
+        cellularServerId: cellularServerId ?? this.cellularServerId,
         fakeIp: fakeIp ?? this.fakeIp,
         hotkeys: hotkeys ?? this.hotkeys,
         serversTwoColumns: serversTwoColumns ?? this.serversTwoColumns,
@@ -710,6 +725,8 @@ class AppSettings {
               serverIconThemeColors == other.serverIconThemeColors &&
               coreEngine == other.coreEngine &&
               vpnCore == other.vpnCore &&
+              wifiServerId == other.wifiServerId &&
+              cellularServerId == other.cellularServerId &&
               fakeIp == other.fakeIp &&
               serversTwoColumns == other.serversTwoColumns &&
               amoledBlack == other.amoledBlack &&
@@ -776,6 +793,8 @@ class AppSettings {
     serverIconThemeColors,
     coreEngine,
     vpnCore,
+    wifiServerId,
+    cellularServerId,
     fakeIp,
     serversTwoColumns,
     amoledBlack,
