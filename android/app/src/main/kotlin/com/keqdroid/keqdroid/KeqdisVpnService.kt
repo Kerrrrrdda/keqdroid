@@ -269,12 +269,19 @@ class KeqdisVpnService : VpnService() {
     @Volatile private var cleanupDone:       Boolean              = false
     @Volatile private var activeSocksPort:   Int                  = 2080
 
-    // Слежение за физической сетью под туннелем — см. startNetworkWatch().
+    // Слежение за физическими сетями под туннелем — см. startNetworkWatch().
     @Volatile private var networkCallback: ConnectivityManager.NetworkCallback? = null
-    // Живые НЕ-VPN сети в порядке появления: последняя и несёт трафик. Держим
-    // список, а не одну сеть, потому что весь вопрос ровно в том, осталась ли
-    // рядом с новой сетью работоспособной старая (см. onPhysicalNetworkUp).
+
+    private data class PhysicalNetworkState(
+        val profile: String,
+        val validatedInternet: Boolean,
+    )
+
+    // Держим все физические сети, а не только последнюю из callback'ов.
+    // Callback registration order не гарантирует, какая сеть сейчас предпочтительна:
+    // Android может держать LTE доступной в фоне, пока default route идёт через Wi-Fi.
     private val liveNetworks = LinkedHashSet<Network>()
+    private val physicalNetworkStates = HashMap<Network, PhysicalNetworkState>()
     @Volatile private var watchStartedAt = 0L
     @Volatile private var handoverJob: Job? = null
 
@@ -935,6 +942,11 @@ class KeqdisVpnService : VpnService() {
         val cb = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) = onPhysicalNetworkUp(network)
             override fun onLost(network: Network) = onPhysicalNetworkDown(network)
+
+            override fun onCapabilitiesChanged(
+                network: Network,
+                networkCapabilities: android.net.NetworkCapabilities,
+            ) = onPhysicalNetworkCapabilitiesChanged(network, networkCapabilities)
         }
         val request = android.net.NetworkRequest.Builder()
             .addCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
@@ -971,7 +983,10 @@ class KeqdisVpnService : VpnService() {
             }
         }
         networkCallback = null
-        synchronized(liveNetworks) { liveNetworks.clear() }
+        synchronized(liveNetworks) {
+            liveNetworks.clear()
+            physicalNetworkStates.clear()
+        }
         watchStartedAt = 0L
     }
 
@@ -982,12 +997,17 @@ class KeqdisVpnService : VpnService() {
     /// придётся нам. Если других нет — это первая сеть или возврат
     /// единственной, и рвать нечего.
     private fun onPhysicalNetworkUp(network: Network) {
+        val capabilities = getSystemService(ConnectivityManager::class.java)
+            ?.getNetworkCapabilities(network)
         val hadOther = synchronized(liveNetworks) {
             val other = liveNetworks.any { it != network }
             liveNetworks.add(network)
+            capabilities?.let { physicalNetworkState(it) }?.let {
+                physicalNetworkStates[network] = it
+            }
             other
         }
-        applyHuaweiUnderlying(network)
+        applyHuaweiUnderlying(preferredPhysicalNetwork() ?: network)
         if (!hadOther) {
             // A late first callback can arrive after the startup snapshot.
             if (System.currentTimeMillis() - watchStartedAt >= HANDOVER_DEBOUNCE_MS) {
@@ -995,25 +1015,56 @@ class KeqdisVpnService : VpnService() {
             }
             return
         }
-        // Регистрация приносит все живые сети пачкой — на старте сессии это
-        // выглядит как переезд, хотя ничего не переезжало.
+        // Registration brings all already-live networks in a batch. Initial
+        // enumeration is not a handover, so wait until that batch has settled.
         if (System.currentTimeMillis() - watchStartedAt < HANDOVER_DEBOUNCE_MS) return
 
-        NativeLog.i("KEQDIS", "handover: network $network came up next to a live one")
+        NativeLog.i("KEQDIS", "handover: physical network $network became available")
         scheduleNetworkRouteUpdate(resetIfUnchanged = true)
     }
+
+    private fun onPhysicalNetworkCapabilitiesChanged(
+        network: Network,
+        capabilities: android.net.NetworkCapabilities,
+    ) {
+        val previousPreferred = preferredPhysicalNetwork()
+        val nextState = physicalNetworkState(capabilities) ?: return
+        synchronized(liveNetworks) {
+            // onAvailable normally comes first, but keep this resilient to OEM callback ordering.
+            liveNetworks.add(network)
+            physicalNetworkStates[network] = nextState
+        }
+        val nextPreferred = preferredPhysicalNetwork()
+        nextPreferred?.let { applyHuaweiUnderlying(it) }
+
+        // Capability updates are how we notice when Wi-Fi loses validated
+        // internet while LTE remains available (or vice versa). A route change
+        // by profile must rebuild the matching network-specific server config.
+        if (System.currentTimeMillis() - watchStartedAt < HANDOVER_DEBOUNCE_MS) return
+        if (previousPreferred != nextPreferred) {
+            NativeLog.i(
+                "KEQDIS",
+                "Preferred physical network changed from " +
+                    (previousPreferred?.toString() ?: "(none)") + " to " +
+                    (nextPreferred?.toString() ?: "(none)"),
+            )
+            scheduleNetworkRouteUpdate(resetIfUnchanged = true)
+        }
+    }
+
 
     /// Сеть ушла — сокеты ушли с ней, рвать нечего. Только забываем её, иначе
     /// её возвращение не будет считаться переездом.
     private fun onPhysicalNetworkDown(network: Network) {
-        val remaining = synchronized(liveNetworks) {
+        synchronized(liveNetworks) {
             liveNetworks.remove(network)
-            liveNetworks.lastOrNull()
+            physicalNetworkStates.remove(network)
         }
+        val remaining = preferredPhysicalNetwork()
         remaining?.let {
             applyHuaweiUnderlying(it)
-            // Lost-network sockets die with their interface. We only need a
-            // restart here if the remaining transport selects a different server.
+            // Lost-network sockets die with their interface. Select the best
+            // remaining physical route instead of relying on callback insertion order.
             scheduleNetworkRouteUpdate(resetIfUnchanged = false)
         }
     }
@@ -1026,19 +1077,53 @@ class KeqdisVpnService : VpnService() {
         }
     }
 
+    private fun physicalNetworkState(
+        capabilities: android.net.NetworkCapabilities,
+    ): PhysicalNetworkState? {
+        val profile = when {
+            capabilities.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) -> "wifi"
+            capabilities.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR) -> "cellular"
+            else -> return null
+        }
+        return PhysicalNetworkState(
+            profile = profile,
+            validatedInternet = capabilities.hasCapability(
+                android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED,
+            ),
+        )
+    }
+
     private fun physicalNetworkProfile(network: Network): String? {
         val cm = getSystemService(ConnectivityManager::class.java) ?: return null
         val capabilities = cm.getNetworkCapabilities(network) ?: return null
-        return when {
-            capabilities.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) -> "wifi"
-            capabilities.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR) -> "cellular"
-            else -> null
+        return physicalNetworkState(capabilities)?.profile
+    }
+
+    // Choose the preferred physical network, not whichever callback arrived last.
+    // A validated network wins over one without validated Internet; when both
+    // are validated, prefer Wi-Fi, with event order only breaking remaining ties.
+    private fun preferredPhysicalNetwork(): Network? {
+        var best: Network? = null
+        var bestScore = Int.MIN_VALUE
+        synchronized(liveNetworks) {
+            liveNetworks.forEachIndexed { index, network ->
+                val state = physicalNetworkStates[network] ?: return@forEachIndexed
+                val score =
+                    (if (state.validatedInternet) 1_000 else 0) +
+                    (if (state.profile == "wifi") 100 else 0) +
+                    index
+                if (score > bestScore) {
+                    bestScore = score
+                    best = network
+                }
+            }
         }
+        return best
     }
 
     private suspend fun applyNetworkRoute(resetIfUnchanged: Boolean) {
         if (status != VpnRunStatus.RUNNING || lastTunnelMode != TUNNEL_MODE_VPN) return
-        val network = synchronized(liveNetworks) { liveNetworks.lastOrNull() } ?: return
+        val network = preferredPhysicalNetwork() ?: return
         val profile = physicalNetworkProfile(network) ?: return
         val target = networkRouteConfigs[profile]
         val targetPath = target?.configPath ?: baseConfigPath ?: return
