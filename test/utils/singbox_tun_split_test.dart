@@ -14,6 +14,7 @@ import 'package:keqdroid/utils/singbox_tun_config.dart';
 Map<String, dynamic> _route({
   required AppRoutingMode mode,
   List<String> apps = const ['firefox.exe'],
+  bool windows = true,
 }) {
   final config = jsonDecode(SingBoxTunConfigGen.generate(
     localSocksPort: 2080,
@@ -27,8 +28,8 @@ Map<String, dynamic> _route({
     ),
     managedProcessNames: apps,
     routingMode: mode,
-    appProcessName: 'keqdroid.exe',
-    windows: true,
+    appProcessName: windows ? 'keqdroid.exe' : 'keqdroid',
+    windows: windows,
   )) as Map<String, dynamic>;
   return config['route'] as Map<String, dynamic>;
 }
@@ -36,7 +37,12 @@ Map<String, dynamic> _route({
 /// Куда sing-box отправит TLS-соединение [process] → [host]: первое правило с
 /// маршрутом, условия которого совпали. Соединение приходит доменом, поэтому
 /// правила по IP и DNS-перехват сюда не относятся.
-String _where(Map<String, dynamic> route, String process, String host) {
+String _where(
+  Map<String, dynamic> route,
+  String process,
+  String host, {
+  String path = '',
+}) {
   bool inList(Object? list, bool Function(String) test) =>
       list is List && list.cast<String>().any(test);
 
@@ -51,6 +57,22 @@ String _where(Map<String, dynamic> route, String process, String host) {
     }
     if (rule.containsKey('process_name') &&
         !inList(rule['process_name'], (n) => n == process)) {
+      continue;
+    }
+    // Как в ядре: `process_path` — точная строка (rule_item_process_path.go),
+    // `process_path_regex` — регулярка Go (RE2).
+    if (rule.containsKey('process_path') &&
+        !inList(rule['process_path'], (p) => p == path)) {
+      continue;
+    }
+    if (rule.containsKey('process_path_regex') &&
+        !inList(rule['process_path_regex'], (re) {
+          final insensitive = re.startsWith('(?i)');
+          return RegExp(
+            insensitive ? re.substring(4) : re,
+            caseSensitive: !insensitive,
+          ).hasMatch(path);
+        })) {
       continue;
     }
     if (rule.containsKey('domain_suffix') &&
@@ -83,7 +105,8 @@ void main() {
       expect(_where(route, 'chrome.exe', 'ads.example'), 'direct');
     });
 
-    // На Linux имена процессов в генератор пока не передаются.
+    // Страховка: если ни одна запись не дала имени, сплит не превращается
+    // в «всё мимо VPN».
     test('без имён процессов списки действуют, как было', () {
       final route = _route(mode: AppRoutingMode.onlySelected, apps: const []);
       expect(_where(route, 'chrome.exe', 'proxy.example'), 'proxy');
@@ -101,5 +124,74 @@ void main() {
     expect(_where(route, 'chrome.exe', 'proxy.example'), 'proxy');
     expect(_where(route, 'chrome.exe', 'direct.example'), 'direct');
     expect(_where(route, 'chrome.exe', 'other.example'), 'proxy');
+  });
+
+  // Выбранное из списка или через «Обзор…» сохраняется путём: это «только
+  // этот файл».
+  group('запись с путём', () {
+    const firefox = r'C:\Program Files\Mozilla Firefox\firefox.exe';
+
+    test('Windows: свой файл уходит в xray, одноимённый чужой — нет', () {
+      final route = _route(
+        mode: AppRoutingMode.onlySelected,
+        apps: const [firefox],
+      );
+      expect(
+        _where(route, 'firefox.exe', 'other.example', path: firefox),
+        'proxy',
+      );
+      // Регистр пути у системы и у диалога выбора файла бывает разный.
+      expect(
+        _where(route, 'firefox.exe', 'other.example',
+            path: r'c:\program files\mozilla firefox\FIREFOX.EXE'),
+        'proxy',
+      );
+      expect(
+        _where(route, 'firefox.exe', 'proxy.example',
+            path: r'D:\Portable\firefox.exe'),
+        'direct',
+      );
+    });
+
+    test('Windows: исключён только свой файл', () {
+      final route = _route(
+        mode: AppRoutingMode.allExceptSelected,
+        apps: const [firefox],
+      );
+      expect(
+        _where(route, 'firefox.exe', 'proxy.example', path: firefox),
+        'direct',
+      );
+      expect(
+        _where(route, 'firefox.exe', 'proxy.example',
+            path: r'D:\Portable\firefox.exe'),
+        'proxy',
+      );
+    });
+
+    test('Linux: точный путь и имя без .exe', () {
+      final route = _route(
+        mode: AppRoutingMode.onlySelected,
+        apps: const ['/usr/bin/curl', 'firefox'],
+        windows: false,
+      );
+      expect(
+        _where(route, 'curl', 'other.example', path: '/usr/bin/curl'),
+        'proxy',
+      );
+      expect(
+        _where(route, 'curl', 'proxy.example', path: '/tmp/curl'),
+        'direct',
+      );
+      expect(
+        _where(route, 'firefox', 'other.example',
+            path: '/usr/lib/firefox/firefox'),
+        'proxy',
+      );
+      expect(
+        _where(route, 'wget', 'proxy.example', path: '/usr/bin/wget'),
+        'direct',
+      );
+    });
   });
 }

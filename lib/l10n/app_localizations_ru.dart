@@ -1248,6 +1248,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get splitAddAppInvalid => 'Укажите имя или путь к .exe';
 
   @override
+  String get splitAddAppHintLinux => 'Путь к программе или её имя (например firefox)';
+
+  @override
+  String get splitAddAppInvalidLinux => 'Укажите имя программы или путь к ней';
+
+  @override
   String splitAddAppAdded(Object name) {
     return 'Добавлено: $name';
   }

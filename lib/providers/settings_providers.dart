@@ -103,6 +103,35 @@ class SplitTunnelingNotifier extends Notifier<SplitTunnelingState> {
     state = state.copyWith(includePackages: set, excludePackages: const {});
   }
 
+  /// Расчёт для [toggleApp] отдельно от записи на диск: его же зовёт тест
+  /// экрана, где SharedPreferences нет.
+  static Set<String> toggledEntries(Set<String> current, AppInfo app) {
+    final next = {...current}..removeWhere((e) => splitEntryMatches(e, app));
+    if (next.length == current.length) next.add(splitEntryForApp(app));
+    return next;
+  }
+
+  /// Нажатие по строке списка. Отмеченная снимается целиком: уходят и запись
+  /// с её путём, и запись с её именем — иначе строку, отмеченную старым
+  /// именем, нельзя было бы снять. Неотмеченная получает путь, если он у неё
+  /// есть: выбранное из списка сравнивается по пути.
+  Future<void> toggleApp(AppInfo app, {required bool include}) async {
+    final next = toggledEntries(
+      include ? state.includePackages : state.excludePackages,
+      app,
+    );
+    final storage = ref.read(storageProvider);
+    if (include) {
+      await storage.setIncludePackages(next.toList());
+      await storage.setExcludePackages([]);
+      state = state.copyWith(includePackages: next, excludePackages: const {});
+    } else {
+      await storage.setExcludePackages(next.toList());
+      await storage.setIncludePackages([]);
+      state = state.copyWith(excludePackages: next, includePackages: const {});
+    }
+  }
+
   /// добавляет пачку пакетов в excludePackages одним обновлением state
   /// (вместо цикла toggleExclude, иначе ловим race condition).
   /// Возвращает, сколько пакетов реально добавилось (без дублей); при пустом
@@ -134,14 +163,17 @@ class SplitTunnelingNotifier extends Notifier<SplitTunnelingState> {
     state = const SplitTunnelingState();
   }
 
-  /// ручное добавление exe/пути (Windows и произвольные записи)
+  /// Ручное добавление на десктопе: путь (из «Обзор…» или вписанный)
+  /// сохраняется путём — «только этот файл», имя — именем.
   Future<void> addCustomProcess(String raw, {required bool asInclude}) async {
-    final name = normalizeProcessName(raw);
-    if (name.isEmpty) return;
+    final entry = isProcessPathEntry(raw)
+        ? normalizeProcessPath(raw)
+        : normalizeProcessName(raw);
+    if (entry.isEmpty || normalizeProcessName(entry).isEmpty) return;
     if (asInclude) {
-      await toggleInclude(name);
+      await toggleInclude(entry);
     } else {
-      await toggleExclude(name);
+      await toggleExclude(entry);
     }
   }
 }

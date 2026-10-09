@@ -59,6 +59,7 @@ import '../utils/singbox_outbounds.dart';
 import '../utils/singbox_tun_config.dart';
 import '../utils/socks5_credentials.dart';
 import '../utils/split_tunnel_routing.dart';
+import '../utils/split_tunneling_entries.dart';
 import '../utils/ssr_uri.dart';
 import '../utils/subscription_diff.dart';
 import '../utils/subscription_url.dart';

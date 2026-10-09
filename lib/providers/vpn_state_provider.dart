@@ -411,7 +411,10 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
         includePackages: split.includePackages,
         excludePackages: split.excludePackages,
       );
-      final processNames = Platform.isWindows
+      // На Linux имена сюда не передавались вовсе — ограничение осталось от
+      // времени, когда десктопом был один Windows, — и сплит в TUN там не
+      // исполнялся. Android отдаёт сплит VpnService, имена ядру не нужны.
+      final processNames = (Platform.isWindows || Platform.isLinux)
           ? processNamesForSplit(
               includePackages: split.includePackages,
               excludePackages: split.excludePackages,

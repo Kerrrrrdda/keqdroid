@@ -402,28 +402,35 @@ class SingBoxTunConfigGen {
       });
     }
 
-    if (managedProcessNames.isNotEmpty) {
-      switch (routingMode) {
-        case AppRoutingMode.onlySelected:
-          for (final process in managedProcessNames) {
-            final variants = processNameMatchVariants(process);
-            if (variants.isEmpty) continue;
-            rules.add({
-              'process_name': variants,
-              'outbound': 'proxy',
-            });
-          }
-        case AppRoutingMode.allExceptSelected:
-          for (final process in managedProcessNames) {
-            final variants = processNameMatchVariants(process);
-            if (variants.isEmpty) continue;
-            rules.add({
-              'process_name': variants,
-              'outbound': 'direct',
-            });
-          }
-        case AppRoutingMode.allProxy:
-          break;
+    final splitOutbound = switch (routingMode) {
+      AppRoutingMode.onlySelected => 'proxy',
+      AppRoutingMode.allExceptSelected => 'direct',
+      AppRoutingMode.allProxy => null,
+    };
+    if (splitOutbound != null) {
+      final paths = <String>[];
+      for (final process in managedProcessNames) {
+        if (isProcessPathEntry(process)) {
+          paths.add(process.trim());
+          continue;
+        }
+        final variants = processNameMatchVariants(process);
+        if (variants.isEmpty) continue;
+        rules.add({'process_name': variants, 'outbound': splitOutbound});
+      }
+      // Запись с путём — «только этот файл». `process_path` сравнивает строку
+      // точно, а на Windows регистр пути у системы и у диалога выбора файла
+      // расходится, поэтому там — регулярка без учёта регистра.
+      if (paths.isNotEmpty) {
+        rules.add({
+          if (isWindows)
+            'process_path_regex': [
+              for (final path in paths) '(?i)^${processPathPattern(path)}\$',
+            ]
+          else
+            'process_path': paths,
+          'outbound': splitOutbound,
+        });
       }
     }
 
@@ -431,8 +438,8 @@ class SingBoxTunConfigGen {
     // а списки сайтов и «Всё остальное» он исполняет сам. Сюда доходят только
     // невыбранные приложения, и они идут мимо туннеля целиком, как на Android,
     // где VpnService их не берёт. Раньше они шли по спискам ниже и попадали в
-    // VPN по «Через VPN». Без имён процессов (Linux их пока не передаёт)
-    // списки остаются, как было.
+    // VPN по «Через VPN». Без единого имени процесса списки остаются, как
+    // было: иначе сплит молча стал бы «всё мимо VPN».
     final selectedOnly = routingMode == AppRoutingMode.onlySelected &&
         managedProcessNames
             .any((name) => processNameMatchVariants(name).isNotEmpty);

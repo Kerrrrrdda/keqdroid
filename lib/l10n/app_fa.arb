@@ -388,6 +388,8 @@
   "splitAddAppHint": "مسیر فایل \u200e.exe\u200e یا نام آن (مثلاً chrome.exe)",
   "splitAddAppPickFile": "انتخاب فایل…",
   "splitAddAppInvalid": "نام یا مسیر معتبر فایل \u200e.exe\u200e را وارد کنید",
+  "splitAddAppHintLinux": "مسیر برنامه یا نام آن (مثلاً ‎firefox‎)",
+  "splitAddAppInvalidLinux": "نام یا مسیر برنامه را وارد کنید",
   "splitAddAppAdded": "اضافه شد: {name}",
   "splitProxyModeWarning": "در حالت پروکسی، پروکسی به تفکیک برنامه اعمال نمی‌شود: همهٔ ترافیک از پروکسی سیستم عبور می‌کند. برای اینکه قوانین برنامه‌ها کار کنند، حالت اتصال را در پنل کناری روی TUN بگذارید.",
   "settingsLatestVersionInstalled": "آخرین نسخه را دارید",

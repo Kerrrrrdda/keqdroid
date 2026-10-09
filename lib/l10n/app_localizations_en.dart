@@ -1246,6 +1246,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get splitAddAppInvalid => 'Enter a valid .exe name or path';
 
   @override
+  String get splitAddAppHintLinux => 'Path to the program or its name (e.g. firefox)';
+
+  @override
+  String get splitAddAppInvalidLinux => 'Enter a program name or path';
+
+  @override
   String splitAddAppAdded(Object name) {
     return 'Added: $name';
   }

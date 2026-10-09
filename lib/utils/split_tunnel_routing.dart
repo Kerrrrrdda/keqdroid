@@ -14,10 +14,18 @@ AppRoutingMode routingModeFromSplit({
   return AppRoutingMode.allProxy;
 }
 
+/// Записи сплита для правил ядра: путь остаётся путём («только этот файл»),
+/// имя приводится к виду, в котором его видит ядро.
 List<String> processNamesForSplit({
   required Set<String> includePackages,
   required Set<String> excludePackages,
+  bool? windows,
 }) {
   final ids = <String>{...includePackages, ...excludePackages};
-  return ids.map(normalizeProcessName).where((e) => e.isNotEmpty).toList();
+  return ids
+      .map((id) => isProcessPathEntry(id)
+          ? normalizeProcessPath(id, windows: windows)
+          : normalizeProcessName(id, windows: windows))
+      .where((e) => e.isNotEmpty)
+      .toList();
 }

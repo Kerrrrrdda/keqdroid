@@ -1246,6 +1246,12 @@ class AppLocalizationsFa extends AppLocalizations {
   String get splitAddAppInvalid => 'نام یا مسیر معتبر فایل ‎.exe‎ را وارد کنید';
 
   @override
+  String get splitAddAppHintLinux => 'مسیر برنامه یا نام آن (مثلاً ‎firefox‎)';
+
+  @override
+  String get splitAddAppInvalidLinux => 'نام یا مسیر برنامه را وارد کنید';
+
+  @override
   String splitAddAppAdded(Object name) {
     return 'اضافه شد: $name';
   }

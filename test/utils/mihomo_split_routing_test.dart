@@ -17,6 +17,7 @@ List<String> _rules({
   required AppRoutingMode mode,
   List<String> apps = const ['firefox.exe', 'Telegram.exe'],
   String finalOutbound = AppSettings.finalOutboundProxy,
+  bool windows = true,
 }) {
   Socks5Credentials().init('u', 'p');
   return (MihomoConfigGen.build(
@@ -32,8 +33,8 @@ List<String> _rules({
     tun: const MihomoTunOptions(device: 'tun-keqdis', stack: 'gvisor'),
     routingMode: mode,
     managedProcessNames: apps,
-    appProcessName: 'keqdroid.exe',
-    windows: true,
+    appProcessName: windows ? 'keqdroid.exe' : 'keqdroid',
+    windows: windows,
   )['rules'] as List)
       .cast<String>();
 }
@@ -41,7 +42,14 @@ List<String> _rules({
 /// Куда mihomo отправит соединение [process] → [host]: первое совпавшее
 /// правило. Понимает типы, которые здесь бывают у соединения по домену; IP- и
 /// geo-правила пропускает — домены теста ни в один диапазон не попадают.
-String _route(List<String> rules, String process, String host) {
+String _route(
+  List<String> rules,
+  String process,
+  String host, {
+  String? path,
+}) {
+  // Путь процесса ядро узнаёт вместе с именем: имя — его последняя часть.
+  final fullPath = path ?? r'C:\Apps\' '$process';
   for (final rule in rules) {
     final fields = rule.split(',');
     final type = fields.first;
@@ -51,6 +59,8 @@ String _route(List<String> rules, String process, String host) {
       // Как в ядре: regexp2 с IgnoreCase (rules/common/process.go).
       'PROCESS-NAME-REGEX' =>
         RegExp(fields[1], caseSensitive: false).hasMatch(process),
+      'PROCESS-PATH-REGEX' =>
+        RegExp(fields[1], caseSensitive: false).hasMatch(fullPath),
       'DOMAIN' => host == fields[1],
       'DOMAIN-SUFFIX' => host == fields[1] || host.endsWith('.${fields[1]}'),
       _ => false,
@@ -123,8 +133,8 @@ void main() {
       expect(_route(rules, 'App x86.exe', 'example.com'), 'DIRECT');
     });
 
-    // На Linux имена процессов в генератор пока не передаются, и сплит там
-    // остаётся прежним: списки и финал DIRECT.
+    // Страховка: без единого имени процесса — прежний смысл, списки и финал
+    // DIRECT, а не «всё через VPN».
     test('без имён процессов всё как было', () {
       final rules = _rules(mode: AppRoutingMode.onlySelected, apps: const []);
       expect(rules.last, 'MATCH,DIRECT');
@@ -161,6 +171,99 @@ void main() {
       final split = rules.where((r) => r.startsWith('PROCESS-NAME-REGEX,'));
       expect(split.single.split(','), hasLength(3));
       expect(_route(rules, 'a,b.exe', 'telegram.org'), 'DIRECT');
+    });
+  });
+
+  // Выбранное из списка или через «Обзор…» сохраняется путём: это «только
+  // этот файл», одноимённая программа из другой папки им не считается.
+  group('запись с путём', () {
+    const firefox = r'C:\Program Files\Mozilla Firefox\firefox.exe';
+
+    test('только выбранные: свой файл идёт по спискам', () {
+      final rules = _rules(
+        mode: AppRoutingMode.onlySelected,
+        apps: const [firefox, 'Telegram.exe'],
+      );
+      expect(_route(rules, 'firefox.exe', 'yandex.ru', path: firefox),
+          'DIRECT');
+      expect(_route(rules, 'firefox.exe', 'example.com', path: firefox),
+          'proxy');
+      // Регистр пути на Windows не важен.
+      expect(
+        _route(rules, 'FIREFOX.EXE', 'example.com',
+            path: r'c:\program files\mozilla firefox\FIREFOX.EXE'),
+        'proxy',
+      );
+      // Имя из той же записи-списка по-прежнему ловит любой Telegram.exe.
+      expect(
+        _route(rules, 'Telegram.exe', 'example.com',
+            path: r'D:\Portable\Telegram.exe'),
+        'proxy',
+      );
+    });
+
+    test('только выбранные: одноимённый файл из другой папки — мимо VPN', () {
+      final rules = _rules(
+        mode: AppRoutingMode.onlySelected,
+        apps: const [firefox],
+      );
+      expect(
+        _route(rules, 'firefox.exe', 'example.com',
+            path: r'D:\Portable\firefox.exe'),
+        'DIRECT',
+      );
+      expect(_route(rules, 'chrome.exe', 'telegram.org'), 'DIRECT');
+      expect(_route(rules, '', 'telegram.org', path: ''), 'DIRECT');
+    });
+
+    test('все, кроме выбранных: исключён только свой файл', () {
+      final rules = _rules(
+        mode: AppRoutingMode.allExceptSelected,
+        apps: const [firefox, 'Telegram.exe'],
+      );
+      expect(_route(rules, 'firefox.exe', 'telegram.org', path: firefox),
+          'DIRECT');
+      expect(
+        _route(rules, 'firefox.exe', 'telegram.org',
+            path: r'D:\Portable\firefox.exe'),
+        'proxy',
+      );
+      expect(_route(rules, 'Telegram.exe', 'example.com'), 'DIRECT');
+    });
+
+    test('запятые и скобки в пути не ломают правило', () {
+      const odd = r'C:\Games (old),new\run.exe';
+      final rules = _rules(mode: AppRoutingMode.onlySelected, apps: const [odd]);
+      final split = rules.where((r) => r.startsWith('PROCESS-PATH-REGEX,'));
+      expect(split.single.split(','), hasLength(3));
+      expect(_route(rules, 'run.exe', 'example.com', path: odd), 'proxy');
+    });
+  });
+
+  // На Linux имя процесса — имя файла без `.exe`.
+  group('Linux', () {
+    test('имена и пути без .exe', () {
+      final rules = _rules(
+        mode: AppRoutingMode.onlySelected,
+        apps: const ['firefox', '/usr/bin/curl'],
+        windows: false,
+      );
+      expect(
+        _route(rules, 'firefox', 'yandex.ru', path: '/usr/lib/firefox/firefox'),
+        'DIRECT',
+      );
+      expect(
+        _route(rules, 'firefox', 'example.com',
+            path: '/usr/lib/firefox/firefox'),
+        'proxy',
+      );
+      expect(_route(rules, 'curl', 'example.com', path: '/usr/bin/curl'),
+          'proxy');
+      expect(_route(rules, 'curl', 'example.com', path: '/tmp/curl'),
+          'DIRECT');
+      expect(_route(rules, 'wget', 'telegram.org', path: '/usr/bin/wget'),
+          'DIRECT');
+      expect(rules.any((r) => r.contains('x2eexe')), isFalse);
     });
   });
 

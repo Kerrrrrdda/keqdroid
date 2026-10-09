@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'package:keqdroid/shared/ui/expressive.dart';
 import 'package:keqdroid/shared/ui/expressive_elements.dart';
 import 'package:keqdroid/shared/ui/expressive_group.dart';
@@ -104,35 +105,21 @@ class _SplitTunnelingScreenState extends ConsumerState<SplitTunnelingScreen>
     setState(() { _mode = mode; });
   }
 
-  /// Записи, которых нет в списке процессов, — добавленные руками exe.
+  /// Записи, которых нет в списке процессов: добавленные руками или
+  /// программы, которые сейчас не запущены. Каждая — своей строкой в начале.
   ///
-  /// Сравнение идёт по ключу [splitEntryKey], а не по сырой строке. Раньше
-  /// `known` собирался в нижнем регистре, а сохранённые имена — нет: Windows
-  /// отдаёт `Discord.exe`, в списках оседает `Discord.exe`, и проверка
-  /// `known.contains('Discord.exe')` не находила `discord.exe`. Каждое
-  /// выбранное приложение считалось «добавленным руками» и приписывалось в
-  /// начало списка второй строкой — без пути и без иконки.
-  ///
-  /// Хуже того, слияние повторялось поверх уже слитого списка на каждое
-  /// изменение выбора, и лишняя строка прибавлялась к каждой галочке снова и
-  /// снова: отсюда и три-четыре одинаковых Discord.exe подряд.
+  /// Запись считается найденной, если совпала с путём или именем живой
+  /// строки ([splitEntryMatches]). Раньше сравнивалась сырая строка, и
+  /// сохранённый `discord.exe` не находил `Discord.exe` системы: каждое
+  /// выбранное приложение приписывалось в начало списка второй строкой — без
+  /// пути и без иконки, и на каждое изменение выбора ещё по одной.
   List<AppInfo> _mergeCustomApps(List<AppInfo> apps) {
     final split = ref.read(splitTunnelingProvider);
-    final seen = apps.map((a) => splitEntryKey(a.packageName)).toSet();
     final custom = <AppInfo>[];
-    for (final id in {...split.includePackages, ...split.excludePackages}) {
-      final key = splitEntryKey(id);
-      // `add` возвращает false и на «уже есть в списке», и на второй вариант
-      // того же имени в самих списках (`Telegram.exe` рядом с `telegram.exe`).
-      if (key.isEmpty || !seen.add(key)) continue;
-      custom.add(
-        AppInfo(
-          packageName: normalizeProcessName(id),
-          appName: id.contains(r'\') || id.contains('/')
-              ? id.split(RegExp(r'[\\/]')).last
-              : id,
-        ),
-      );
+    for (final entry in {...split.includePackages, ...split.excludePackages}) {
+      if (entry.trim().isEmpty) continue;
+      if (apps.any((app) => splitEntryMatches(entry, app))) continue;
+      custom.add(splitStubForEntry(entry));
     }
     if (custom.isEmpty) return apps;
     return [...custom, ...apps];
@@ -140,12 +127,12 @@ class _SplitTunnelingScreenState extends ConsumerState<SplitTunnelingScreen>
 
   void _applyInitialSort(List<AppInfo> apps) {
     final split = ref.read(splitTunnelingProvider);
-    final checkedKeys = _checkedSet(split).map(splitEntryKey).toSet();
+    final selection = SplitSelection(_checkedSet(split));
     // Схлопывание — страховка на случай, если дубли придут откуда-то ещё
     // (список процессов, накопленное состояние прошлых версий): экран не
     // должен показывать одно приложение дважды ни при каких входных данных.
     final merged = dedupeSplitEntries(_mergeCustomApps(apps));
-    bool isChecked(AppInfo a) => checkedKeys.contains(splitEntryKey(a.packageName));
+    bool isChecked(AppInfo a) => selection.covers(a);
     _allApps = [
       ...merged.where(isChecked),
       ...merged.where((a) => !isChecked(a)),
@@ -189,7 +176,9 @@ class _SplitTunnelingScreenState extends ConsumerState<SplitTunnelingScreen>
               controller: ctrl,
               textDirection: technicalInputDirection,
               decoration: InputDecoration(
-                hintText: l10n.splitAddAppHint,
+                hintText: Platform.isLinux
+                    ? l10n.splitAddAppHintLinux
+                    : l10n.splitAddAppHint,
               ),
               autofocus: true,
             ),
@@ -200,10 +189,15 @@ class _SplitTunnelingScreenState extends ConsumerState<SplitTunnelingScreen>
                 child: TextButton.icon(
                   onPressed: () async {
                     try {
+                      // У программ Linux расширения нет, и фильтр по
+                      // `.exe` не дал бы выбрать ни одну.
                       final r = await AppFileDialogs.pickFile(
                         dialogTitle: l10n.splitAddAppPickFile,
-                        type: FileType.custom,
-                        allowedExtensions: const ['exe'],
+                        type: Platform.isLinux
+                            ? FileType.any
+                            : FileType.custom,
+                        allowedExtensions:
+                            Platform.isLinux ? null : const ['exe'],
                       );
                       if (r?.path != null) {
                         pickedPath = r!.path!;
@@ -252,7 +246,13 @@ class _SplitTunnelingScreenState extends ConsumerState<SplitTunnelingScreen>
     final name = normalizeProcessName(raw);
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.splitAddAppInvalid)),
+        SnackBar(
+          content: Text(
+            Platform.isLinux
+                ? l10n.splitAddAppInvalidLinux
+                : l10n.splitAddAppInvalid,
+          ),
+        ),
       );
       return;
     }
@@ -373,13 +373,11 @@ class _SplitTunnelingScreenState extends ConsumerState<SplitTunnelingScreen>
     }
   }
 
-  void _toggle(String pkg) {
+  void _toggle(AppInfo app) {
     if (_mode == TunnelMode.all) return;
-    if (_mode == TunnelMode.includeOnly) {
-      ref.read(splitTunnelingProvider.notifier).toggleInclude(pkg);
-    } else {
-      ref.read(splitTunnelingProvider.notifier).toggleExclude(pkg);
-    }
+    ref
+        .read(splitTunnelingProvider.notifier)
+        .toggleApp(app, include: _mode == TunnelMode.includeOnly);
   }
 
   int _checkedCount(
@@ -841,7 +839,7 @@ class _AppList extends StatelessWidget {
   final TunnelMode mode;
   final Set<String> includePackages;
   final Set<String> excludePackages;
-  final void Function(String) onToggle;
+  final void Function(AppInfo) onToggle;
 
   /// Есть ли над списком расширенный FAB. Если есть — последняя строка должна
   /// уезжать из-под него, иначе до неё не дотянуться.
@@ -856,15 +854,13 @@ class _AppList extends StatelessWidget {
     required this.hasFab,
   });
 
-  /// Отмеченные — ключами, а не сырыми строками: сохранённый `telegram.exe` и
-  /// пришедший из системы `Telegram.exe` — одна и та же строка списка, и
-  /// галочка обязана стоять в обоих случаях. Считаем один раз на построение
-  /// списка, а не на каждую из сотен строк.
-  Set<String> _checkedKeys() => switch (mode) {
+  /// Отмеченные разбираются один раз на построение списка, а не на каждую из
+  /// сотен строк.
+  SplitSelection _selection() => SplitSelection(switch (mode) {
         TunnelMode.all => const <String>{},
-        TunnelMode.includeOnly => includePackages.map(splitEntryKey).toSet(),
-        TunnelMode.excludeOnly => excludePackages.map(splitEntryKey).toSet(),
-      };
+        TunnelMode.includeOnly => includePackages,
+        TunnelMode.excludeOnly => excludePackages,
+      });
 
   @override
   Widget build(BuildContext context) {
@@ -913,7 +909,7 @@ class _AppList extends StatelessWidget {
       sliver: _AppListBody(
         apps: apps,
         mode: mode,
-        checkedKeys: _checkedKeys(),
+        selection: _selection(),
         onToggle: onToggle,
       ),
     );
@@ -925,13 +921,13 @@ class _AppList extends StatelessWidget {
 class _AppListBody extends ConsumerWidget {
   final List<AppInfo> apps;
   final TunnelMode mode;
-  final Set<String> checkedKeys;
-  final void Function(String) onToggle;
+  final SplitSelection selection;
+  final void Function(AppInfo) onToggle;
 
   const _AppListBody({
     required this.apps,
     required this.mode,
-    required this.checkedKeys,
+    required this.selection,
     required this.onToggle,
   });
 
@@ -952,10 +948,10 @@ class _AppListBody extends ConsumerWidget {
       itemBuilder: (context, i) {
         final app = apps[i];
         return _AppTile(
-          key: ValueKey(app.packageName),
+          key: ValueKey(app.installPath ?? app.packageName),
           app: app,
           iconCache: iconCache,
-          checked: checkedKeys.contains(splitEntryKey(app.packageName)),
+          checked: selection.covers(app),
           mode: mode,
           radius: ExpressiveListSegment.segmentRadius(
             index: i,
@@ -964,7 +960,7 @@ class _AppListBody extends ConsumerWidget {
           margin: ExpressiveListSegment.segmentMargin(index: i)
               .resolve(Directionality.of(context)),
           onTap:
-              mode == TunnelMode.all ? null : () => onToggle(app.packageName),
+              mode == TunnelMode.all ? null : () => onToggle(app),
         );
       },
     );

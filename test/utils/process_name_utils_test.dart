@@ -18,7 +18,10 @@ void main() {
     });
 
     test('юниксовый путь', () {
-      expect(normalizeProcessName('/usr/bin/discord'), 'discord.exe');
+      expect(
+        normalizeProcessName('/usr/bin/discord', windows: true),
+        'discord.exe',
+      );
     });
 
     test('смешанные разделители — берём последний любой', () {
@@ -36,7 +39,7 @@ void main() {
     });
 
     test('имя без расширения получает .exe', () {
-      expect(normalizeProcessName('Discord'), 'Discord.exe');
+      expect(normalizeProcessName('Discord', windows: true), 'Discord.exe');
     });
 
     test('уже .exe второй раз не дописывается, регистр расширения не важен', () {
@@ -45,6 +48,65 @@ void main() {
 
     test('пусто остаётся пустым', () {
       expect(normalizeProcessName('   '), isEmpty);
+    });
+  });
+
+  // На Linux имя процесса — имя файла как есть: с дописанным `.exe` правило
+  // ядра не совпадало ни разу.
+  group('normalizeProcessName на Linux', () {
+    test('расширение не дописывается', () {
+      expect(normalizeProcessName('firefox', windows: false), 'firefox');
+    });
+
+    test('путь режется до имени файла', () {
+      expect(
+        normalizeProcessName('/usr/lib/firefox/firefox', windows: false),
+        'firefox',
+      );
+    });
+  });
+
+  group('запись с путём', () {
+    test('путь — с любой косой, имя — без', () {
+      expect(isProcessPathEntry(r'C:\Apps\a.exe'), isTrue);
+      expect(isProcessPathEntry('/usr/bin/curl'), isTrue);
+      expect(isProcessPathEntry('curl'), isFalse);
+      expect(isProcessPathEntry('Discord.exe'), isFalse);
+    });
+
+    test('на Windows путь приводится к обратным косым, кавычки снимаются', () {
+      expect(
+        normalizeProcessPath('"C:/Apps/a.exe"', windows: true),
+        r'C:\Apps\a.exe',
+      );
+      expect(
+        normalizeProcessPath('/usr/bin/curl', windows: false),
+        '/usr/bin/curl',
+      );
+    });
+  });
+
+  group('регулярка ядра', () {
+    // Ядро сравнивает регуляркой: точка без кодирования значила бы «любой
+    // символ», а запятая разрезала бы правило mihomo на поля.
+    test('всё, кроме латиницы и цифр, кодируется', () {
+      expect(
+        processRegexLiteral('a,b (x).exe'),
+        r'a\x2cb\x20\x28x\x29\x2eexe',
+      );
+      expect(processRegexLiteral('Телега.exe'), r'Телега\x2eexe');
+    });
+
+    test('путь ловит обе косые и не ловит соседний файл', () {
+      final re = RegExp(
+        '^${processPathPattern(r'C:\Apps\a.exe')}\$',
+        caseSensitive: false,
+      );
+      expect(re.hasMatch(r'C:\Apps\a.exe'), isTrue);
+      expect(re.hasMatch('C:/Apps/a.exe'), isTrue);
+      expect(re.hasMatch(r'c:\apps\A.EXE'), isTrue);
+      expect(re.hasMatch(r'C:\Apps\aXexe'), isFalse);
+      expect(re.hasMatch(r'C:\Other\a.exe'), isFalse);
     });
   });
 

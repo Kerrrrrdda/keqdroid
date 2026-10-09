@@ -1276,9 +1276,10 @@ chown root:root '$_polkitRulePath' 2>/dev/null || true
   Future<List<Map<String, dynamic>>> getInstalledApps({
     bool includeSystem = false,
   }) async {
-    // Split tunneling matches sing-box `process_name`, which on Linux is the
-    // executable basename. Enumerate running processes from /proc, de-duped by
-    // that name. Kernel threads (no /exe) are skipped unless includeSystem.
+    // Запущенные процессы из /proc; потоки ядра (без /exe) — только с
+    // includeSystem. Выбранная строка сохраняется путём, поэтому повторы
+    // отсекаются по пути: одноимённые программы из разных мест (python3 из
+    // разных окружений) — разные строки.
     final seen = <String>{};
     final apps = <Map<String, dynamic>>[];
     try {
@@ -1304,7 +1305,7 @@ chown root:root '$_polkitRulePath' 2>/dev/null || true
             continue;
           }
         }
-        if (name.isEmpty || !seen.add(name.toLowerCase())) continue;
+        if (name.isEmpty || !seen.add(exePath ?? 'comm:$name')) continue;
 
         apps.add({
           'packageName': name,

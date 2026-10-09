@@ -584,6 +584,8 @@
   "splitAddAppHint": "Путь к .exe или имя (например chrome.exe)",
   "splitAddAppPickFile": "Обзор…",
   "splitAddAppInvalid": "Укажите имя или путь к .exe",
+  "splitAddAppHintLinux": "Путь к программе или её имя (например firefox)",
+  "splitAddAppInvalidLinux": "Укажите имя программы или путь к ней",
   "splitAddAppAdded": "Добавлено: {name}",
   "@splitAddAppAdded": {
     "placeholders": {

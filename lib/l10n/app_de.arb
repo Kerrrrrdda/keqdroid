@@ -584,6 +584,8 @@
   "splitAddAppHint": "Pfad zur .exe oder Name (z. B. chrome.exe)",
   "splitAddAppPickFile": "Durchsuchen…",
   "splitAddAppInvalid": "Gib einen gültigen .exe-Namen oder Pfad ein",
+  "splitAddAppHintLinux": "Pfad zum Programm oder sein Name (z. B. firefox)",
+  "splitAddAppInvalidLinux": "Gib einen Programmnamen oder Pfad ein",
   "splitAddAppAdded": "Hinzugefügt: {name}",
   "@splitAddAppAdded": {
     "placeholders": {

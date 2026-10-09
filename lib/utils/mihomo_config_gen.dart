@@ -9,6 +9,7 @@ import 'custom_clash_config.dart';
 import 'fake_ip.dart';
 import 'hysteria_uri.dart';
 import 'mieru_uri.dart';
+import 'process_name_utils.dart';
 import 'routing_entry.dart';
 import 'socks5_credentials.dart';
 import 'ssr_uri.dart';
@@ -2097,9 +2098,8 @@ class MihomoConfigGen {
     // же у keqrnel, где финал исполняет встроенный xray, и на Android. Раньше
     // сплит подменял финал собой, и «Всё остальное» при нём не действовало.
     //
-    // Исключение — «только выбранные» без единого имени процесса: на Linux
-    // имена в генератор пока не передаются, и там остаётся прежний DIRECT,
-    // иначе сплит молча стал бы «всё через VPN».
+    // Исключение — «только выбранные» без единого имени процесса: там
+    // остаётся прежний DIRECT, иначе сплит молча стал бы «всё через VPN».
     final unnamedSelection = routingMode == AppRoutingMode.onlySelected &&
         managedProcessNames.every((name) => name.trim().isEmpty);
     final finalTarget = unnamedSelection
@@ -2180,43 +2180,48 @@ class MihomoConfigGen {
     // как на Android, где VpnService просто не берёт чужие приложения. Прежнее
     // «выбранное приложение — сразу в прокси» стояло раньше списков, и
     // «Напрямую: ru» на выбранные приложения не действовало вовсе.
-    final names = [
-      for (final process in managedProcessNames)
-        if (process.trim().isNotEmpty) process.trim(),
-    ];
-    if (names.isEmpty) return rules;
-    final anyOf = names.map(_processNamePattern).join('|');
+    //
+    // Регулярка, а не `PROCESS-NAME` на каждое имя или `NOT,((OR,…))`: ядро
+    // режет правило по запятым, а в логических правилах ещё и считает скобки.
+    // exe с запятой в имени уже ронял разбор всего конфига, и ядро не
+    // запускалось; скобка уронила бы логическое правило так же. Отсюда
+    // кодирование в [processRegexLiteral].
+    //
+    // Запись с путём сверяется с путём процесса, имя — с именем. У «только
+    // выбранных» оба вида в одном правиле по пути (имя — его хвост): «ни одна
+    // запись не совпала» из двух правил собралось бы только логическим И.
+    final names = <String>[];
+    final paths = <String>[];
+    for (final process in managedProcessNames) {
+      final entry = process.trim();
+      if (entry.isEmpty) continue;
+      (isProcessPathEntry(entry) ? paths : names).add(entry);
+    }
+    if (names.isEmpty && paths.isEmpty) return rules;
+    final nameAlts = names.map(processRegexLiteral).join('|');
+    final pathAlts = paths.map(processPathPattern).join('|');
     switch (routingMode) {
       case AppRoutingMode.onlySelected:
-        rules.add('PROCESS-NAME-REGEX,^(?!(?:$anyOf)\$),DIRECT');
+        if (paths.isEmpty) {
+          rules.add('PROCESS-NAME-REGEX,^(?!(?:$nameAlts)\$),DIRECT');
+        } else {
+          final anyOf = [
+            pathAlts,
+            if (names.isNotEmpty) '.*[\\x5c/](?:$nameAlts)',
+          ].join('|');
+          rules.add('PROCESS-PATH-REGEX,^(?!(?:$anyOf)\$),DIRECT');
+        }
       case AppRoutingMode.allExceptSelected:
-        rules.add('PROCESS-NAME-REGEX,^(?:$anyOf)\$,DIRECT');
+        if (names.isNotEmpty) {
+          rules.add('PROCESS-NAME-REGEX,^(?:$nameAlts)\$,DIRECT');
+        }
+        if (paths.isNotEmpty) {
+          rules.add('PROCESS-PATH-REGEX,^(?:$pathAlts)\$,DIRECT');
+        }
       case AppRoutingMode.allProxy:
         break;
     }
     return rules;
-  }
-
-  /// Имя процесса буквально, внутри регулярки `PROCESS-NAME-REGEX`.
-  ///
-  /// Регулярка, а не `PROCESS-NAME` на каждое имя или `NOT,((OR,…))`: ядро
-  /// режет правило по запятым, а в логических правилах ещё и считает скобки.
-  /// exe с запятой в имени уже ронял разбор всего конфига, и ядро не
-  /// запускалось; скобка уронила бы логическое правило так же. Поэтому всё,
-  /// кроме латиницы и цифр, пишется кодом `\xNN`.
-  static String _processNamePattern(String name) {
-    final out = StringBuffer();
-    for (final rune in name.runes) {
-      final isAsciiAlnum = (rune >= 0x30 && rune <= 0x39) ||
-          (rune >= 0x41 && rune <= 0x5a) ||
-          (rune >= 0x61 && rune <= 0x7a);
-      if (isAsciiAlnum || rune > 0x7f) {
-        out.writeCharCode(rune);
-      } else {
-        out.write('\\x${rune.toRadixString(16).padLeft(2, '0')}');
-      }
-    }
-    return out.toString();
   }
 
   /// Сам сервер — мимо туннеля, иначе обращение к его адресу закольцуется.

@@ -1246,6 +1246,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get splitAddAppInvalid => '请输入有效的 .exe 名称或路径';
 
   @override
+  String get splitAddAppHintLinux => '程序路径或名称（例如 firefox）';
+
+  @override
+  String get splitAddAppInvalidLinux => '请输入程序名称或路径';
+
+  @override
   String splitAddAppAdded(Object name) {
     return '已添加：$name';
   }

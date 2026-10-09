@@ -23,14 +23,22 @@ class _FakeSplit extends SplitTunnelingNotifier {
   SplitTunnelingState build() => _state;
 
   /// Настоящий toggle пишет в SharedPreferences; здесь нужен только сдвиг
-  /// состояния — экран слушает именно его.
+  /// состояния — экран слушает именно его. Сам расчёт — настоящий.
   @override
-  Future<void> toggleExclude(String pkg) async {
-    final key = pkg.toLowerCase();
-    final next = {...state.excludePackages}
-      ..removeWhere((e) => e.toLowerCase() == key);
-    if (next.length == state.excludePackages.length) next.add(pkg);
-    state = state.copyWith(excludePackages: next);
+  Future<void> toggleApp(AppInfo app, {required bool include}) async {
+    state = include
+        ? state.copyWith(
+            includePackages: SplitTunnelingNotifier.toggledEntries(
+              state.includePackages,
+              app,
+            ),
+          )
+        : state.copyWith(
+            excludePackages: SplitTunnelingNotifier.toggledEntries(
+              state.excludePackages,
+              app,
+            ),
+          );
   }
 }
 
@@ -228,6 +236,96 @@ void main() {
         find.byType(ExpressiveListSegment),
         findsNWidgets(3 + _windowsApps.length),
       );
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  // Выбранное из списка сравнивается по пути, вписанное руками — по имени, и
+  // старые записи по имени продолжают работать.
+  group('путь и имя', () {
+    // Две строки в тестовом окне ложатся под плавающую кнопку «Добавить», и
+    // нажатие по координатам ловит она. Зовём обработчик самой строки.
+    Future<void> tapRow(WidgetTester tester, String title) async {
+      tester
+          .widget<ExpressiveListSegment>(
+            find
+                .ancestor(
+                  of: find.text(title),
+                  matching: find.byType(ExpressiveListSegment),
+                )
+                .first,
+          )
+          .onTap!();
+      await tester.pumpAndSettle();
+    }
+
+    SplitTunnelingState state(WidgetTester tester) =>
+        ProviderScope.containerOf(
+          tester.element(find.byType(SplitTunnelingScreen)),
+        ).read(splitTunnelingProvider);
+
+    testWidgets('отметка строки сохраняет её путь', (tester) async {
+      await _pump(tester, apps: _windowsApps, excludes: {'Telegram.exe'});
+
+      await tapRow(tester, 'Discord.exe');
+
+      expect(state(tester).excludePackages, {
+        'Telegram.exe',
+        r'C:\Users\u\AppData\Local\Discord\Discord.exe',
+      });
+      expect(_isRowSelected(tester, 'Discord.exe'), isTrue);
+    });
+
+    testWidgets('строка, отмеченная старым именем, снимается', (tester) async {
+      await _pump(
+        tester,
+        apps: _windowsApps,
+        excludes: {'telegram.exe', 'Discord.exe'},
+      );
+
+      await tapRow(tester, 'Telegram.exe');
+
+      expect(state(tester).excludePackages, {'Discord.exe'});
+      expect(_isRowSelected(tester, 'Telegram.exe'), isFalse);
+    });
+
+    testWidgets('путь к программе не из списка — своя строка с этим путём', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        apps: _windowsApps,
+        excludes: {r'C:\Games\Launcher\Update.exe'},
+      );
+
+      expect(find.text('Update.exe'), findsOneWidget);
+      expect(find.text(r'C:\Games\Launcher\Update.exe'), findsOneWidget);
+      expect(_isRowSelected(tester, 'Update.exe'), isTrue);
+      expect(_isRowSelected(tester, 'Discord.exe'), isFalse);
+    });
+
+    testWidgets('одно имя, разные пути — отмечена только своя строка', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        apps: const [
+          AppInfo(
+            packageName: 'Update.exe',
+            appName: 'Launcher A',
+            installPath: r'C:\A\Update.exe',
+          ),
+          AppInfo(
+            packageName: 'Update.exe',
+            appName: 'Launcher B',
+            installPath: r'C:\B\Update.exe',
+          ),
+        ],
+        excludes: {r'C:\B\Update.exe'},
+      );
+
+      expect(_isRowSelected(tester, 'Launcher B'), isTrue);
+      expect(_isRowSelected(tester, 'Launcher A'), isFalse);
       expect(tester.takeException(), isNull);
     });
   });

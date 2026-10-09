@@ -5,25 +5,102 @@ import 'package:keqdroid/utils/split_tunneling_entries.dart';
 AppInfo _app(String pkg, {String? path}) =>
     AppInfo(packageName: pkg, appName: pkg, installPath: path);
 
+const _discord = AppInfo(
+  packageName: 'Discord.exe',
+  appName: 'Discord',
+  installPath: r'C:\Users\u\AppData\Local\Discord\app-1.0\Discord.exe',
+);
+
 void main() {
-  group('splitEntryKey', () {
-    test('регистр не создаёт второго приложения', () {
-      expect(splitEntryKey('Discord.exe'), splitEntryKey('discord.exe'));
+  group('запись совпадает со строкой', () {
+    test('имя — с любой программой этого имени, без учёта регистра', () {
+      expect(splitEntryMatches('Discord.exe', _discord, windows: true), isTrue);
+      // Так писала старая версия.
+      expect(splitEntryMatches('discord.exe', _discord, windows: true), isTrue);
+      expect(splitEntryMatches('Discord', _discord, windows: true), isTrue);
     });
 
-    test('путь и голое имя — одна запись', () {
+    test('путь — только с этим файлом', () {
       expect(
-        splitEntryKey(r'C:\Program Files\Discord\Discord.exe'),
-        splitEntryKey('Discord.exe'),
+        splitEntryMatches(_discord.installPath!, _discord, windows: true),
+        isTrue,
+      );
+      // На Windows путь от регистра не зависит.
+      expect(
+        splitEntryMatches(
+          r'c:\users\u\appdata\local\discord\APP-1.0\discord.exe',
+          _discord,
+          windows: true,
+        ),
+        isTrue,
+      );
+      expect(
+        splitEntryMatches(
+          r'C:\Games\Other\Discord.exe',
+          _discord,
+          windows: true,
+        ),
+        isFalse,
       );
     });
 
-    test('имя без расширения приводится к exe', () {
-      expect(splitEntryKey('Discord'), splitEntryKey('Discord.exe'));
+    test('на Linux регистр пути различается', () {
+      const app = AppInfo(
+        packageName: 'tool',
+        appName: 'tool',
+        installPath: '/opt/App/tool',
+      );
+      expect(splitEntryMatches('/opt/App/tool', app, windows: false), isTrue);
+      expect(splitEntryMatches('/opt/app/tool', app, windows: false), isFalse);
     });
 
-    test('пустая строка остаётся пустой', () {
-      expect(splitEntryKey('   '), isEmpty);
+    test('путь у строки без пути не совпадает', () {
+      expect(
+        splitEntryMatches(r'C:\a\x.exe', _app('x.exe'), windows: true),
+        isFalse,
+      );
+    });
+  });
+
+  group('что сохраняется при отметке', () {
+    test('строка с путём — путь', () {
+      expect(
+        splitEntryForApp(_discord, windows: true),
+        _discord.installPath,
+      );
+    });
+
+    test('строка без пути (Android, вписанное имя) — имя', () {
+      expect(splitEntryForApp(_app('org.mozilla.firefox')), 'org.mozilla.firefox');
+    });
+  });
+
+  test('SplitSelection отмечает строку по пути или по имени', () {
+    final byPath = SplitSelection({_discord.installPath!}, windows: true);
+    final byName = SplitSelection({'discord.exe'}, windows: true);
+    const other = AppInfo(
+      packageName: 'Discord.exe',
+      appName: 'Discord',
+      installPath: r'C:\Elsewhere\Discord.exe',
+    );
+
+    expect(byPath.covers(_discord), isTrue);
+    expect(byPath.covers(other), isFalse);
+    expect(byName.covers(_discord), isTrue);
+    expect(byName.covers(other), isTrue);
+  });
+
+  group('строка для записи вне списка', () {
+    test('путь даёт строку с этим путём и именем файла', () {
+      final stub = splitStubForEntry(r'C:\Games\Update.exe', windows: true);
+      expect(stub.packageName, 'Update.exe');
+      expect(stub.installPath, r'C:\Games\Update.exe');
+    });
+
+    test('имя даёт строку без пути', () {
+      final stub = splitStubForEntry('Update', windows: true);
+      expect(stub.packageName, 'Update.exe');
+      expect(stub.installPath, isNull);
     });
   });
 
@@ -32,7 +109,7 @@ void main() {
       final out = dedupeSplitEntries([
         _app('Discord.exe', path: r'C:\Discord\Discord.exe'),
         _app('discord.exe'),
-      ]);
+      ], windows: true);
 
       expect(out, hasLength(1));
       expect(out.single.installPath, isNotNull);
@@ -45,10 +122,23 @@ void main() {
       final out = dedupeSplitEntries([
         _app('Telegram.exe'),
         _app('Telegram.exe', path: r'C:\Telegram\Telegram.exe'),
-      ]);
+      ], windows: true);
 
       expect(out, hasLength(1));
       expect(out.single.installPath, r'C:\Telegram\Telegram.exe');
+    });
+
+    test('одно имя с разными путями — разные программы', () {
+      final out = dedupeSplitEntries([
+        _app('Update.exe', path: r'C:\A\Update.exe'),
+        _app('Update.exe', path: r'C:\B\Update.exe'),
+        _app('Update.exe', path: r'c:\a\update.exe'),
+      ], windows: true);
+
+      expect(out.map((e) => e.installPath), [
+        r'C:\A\Update.exe',
+        r'C:\B\Update.exe',
+      ]);
     });
 
     test('порядок остальных записей сохраняется', () {
@@ -57,7 +147,7 @@ void main() {
         _app('b.exe', path: 'b'),
         _app('A.exe'),
         _app('c.exe', path: 'c'),
-      ]);
+      ], windows: true);
 
       expect(out.map((e) => e.packageName), ['a.exe', 'b.exe', 'c.exe']);
     });
@@ -66,7 +156,7 @@ void main() {
       final out = dedupeSplitEntries([
         _app('Discord.exe', path: 'd'),
         _app('Telegram.exe', path: 't'),
-      ]);
+      ], windows: true);
 
       expect(out, hasLength(2));
     });

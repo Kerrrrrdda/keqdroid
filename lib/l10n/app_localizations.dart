@@ -2429,6 +2429,18 @@ abstract class AppLocalizations {
   /// **'Enter a valid .exe name or path'**
   String get splitAddAppInvalid;
 
+  /// No description provided for @splitAddAppHintLinux.
+  ///
+  /// In en, this message translates to:
+  /// **'Path to the program or its name (e.g. firefox)'**
+  String get splitAddAppHintLinux;
+
+  /// No description provided for @splitAddAppInvalidLinux.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a program name or path'**
+  String get splitAddAppInvalidLinux;
+
   /// No description provided for @splitAddAppAdded.
   ///
   /// In en, this message translates to:
