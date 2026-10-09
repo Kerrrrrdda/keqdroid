@@ -401,6 +401,13 @@ abstract class AppLocalizations {
   /// **'Routing Rules'**
   String get settingsRoutingTitle;
 
+  String get settingsNetworkRoutingTitle;
+  String get settingsNetworkRoutingSubtitle;
+  String get settingsNetworkRoutingWifi;
+  String get settingsNetworkRoutingCellular;
+  String get settingsNetworkRoutingDefault;
+  String get settingsNetworkRoutingHint;
+
   /// No description provided for @settingsSplitConfigured.
   ///
   /// In en, this message translates to:
