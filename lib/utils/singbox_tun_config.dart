@@ -154,6 +154,12 @@ class SingBoxTunConfigGen {
     /// интерфейсе там, где IPv6 в системе выключен, — это не «лишняя строка в
     /// конфиге», а упавший на старте sing-box.
     bool hostHasIpv6 = false,
+    /// Android: package name -> server id. These rules take precedence over
+    /// domain/IP routing, so an app keeps its assigned server consistently.
+    Map<String, String> appServerAssignments = const {},
+    /// Server id -> local SOCKS port for extra proxy-only core processes.
+    Map<String, int> appServerPorts = const {},
+    String? activeServerId,
   }) {
     final isWindows = windows ?? Platform.isWindows;
     // Разделители — и запятая, и перевод строки: UI обещает «по одному в
@@ -354,6 +360,31 @@ class SingBoxTunConfigGen {
       {'protocol': 'icmp', 'outbound': 'direct'},
       {'ip_cidr': ['172.19.0.0/30'], 'outbound': 'direct'},
     ];
+
+    final sortedAppServerIds = appServerPorts.keys.toList()..sort();
+    final appServerTags = <String, String>{
+      for (var i = 0; i < sortedAppServerIds.length; i++)
+        sortedAppServerIds[i]: 'app-server-$i',
+    };
+    final appPackageRules = <Map<String, dynamic>>[];
+    if (activeServerId != null) {
+      for (final entry in appServerAssignments.entries) {
+        final packageName = entry.key.trim();
+        final serverId = entry.value.trim();
+        if (packageName.isEmpty) continue;
+        final outbound = serverId == activeServerId
+            ? 'proxy'
+            : appServerTags[serverId];
+        if (outbound == null) continue;
+        appPackageRules.add({
+          'package_name': [packageName],
+          'outbound': outbound,
+        });
+      }
+    }
+    // Per-app rules precede generic direct/proxy/domain rules below. The
+    // TUN's DNS interception and local ICMP/TUN-subnet exceptions remain first.
+    rules.addAll(appPackageRules);
 
     // bypass tun for the cores and this app itself so they go direct:
     //  - xray.exe / ephemeral ping xray: only dials the server, avoids double-tunnel
@@ -729,6 +760,14 @@ class SingBoxTunConfigGen {
       'inbounds': [tunInbound],
       'outbounds': [
         proxyOutbound,
+        for (final serverId in sortedAppServerIds)
+          {
+            'type': 'socks',
+            'tag': appServerTags[serverId]!,
+            'server': '127.0.0.1',
+            'server_port': appServerPorts[serverId]!,
+            'version': '5',
+          },
         {'type': 'direct', 'tag': 'direct'},
       ],
       'route': {
