@@ -188,6 +188,31 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsNetworkRoutingHint => "WLAN und mobile Daten haben unabhängige Serverauswahlen. „Aktiven Server für dieses Netzwerk verwenden“ gilt nur für das jeweilige Feld. Im Android-VPN-Modus wird das Kernprogramm beim Netzwerkwechsel neu gestartet; Verbindungen können kurz pausieren. Alternative Server müssen dasselbe Kernprogramm wie der aktive Server verwenden.";
 
   @override
+  String get settingsAppServerRoutingTitle => "Server pro App";
+
+  @override
+  String get settingsAppServerRoutingSubtitle => "Weisen Sie jeder Android-App einen eigenen Server zu";
+
+  @override
+  String get settingsAppServerRoutingHint => "Funktioniert im Android-VPN-Modus ab Android 10. Zugewiesene Apps verwenden ihren Server für den gesamten Datenverkehr; alle anderen nutzen den Hauptserver. Änderungen gelten nach erneutem Verbinden.";
+
+  @override
+  String get settingsAppServerRoutingSearch => "Apps suchen";
+
+  @override
+  String get settingsAppServerRoutingShowSystemApps => "System-Apps anzeigen";
+
+  @override
+  String get settingsAppServerRoutingNoApps => "Keine Apps gefunden";
+
+  @override
+  String get settingsAppServerRoutingServer => "Server";
+
+  @override
+  String get settingsAppServerRoutingDefault => "Hauptserver verwenden";
+
+
+  @override
   String settingsSplitConfigured(int count) {
     return '$count Apps konfiguriert';
   }
