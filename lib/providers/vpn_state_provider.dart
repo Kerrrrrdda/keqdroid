@@ -369,7 +369,7 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
     required ConnectionMode connectionMode,
     required AppRoutingMode routingMode,
     required bool localInboundsNoAuth,
-    required int mihomoApiPort,
+    required int? mihomoApiPort,
     required String mihomoApiSecret,
     required RuleListDomains ruleLists,
   }) async {
