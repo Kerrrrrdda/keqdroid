@@ -29,6 +29,27 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(keystorePropertiesFile.inputStream())
 }
 
+// A local checkout may not have a release keystore (key.properties and *.jks
+// are deliberately gitignored). In that case, local --release builds use the
+// Android debug key instead of trying to open a file literally named "null".
+// The release packaging script separately requires a real release key.
+val releaseStoreFile = keystoreProperties.getProperty("storeFile")
+    ?.trim()
+    ?.takeIf { it.isNotEmpty() }
+    ?.let { file(it) }
+val releaseSigningConfigured =
+    keystorePropertiesFile.isFile &&
+        listOf("keyAlias", "keyPassword", "storePassword")
+            .all { !keystoreProperties.getProperty(it).isNullOrBlank() } &&
+        releaseStoreFile?.isFile == true
+
+if (!releaseSigningConfigured) {
+    logger.warn(
+        "No valid Android release keystore found; local release/profile builds will use the " +
+            "debug signing key. Such APKs cannot update installations signed with another key."
+    )
+}
+
 // Архитектура APK. В релизе их две: основной arm64-v8a и armeabi-v7a для
 // телефонов, где производитель поставил 32-битный Android на 64-битный чип
 // (Redmi 9A/9C), — arm64-APK там не ставится вовсе. Какую собирать, Flutter
@@ -96,26 +117,29 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            keyAlias = keystoreProperties["keyAlias"].toString()
-            keyPassword = keystoreProperties["keyPassword"].toString()
-            storeFile = file(keystoreProperties["storeFile"].toString())
-            storePassword = keystoreProperties["storePassword"].toString()
+        if (releaseSigningConfigured) {
+            create("release") {
+                keyAlias = keystoreProperties.getProperty("keyAlias").trim()
+                keyPassword = keystoreProperties.getProperty("keyPassword").trim()
+                storeFile = requireNotNull(releaseStoreFile)
+                storePassword = keystoreProperties.getProperty("storePassword").trim()
+            }
         }
     }
 
     buildTypes {
-        // Профильная сборка подписывается тем же ключом, что и релизная.
-        //
-        // Иначе её невозможно поставить поверх установленного релиза
-        // (INSTALL_FAILED_UPDATE_INCOMPATIBLE), а единственный выход — удалить
-        // приложение вместе со всеми подписками и настройками. Профилировать
-        // приходится именно на реальном устройстве с реальными данными, так
-        // что цена «чистой» отладочной подписи здесь — потерянный аккаунт.
-        maybeCreate("profile").signingConfig = signingConfigs.getByName("release")
+        // Keep profile and release on the same key when a release keystore is
+        // configured. On a fresh checkout, use the debug key for local testing.
+        // tool/make_release.ps1 refuses to package an APK without a real key.
+        val localSigningConfig = if (releaseSigningConfigured) {
+            signingConfigs.getByName("release")
+        } else {
+            signingConfigs.getByName("debug")
+        }
+        maybeCreate("profile").signingConfig = localSigningConfig
 
         release {
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = localSigningConfig
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
