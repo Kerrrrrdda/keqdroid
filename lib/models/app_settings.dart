@@ -131,6 +131,9 @@ class AppSettings {
   final String wifiServerId;
   final String cellularServerId;
 
+  /// Android: package name -> server id. Missing entries use the active server.
+  final Map<String, String> appServerAssignments;
+
   /// Отдавать системе подменные адреса вместо настоящих (fake-ip) — одна
   /// настройка на оба ядра.
   ///
@@ -251,6 +254,7 @@ class AppSettings {
     this.vpnCore = vpnCoreAuto,
     this.wifiServerId = '',
     this.cellularServerId = '',
+    this.appServerAssignments = const {},
     this.fakeIp = false,
     this.hotkeys = const {},
     this.serversTwoColumns = false,
@@ -310,6 +314,7 @@ class AppSettings {
     'vpnCore': vpnCore,
     'wifiServerId': wifiServerId,
     'cellularServerId': cellularServerId,
+    'appServerAssignments': appServerAssignments,
     'fakeIp': fakeIp,
     'hotkeys': hotkeys,
     'serversTwoColumns': serversTwoColumns,
@@ -399,6 +404,7 @@ class AppSettings {
       vpnCore: normalizeVpnCore(json['vpnCore'] as String?),
       wifiServerId: json['wifiServerId'] as String? ?? '',
       cellularServerId: json['cellularServerId'] as String? ?? '',
+      appServerAssignments: _readStringMap(json['appServerAssignments']),
       // До 26.09.2026 настройка была только у mihomo и хранилась под старым
       // именем — его и дочитываем, чтобы включённое не выключилось само.
       fakeIp: json['fakeIp'] as bool? ?? json['mihomoFakeIp'] as bool? ?? false,
@@ -525,6 +531,18 @@ class AppSettings {
     return merged.join(', ');
   }
 
+  static Map<String, String> _readStringMap(Object? raw) {
+    if (raw is! Map) return const {};
+    return {
+      for (final entry in raw.entries)
+        if (entry.key is String &&
+            entry.value is String &&
+            (entry.key as String).trim().isNotEmpty &&
+            (entry.value as String).trim().isNotEmpty)
+          (entry.key as String).trim(): (entry.value as String).trim(),
+    };
+  }
+
   static const pingTypes = ['tcp', 'url', 'speed', 'icmp'];
 
   static String _normalizePingType(String? raw) {
@@ -581,6 +599,7 @@ class AppSettings {
     String? vpnCore,
     String? wifiServerId,
     String? cellularServerId,
+    Map<String, String>? appServerAssignments,
     bool? fakeIp,
     Map<String, String>? hotkeys,
     bool? serversTwoColumns,
@@ -641,6 +660,7 @@ class AppSettings {
         vpnCore: vpnCore ?? this.vpnCore,
         wifiServerId: wifiServerId ?? this.wifiServerId,
         cellularServerId: cellularServerId ?? this.cellularServerId,
+        appServerAssignments: appServerAssignments ?? this.appServerAssignments,
         fakeIp: fakeIp ?? this.fakeIp,
         hotkeys: hotkeys ?? this.hotkeys,
         serversTwoColumns: serversTwoColumns ?? this.serversTwoColumns,
@@ -727,6 +747,7 @@ class AppSettings {
               vpnCore == other.vpnCore &&
               wifiServerId == other.wifiServerId &&
               cellularServerId == other.cellularServerId &&
+              _stringMapEquals(appServerAssignments, other.appServerAssignments) &&
               fakeIp == other.fakeIp &&
               serversTwoColumns == other.serversTwoColumns &&
               amoledBlack == other.amoledBlack &&
@@ -741,6 +762,15 @@ class AppSettings {
               linuxTunRememberDismissed == other.linuxTunRememberDismissed &&
               uiScale == other.uiScale &&
               _hotkeysEqual(hotkeys, other.hotkeys);
+
+  static bool _stringMapEquals(Map<String, String> a, Map<String, String> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (final entry in a.entries) {
+      if (b[entry.key] != entry.value) return false;
+    }
+    return true;
+  }
 
   static bool _hotkeysEqual(Map<String, String> a, Map<String, String> b) {
     if (identical(a, b)) return true;
@@ -795,6 +825,11 @@ class AppSettings {
     vpnCore,
     wifiServerId,
     cellularServerId,
+    Object.hashAll(
+      (appServerAssignments.entries.toList()
+            ..sort((a, b) => a.key.compareTo(b.key)))
+          .map((e) => Object.hash(e.key, e.value)),
+    ),
     fakeIp,
     serversTwoColumns,
     amoledBlack,
