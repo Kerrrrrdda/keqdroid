@@ -107,14 +107,13 @@ class SplitTunnelingNotifier extends Notifier<SplitTunnelingState> {
   /// экрана, где SharedPreferences нет.
   static Set<String> toggledEntries(Set<String> current, AppInfo app) {
     final next = {...current}..removeWhere((e) => splitEntryMatches(e, app));
-    if (next.length == current.length) next.add(splitEntryForApp(app));
+    if (next.length == current.length) next.add(app.packageName);
     return next;
   }
 
   /// Нажатие по строке списка. Отмеченная снимается целиком: уходят и запись
-  /// с её путём, и запись с её именем — иначе строку, отмеченную старым
-  /// именем, нельзя было бы снять. Неотмеченная получает путь, если он у неё
-  /// есть: выбранное из списка сравнивается по пути.
+  /// с её путём, и запись с её именем. Неотмеченная получает имя: программа,
+  /// обновившаяся в новую папку (Discord), так остаётся в сплите.
   Future<void> toggleApp(AppInfo app, {required bool include}) async {
     final next = toggledEntries(
       include ? state.includePackages : state.excludePackages,

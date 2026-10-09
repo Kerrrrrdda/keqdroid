@@ -1276,10 +1276,9 @@ chown root:root '$_polkitRulePath' 2>/dev/null || true
   Future<List<Map<String, dynamic>>> getInstalledApps({
     bool includeSystem = false,
   }) async {
-    // Запущенные процессы из /proc; потоки ядра (без /exe) — только с
-    // includeSystem. Выбранная строка сохраняется путём, поэтому повторы
-    // отсекаются по пути: одноимённые программы из разных мест (python3 из
-    // разных окружений) — разные строки.
+    // Запущенные процессы из /proc, по одному на имя файла: отмеченная
+    // строка сохраняется именем. Потоки ядра (без /exe) — только с
+    // includeSystem.
     final seen = <String>{};
     final apps = <Map<String, dynamic>>[];
     try {
@@ -1305,7 +1304,7 @@ chown root:root '$_polkitRulePath' 2>/dev/null || true
             continue;
           }
         }
-        if (name.isEmpty || !seen.add(exePath ?? 'comm:$name')) continue;
+        if (name.isEmpty || !seen.add(name.toLowerCase())) continue;
 
         apps.add({
           'packageName': name,

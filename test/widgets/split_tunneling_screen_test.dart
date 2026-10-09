@@ -240,8 +240,8 @@ void main() {
     });
   });
 
-  // Выбранное из списка сравнивается по пути, вписанное руками — по имени, и
-  // старые записи по имени продолжают работать.
+  // Отмеченное в списке сохраняется именем — программа, обновившаяся в новую
+  // папку, остаётся в сплите; путь, указанный вручную, — «только этот файл».
   group('путь и имя', () {
     // Две строки в тестовом окне ложатся под плавающую кнопку «Добавить», и
     // нажатие по координатам ловит она. Зовём обработчик самой строки.
@@ -264,15 +264,12 @@ void main() {
           tester.element(find.byType(SplitTunnelingScreen)),
         ).read(splitTunnelingProvider);
 
-    testWidgets('отметка строки сохраняет её путь', (tester) async {
+    testWidgets('отметка строки сохраняет её имя, а не путь', (tester) async {
       await _pump(tester, apps: _windowsApps, excludes: {'Telegram.exe'});
 
       await tapRow(tester, 'Discord.exe');
 
-      expect(state(tester).excludePackages, {
-        'Telegram.exe',
-        r'C:\Users\u\AppData\Local\Discord\Discord.exe',
-      });
+      expect(state(tester).excludePackages, {'Telegram.exe', 'Discord.exe'});
       expect(_isRowSelected(tester, 'Discord.exe'), isTrue);
     });
 

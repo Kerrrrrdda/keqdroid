@@ -62,19 +62,6 @@ void main() {
     });
   });
 
-  group('что сохраняется при отметке', () {
-    test('строка с путём — путь', () {
-      expect(
-        splitEntryForApp(_discord, windows: true),
-        _discord.installPath,
-      );
-    });
-
-    test('строка без пути (Android, вписанное имя) — имя', () {
-      expect(splitEntryForApp(_app('org.mozilla.firefox')), 'org.mozilla.firefox');
-    });
-  });
-
   test('SplitSelection отмечает строку по пути или по имени', () {
     final byPath = SplitSelection({_discord.installPath!}, windows: true);
     final byName = SplitSelection({'discord.exe'}, windows: true);
