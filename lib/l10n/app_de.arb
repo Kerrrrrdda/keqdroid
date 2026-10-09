@@ -93,6 +93,12 @@
     }
   },
   "settingsRoutingSubtitle": "Regeln für Direkt, Proxy und Blockieren, fertige Vorlagen",
+  "settingsNetworkRoutingTitle": "Server je Netzwerk",
+  "settingsNetworkRoutingSubtitle": "Server für WLAN und mobile Daten auswählen",
+  "settingsNetworkRoutingWifi": "WLAN",
+  "settingsNetworkRoutingCellular": "Mobile Daten",
+  "settingsNetworkRoutingDefault": "Aktiven Server verwenden",
+  "settingsNetworkRoutingHint": "Im Android-VPN-Modus wird das Kernprogramm beim Netzwerkwechsel neu gestartet; Verbindungen können kurz pausieren. Alternative Server müssen dasselbe Kernprogramm wie der aktive Server verwenden.",
   "settingsResetRoutingTitle": "Routing auf Standard zurücksetzen",
   "settingsRoutingResetDone": "Routing-Regeln zurückgesetzt",
   "settingsRoutingPresetsTitle": "Fertige Listen",
