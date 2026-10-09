@@ -481,6 +481,8 @@ class MainActivity : FlutterFragmentActivity() {
                                         "mihomo_config.yaml",
                                         tunnelMode = tunnelMode,
                                         networkConfigs = networkConfigs,
+                                        appRoutingConfig = appRoutingConfig,
+                                        appServerConfigs = appServerConfigs,
                                     )
                                 }
                                 else -> result.error("UNSUPPORTED_BACKEND", "Unsupported VPN backend: $backend", null)
