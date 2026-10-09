@@ -164,4 +164,6 @@ dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
     implementation("androidx.profileinstaller:profileinstaller:1.4.1")
     implementation("androidx.activity:activity-ktx:1.9.3")
+    // sing-box owns Android's TUN and routes each package to a dedicated SOCKS outbound.
+    implementation("com.github.singbox-android:libbox:1.14.2")
 }
