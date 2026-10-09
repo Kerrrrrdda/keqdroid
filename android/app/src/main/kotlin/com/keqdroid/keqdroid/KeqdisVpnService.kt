@@ -694,6 +694,8 @@ class KeqdisVpnService : VpnService() {
         coreKind: String = CORE_KIND_XRAY,
         tunnelMode: String = TUNNEL_MODE_VPN,
         logNote: String? = null,
+        appRoutingPath: String? = null,
+        appServerConfigs: Map<String, AppServerProxyConfig> = emptyMap(),
     ) = opMutex.withLock {
         // Под opMutex: предыдущий стоп уже завершил cleanup(), порт/процессы свободны.
         if (status == VpnRunStatus.RUNNING || status == VpnRunStatus.STARTING) {
@@ -739,10 +741,21 @@ class KeqdisVpnService : VpnService() {
             }
 
             val isMihomo = coreKind == CORE_KIND_MIHOMO
-            // Только локальный прокси: интерфейса нет, значит нет ни
-            // дескриптора для ядра, ни ожидания его tun-листенера. Ядро
-            // поднимает свои инбаунды на 127.0.0.1 — этого достаточно.
-            val proxyOnly = tunnelMode == TUNNEL_MODE_PROXY
+            val perAppRouting = !appRoutingPath.isNullOrBlank()
+            if (perAppRouting) {
+                check(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    "Per-app server routing requires Android 10 or newer."
+                }
+                check(File(appRoutingPath!!).isFile) {
+                    "Per-app routing config was not found: $appRoutingPath"
+                }
+                check(appServerConfigs.isNotEmpty()) {
+                    "Per-app routing was requested without any available alternate servers."
+                }
+            }
+            // Assigned-server mode keeps the existing selected core as a
+            // proxy-only default outbound. libbox, not Xray/mihomo, owns TUN.
+            val proxyOnly = tunnelMode == TUNNEL_MODE_PROXY || perAppRouting
             // Держит ли туннель сам xray. Спрашиваем конфиг, а не настройку:
             // конфиг и есть то, по чему ядро будет себя вести, и он же лежит на
             // диске для реконнекта из плитки — второй источник правды разъехался
@@ -845,6 +858,12 @@ class KeqdisVpnService : VpnService() {
                 activeSocksPort = socksPort
             }
 
+            if (perAppRouting) {
+                startAppServerCores(appServerConfigs)
+                val routeConfig = File(appRoutingPath!!).readText(Charsets.UTF_8)
+                appRoutingRuntime = AppRoutingLibboxRuntime(this).also { it.start(routeConfig) }
+            }
+
             startTime = System.currentTimeMillis()
             setStatus(VpnRunStatus.RUNNING)
             // Текст уведомления называет режим: в режиме прокси системного
@@ -852,12 +871,16 @@ class KeqdisVpnService : VpnService() {
             // ли вообще что-нибудь — а адрес рядом избавляет от похода в
             // настройки за ним.
             showControlNotification(
-                if (proxyOnly) "Proxy · 127.0.0.1:$socksPort" else "Connected",
+                when {
+                    perAppRouting -> "Connected · app server routing"
+                    proxyOnly -> "Proxy · 127.0.0.1:$socksPort"
+                    else -> "Connected"
+                },
                 isConnected = true,
                 isTransitioning = false,
             )
             startStatsLoop()
-            startNetworkWatch()
+            if (!perAppRouting) startNetworkWatch()
 
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) {
@@ -1189,6 +1212,76 @@ class KeqdisVpnService : VpnService() {
             restartCoreAfterHandover(targetPath, targetName)
         } else if (resetIfUnchanged) {
             resetCoreConnections()
+        }
+    }
+
+    private fun parseAppServerProxyConfigs(raw: String?): Map<String, AppServerProxyConfig> {
+        if (raw.isNullOrBlank()) return emptyMap()
+        return runCatching {
+            val json = org.json.JSONObject(raw)
+            val parsed = LinkedHashMap<String, AppServerProxyConfig>()
+            val keys = json.keys()
+            while (keys.hasNext()) {
+                val serverId = keys.next()
+                val item = json.optJSONObject(serverId) ?: continue
+                val path = item.optString("configPath").takeIf { it.isNotBlank() } ?: continue
+                val backend = item.optString("backend")
+                val serverName = item.optString("serverName").takeIf { it.isNotBlank() } ?: serverId
+                val socksPort = item.optInt("socksPort", -1)
+                if (backend != VPN_BACKEND_XRAY && backend != VPN_BACKEND_MIHOMO) {
+                    NativeLog.w("KEQDIS", "app routing: invalid backend '$backend' for server $serverId")
+                    continue
+                }
+                if (!File(path).isFile || socksPort !in 1..65535) {
+                    NativeLog.w("KEQDIS", "app routing: incomplete config for server $serverId")
+                    continue
+                }
+                parsed[serverId] = AppServerProxyConfig(path, backend, serverName, socksPort)
+            }
+            parsed
+        }.getOrElse {
+            NativeLog.w("KEQDIS", "app routing: could not parse proxy configs: ${it.message}")
+            emptyMap()
+        }
+    }
+
+    private suspend fun startAppServerCores(configs: Map<String, AppServerProxyConfig>) {
+        appServerCorePids.values.forEach { pid ->
+            runCatching { android.os.Process.killProcess(pid) }
+        }
+        appServerCorePids.clear()
+
+        for ((serverId, config) in configs) {
+            val coreKind = if (config.backend == VPN_BACKEND_MIHOMO) CORE_KIND_MIHOMO else CORE_KIND_XRAY
+            val binary = getBinaryPath(if (coreKind == CORE_KIND_MIHOMO) "libmihomo.so" else "libxray.so")
+            val safeId = serverId.replace(Regex("[^A-Za-z0-9_-]"), "_").take(36)
+            val pid = startXray(
+                binary,
+                config.configPath,
+                coreKind,
+                logName = "app_route_${safeId}_logs.txt",
+            )
+            appServerCorePids[serverId] = pid
+
+            var waited = 0
+            while (!isPortOpen("127.0.0.1", config.socksPort) && waited < 10_000) {
+                if (pid > 0 && !File("/proc/$pid").exists()) {
+                    throw IllegalStateException(
+                        "Assigned server '${config.serverName}' exited before opening SOCKS."
+                    )
+                }
+                delay(100)
+                waited += 100
+            }
+            if (!isPortOpen("127.0.0.1", config.socksPort)) {
+                throw IllegalStateException(
+                    "Assigned server '${config.serverName}' SOCKS port ${config.socksPort} is not ready."
+                )
+            }
+            NativeLog.i(
+                "KEQDIS",
+                "app routing: started ${config.serverName} (${config.backend}) on 127.0.0.1:${config.socksPort}",
+            )
         }
     }
 
