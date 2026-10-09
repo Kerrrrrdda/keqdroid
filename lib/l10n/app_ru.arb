@@ -93,6 +93,12 @@
     }
   },
   "settingsRoutingSubtitle": "Правила direct / proxy / block и пресеты",
+  "settingsNetworkRoutingTitle": "Сервер для каждой сети",
+  "settingsNetworkRoutingSubtitle": "Выберите сервер для Wi-Fi и мобильной сети",
+  "settingsNetworkRoutingWifi": "Wi-Fi",
+  "settingsNetworkRoutingCellular": "Мобильная сеть",
+  "settingsNetworkRoutingDefault": "Использовать активный сервер",
+  "settingsNetworkRoutingHint": "Работает в режиме Android VPN. При смене сети ядро перезапускается, возможна короткая пауза. Альтернативные серверы должны работать на том же ядре, что и основной.",
   "settingsResetRoutingTitle": "Сбросить настройки маршрутизации",
   "settingsRoutingResetDone": "Правила маршрутизации сброшены",
   "settingsRoutingPresetsTitle": "Готовые списки",
