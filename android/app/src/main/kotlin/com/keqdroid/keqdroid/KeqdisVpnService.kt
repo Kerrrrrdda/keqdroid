@@ -38,6 +38,7 @@ class KeqdisVpnService : VpnService() {
         const val ACTION_STOP          = "com.keqdis.vpn.STOP"
         const val ACTION_TOGGLE         = "com.keqdis.vpn.TOGGLE"
         const val EXTRA_XRAY_CONFIG    = "xray_config_path"
+        const val EXTRA_NETWORK_CONFIGS = "network_configs"
         const val EXTRA_SOCKS_USERNAME = "socks_username"
         const val EXTRA_SOCKS_PASSWORD = "socks_password"
         const val EXTRA_SERVER_NAME    = "server_name"
@@ -125,6 +126,9 @@ class KeqdisVpnService : VpnService() {
             private set
         const val KEY_QS_ERROR = "qs_error"
         const val KEY_QS_LAST_XRAY_CONFIG = "qs_last_xray_config"
+        const val KEY_QS_BASE_XRAY_CONFIG = "qs_base_xray_config"
+        const val KEY_QS_BASE_SERVER_NAME = "qs_base_server_name"
+        const val KEY_QS_LAST_NETWORK_CONFIGS = "qs_last_network_configs"
         const val KEY_QS_LAST_SOCKS_USERNAME = "qs_last_socks_username"
         const val KEY_QS_LAST_SOCKS_PASSWORD = "qs_last_socks_password"
         const val KEY_QS_LAST_SOCKS_PORT = "qs_last_socks_port"
@@ -165,7 +169,12 @@ class KeqdisVpnService : VpnService() {
             val prefs = context.getSharedPreferences(PREFS_QS, Context.MODE_PRIVATE)
             val backend = prefs.getString(KEY_QS_LAST_BACKEND, VPN_BACKEND_XRAY) ?: VPN_BACKEND_XRAY
             if (backend != VPN_BACKEND_XRAY && backend != VPN_BACKEND_MIHOMO) return null
-            val config = prefs.getString(KEY_QS_LAST_XRAY_CONFIG, null)
+            // Reconnect from the primary server, then let the physical-network
+            // watcher select Wi-Fi/cellular overrides. The active path may have
+            // been an alternate when the process was stopped.
+            val config = prefs.getString(KEY_QS_BASE_XRAY_CONFIG, null)
+                ?: prefs.getString(KEY_QS_LAST_XRAY_CONFIG, null)
+            val networkConfigs = prefs.getString(KEY_QS_LAST_NETWORK_CONFIGS, null)
             val user = prefs.getString(KEY_QS_LAST_SOCKS_USERNAME, null)
             val pass = prefs.getString(KEY_QS_LAST_SOCKS_PASSWORD, null)
             if (config.isNullOrBlank() || user.isNullOrBlank() || pass.isNullOrBlank() ||
@@ -173,7 +182,8 @@ class KeqdisVpnService : VpnService() {
             ) return null
             val exclude = prefs.getStringSet(KEY_QS_LAST_EXCLUDE_PACKAGES, emptySet()) ?: emptySet()
             val include = prefs.getStringSet(KEY_QS_LAST_INCLUDE_PACKAGES, emptySet()) ?: emptySet()
-            val serverName = prefs.getString(KEY_QS_LAST_SERVER_NAME, null)
+            val serverName = prefs.getString(KEY_QS_BASE_SERVER_NAME, null)
+                ?: prefs.getString(KEY_QS_LAST_SERVER_NAME, null)
 
             return Intent(context, KeqdisVpnService::class.java).apply {
                 action = ACTION_START
@@ -189,6 +199,9 @@ class KeqdisVpnService : VpnService() {
                     prefs.getString(KEY_QS_LAST_TUNNEL_MODE, TUNNEL_MODE_VPN) ?: TUNNEL_MODE_VPN,
                 )
                 putExtra(EXTRA_XRAY_CONFIG, config)
+                if (!networkConfigs.isNullOrBlank()) {
+                    putExtra(EXTRA_NETWORK_CONFIGS, networkConfigs)
+                }
                 putExtra("socks_port", prefs.getInt(KEY_QS_LAST_SOCKS_PORT, 2080))
                 putStringArrayListExtra("exclude_packages", ArrayList(exclude))
                 putStringArrayListExtra("include_packages", ArrayList(include))
@@ -223,6 +236,17 @@ class KeqdisVpnService : VpnService() {
         private const val MEMORY_SNAPSHOT_TICKS = 600
         private const val MEMORY_GROWTH_ALARM = 256L * 1024 * 1024
     }
+
+    private data class NetworkRouteConfig(
+        val configPath: String,
+        val serverName: String,
+    )
+
+    // The primary config is the fallback; active config can temporarily point
+    // at the Wi-Fi/cellular variant selected by the physical-network watcher.
+    @Volatile private var baseConfigPath: String? = null
+    @Volatile private var baseServerName: String? = null
+    @Volatile private var networkRouteConfigs: Map<String, NetworkRouteConfig> = emptyMap()
 
     // Credentials приходят через Intent от MainActivity — так они гарантированно совпадают с теми что были записаны в Xray конфиг
     @Volatile var socksUsername: String    = ""
@@ -432,6 +456,9 @@ class KeqdisVpnService : VpnService() {
         lastExcludePackages = excludePkgs
         lastIncludePackages = includePkgs
 
+        val networkConfigsJson = intent.getStringExtra(EXTRA_NETWORK_CONFIGS).orEmpty()
+        networkRouteConfigs = parseNetworkRouteConfigs(networkConfigsJson)
+
         val configPath = intent.getStringExtra(EXTRA_XRAY_CONFIG) ?: run {
             NativeLog.e("KEQDIS", "onStartCommand: missing EXTRA_XRAY_CONFIG")
             return START_NOT_STICKY
@@ -478,6 +505,8 @@ class KeqdisVpnService : VpnService() {
             "onStartCommand: backend=$backend core=$coreKind engine=$coreEngine config=$configPath"
         )
         lastXrayConfigPath = configPath
+        baseConfigPath = configPath
+        baseServerName = currentServerName
 
         runCatching {
             getSharedPreferences(PREFS_QS, Context.MODE_PRIVATE)
@@ -487,6 +516,9 @@ class KeqdisVpnService : VpnService() {
                 .putString(KEY_QS_LAST_CORE_KIND, coreKind)
                 .putString(KEY_QS_LAST_TUNNEL_MODE, tunnelMode)
                 .putString(KEY_QS_LAST_XRAY_CONFIG, configPath)
+                .putString(KEY_QS_BASE_XRAY_CONFIG, configPath)
+                .putString(KEY_QS_BASE_SERVER_NAME, currentServerName)
+                .putString(KEY_QS_LAST_NETWORK_CONFIGS, networkConfigsJson)
                 .putInt(KEY_QS_LAST_SOCKS_PORT, socksPort)
                 .putString(KEY_QS_LAST_SOCKS_USERNAME, socksUsername)
                 .putString(KEY_QS_LAST_SOCKS_PASSWORD, socksPassword)
@@ -910,7 +942,21 @@ class KeqdisVpnService : VpnService() {
             .build()
         watchStartedAt = System.currentTimeMillis()
         runCatching { cm.registerNetworkCallback(request, cb) }
-            .onSuccess { networkCallback = cb }
+            .onSuccess {
+                networkCallback = cb
+                // Initial callbacks enumerate already-connected physical networks.
+                // Wait until this batch settles, then apply the matching server
+                // without treating startup as a handover that needs a full reset.
+                serviceScope.launch {
+                    delay(HANDOVER_DEBOUNCE_MS)
+                    var waits = 0
+                    while (waits < 8 && synchronized(liveNetworks) { liveNetworks.isEmpty() }) {
+                        delay(250)
+                        waits++
+                    }
+                    applyNetworkRoute(resetIfUnchanged = false)
+                }
+            }
             .onFailure { NativeLog.w("KEQDIS", "network watch: register failed: ${it.message}") }
     }
 
@@ -942,17 +988,19 @@ class KeqdisVpnService : VpnService() {
             other
         }
         applyHuaweiUnderlying(network)
-        if (!hadOther) return
+        if (!hadOther) {
+            // A late first callback can arrive after the startup snapshot.
+            if (System.currentTimeMillis() - watchStartedAt >= HANDOVER_DEBOUNCE_MS) {
+                scheduleNetworkRouteUpdate(resetIfUnchanged = false)
+            }
+            return
+        }
         // Регистрация приносит все живые сети пачкой — на старте сессии это
         // выглядит как переезд, хотя ничего не переезжало.
         if (System.currentTimeMillis() - watchStartedAt < HANDOVER_DEBOUNCE_MS) return
 
         NativeLog.i("KEQDIS", "handover: network $network came up next to a live one")
-        handoverJob?.cancel()
-        handoverJob = serviceScope.launch {
-            delay(HANDOVER_DEBOUNCE_MS)
-            resetCoreConnections()
-        }
+        scheduleNetworkRouteUpdate(resetIfUnchanged = true)
     }
 
     /// Сеть ушла — сокеты ушли с ней, рвать нечего. Только забываем её, иначе
@@ -962,7 +1010,70 @@ class KeqdisVpnService : VpnService() {
             liveNetworks.remove(network)
             liveNetworks.lastOrNull()
         }
-        remaining?.let { applyHuaweiUnderlying(it) }
+        remaining?.let {
+            applyHuaweiUnderlying(it)
+            // Lost-network sockets die with their interface. We only need a
+            // restart here if the remaining transport selects a different server.
+            scheduleNetworkRouteUpdate(resetIfUnchanged = false)
+        }
+    }
+
+    private fun scheduleNetworkRouteUpdate(resetIfUnchanged: Boolean) {
+        handoverJob?.cancel()
+        handoverJob = serviceScope.launch {
+            delay(HANDOVER_DEBOUNCE_MS)
+            applyNetworkRoute(resetIfUnchanged)
+        }
+    }
+
+    private fun physicalNetworkProfile(network: Network): String? {
+        val cm = getSystemService(ConnectivityManager::class.java) ?: return null
+        val capabilities = cm.getNetworkCapabilities(network) ?: return null
+        return when {
+            capabilities.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) -> "wifi"
+            capabilities.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR) -> "cellular"
+            else -> null
+        }
+    }
+
+    private suspend fun applyNetworkRoute(resetIfUnchanged: Boolean) {
+        if (status != VpnRunStatus.RUNNING || lastTunnelMode != TUNNEL_MODE_VPN) return
+        val network = synchronized(liveNetworks) { liveNetworks.lastOrNull() } ?: return
+        val profile = physicalNetworkProfile(network) ?: return
+        val target = networkRouteConfigs[profile]
+        val targetPath = target?.configPath ?: baseConfigPath ?: return
+        val targetName = target?.serverName ?: baseServerName
+
+        if (targetPath != lastXrayConfigPath) {
+            NativeLog.i(
+                "KEQDIS",
+                "network routing: transport=$profile server=${targetName ?: "(primary)"}",
+            )
+            restartCoreAfterHandover(targetPath, targetName)
+        } else if (resetIfUnchanged) {
+            resetCoreConnections()
+        }
+    }
+
+    private fun parseNetworkRouteConfigs(raw: String?): Map<String, NetworkRouteConfig> {
+        if (raw.isNullOrBlank()) return emptyMap()
+        return runCatching {
+            val json = org.json.JSONObject(raw)
+            listOf("wifi", "cellular").mapNotNull { profile ->
+                val item = json.optJSONObject(profile) ?: return@mapNotNull null
+                val path = item.optString("configPath").takeIf { it.isNotBlank() }
+                    ?: return@mapNotNull null
+                if (!File(path).isFile) {
+                    NativeLog.w("KEQDIS", "network routing: missing $profile config at $path")
+                    return@mapNotNull null
+                }
+                val name = item.optString("serverName").takeIf { it.isNotBlank() } ?: profile
+                profile to NetworkRouteConfig(path, name)
+            }.toMap()
+        }.getOrElse {
+            NativeLog.w("KEQDIS", "network routing: could not parse alternate configs: ${it.message}")
+            emptyMap()
+        }
     }
 
     /// Заставить ядро бросить соединения, оставшиеся на прошлой сети.
@@ -1031,29 +1142,86 @@ class KeqdisVpnService : VpnService() {
         if (port <= 0 || secret.isEmpty()) null else port to secret
     }.getOrNull()
 
-    /// Сброс соединений xray после смены сети: убить ядро и поднять его на месте.
-    private suspend fun restartCoreAfterHandover() = opMutex.withLock {
+    /// Restart on the existing TUN. When [nextConfigPath] is supplied, switch to
+    /// that network's prevalidated config while keeping the same native backend.
+    private suspend fun restartCoreAfterHandover(
+        nextConfigPath: String? = null,
+        nextServerName: String? = null,
+    ) = opMutex.withLock {
         if (status != VpnRunStatus.RUNNING) return@withLock
-        val config = lastXrayConfigPath ?: return@withLock
+        val currentConfig = lastXrayConfigPath ?: return@withLock
+        val targetConfig = nextConfigPath ?: currentConfig
+        val switchingServer = targetConfig != currentConfig
+        val previousServerName = currentServerName
         val previousPid = xrayPid
         if (previousPid <= 0) return@withLock
 
+        suspend fun killCurrentCore() {
+            val pid = xrayPid
+            xrayPid = -1
+            if (pid > 0) {
+                runCatching { android.os.Process.killProcess(pid) }
+                withTimeoutOrNull(3000) {
+                    while (File("/proc/$pid").exists()) delay(100)
+                }
+            }
+        }
+
         try {
-            // Обнулить ДО убийства обязательно: монитор процесса (см. startXray)
-            // сверяет свой pid с xrayPid и на совпадении принял бы наш
-            // перезапуск за смерть ядра — и полез бы поднимать его второй раз.
+            // Clear the PID before killing it so the process monitor doesn't
+            // interpret our intentional restart as an unexpected death.
             xrayPid = -1
             runCatching { android.os.Process.killProcess(previousPid) }
             withTimeoutOrNull(3000) {
                 while (File("/proc/$previousPid").exists()) delay(100)
             }
-            relaunchCore(config)
-            NativeLog.i("KEQDIS", "handover: core restarted pid=$xrayPid")
+            relaunchCore(targetConfig)
+            if (switchingServer) {
+                lastXrayConfigPath = targetConfig
+                currentServerName = nextServerName ?: baseServerName
+                getSharedPreferences(PREFS_QS, Context.MODE_PRIVATE).edit()
+                    .putString(KEY_QS_LAST_XRAY_CONFIG, targetConfig)
+                    .putString(KEY_QS_LAST_SERVER_NAME, currentServerName)
+                    .apply()
+                NativeLog.i(
+                    "KEQDIS",
+                    "network routing: now using ${currentServerName ?: targetConfig}, pid=$xrayPid",
+                )
+            } else {
+                NativeLog.i("KEQDIS", "handover: core restarted pid=$xrayPid")
+            }
         } catch (e: Exception) {
             if (e is CancellationException) throw e
-            // Дальше сессия всё равно нежизнеспособна: ядра нет, из туннеля
-            // читать некому. Ведём себя ровно как монитор при падении ядра,
-            // чтобы приложение и плитка увидели честный исход.
+            if (switchingServer) {
+                // If the alternate config fails to start, restore the previous
+                // server instead of taking down the whole VPN.
+                NativeLog.e(
+                    "KEQDIS",
+                    "network routing: switch failed (${e.message}); restoring previous server",
+                    e,
+                )
+                runCatching { killCurrentCore() }
+                try {
+                    relaunchCore(currentConfig)
+                    lastXrayConfigPath = currentConfig
+                    currentServerName = previousServerName
+                    NativeLog.w(
+                        "KEQDIS",
+                        "network routing: previous server restored, pid=$xrayPid",
+                    )
+                    return@withLock
+                } catch (restoreError: Exception) {
+                    if (restoreError is CancellationException) throw restoreError
+                    NativeLog.e(
+                        "KEQDIS",
+                        "network routing: previous server also failed to restart: ${restoreError.message}",
+                        restoreError,
+                    )
+                }
+            }
+
+            // Both the requested config and the fallback failed. At this point
+            // nobody reads from the TUN, so report a real session failure.
             NativeLog.e("KEQDIS", "handover: core restart failed: ${e.message}", e)
             setStatus(VpnRunStatus.ERROR, "Core restart after network change failed")
             cleanup()
