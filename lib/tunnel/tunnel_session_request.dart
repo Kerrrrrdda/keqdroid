@@ -21,6 +21,12 @@ class TunnelSessionRequest {
   /// Extra per-network configs, generated for Android VPN mode only.
   /// Shape: {wifi|cellular: {config, backend, serverName}}.
   final Map<String, Map<String, String>> networkConfigs;
+
+  /// Optional sing-box/libbox TUN config for per-app server routing on Android.
+  final String? appRoutingConfig;
+
+  /// Proxy-only core configs keyed by server id. Each has config/backend/name/SOCKS port.
+  final Map<String, Map<String, dynamic>> appServerConfigs;
   final String? serverName;
   final bool systemProxy;
 
@@ -45,6 +51,8 @@ class TunnelSessionRequest {
     this.excludeProcesses = const [],
     this.includeProcesses = const [],
     this.networkConfigs = const {},
+    this.appRoutingConfig,
+    this.appServerConfigs = const {},
     this.serverName,
     this.systemProxy = true,
     this.coreEngine = 'chain',
@@ -71,6 +79,9 @@ class TunnelSessionRequest {
         'excludeProcesses': excludeProcesses,
         'includeProcesses': includeProcesses,
         if (networkConfigs.isNotEmpty) 'networkConfigs': networkConfigs,
+        if (appRoutingConfig != null && appRoutingConfig!.isNotEmpty)
+          'appRoutingConfig': appRoutingConfig,
+        if (appServerConfigs.isNotEmpty) 'appServerConfigs': appServerConfigs,
         'systemProxy': systemProxy,
         'coreEngine': coreEngine,
         if (serverName != null && serverName!.isNotEmpty) 'serverName': serverName,
