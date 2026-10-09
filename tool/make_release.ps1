@@ -182,7 +182,25 @@ if (-not $SkipAndroid) {
   }
   $signingProperties = @{}
   foreach ($line in Get-Content -LiteralPath $keyPropertiesPath) {
-    if ($line -match '^\s*([^#!][^=]*)=(.*)    @{ Platform = 'android-arm64'; Abi = 'arm64-v8a';   Name = "keqdroid-$version-android.apk" },
+    if ($line -match '^\s*([^#!][^=]*)=(.*)$') {
+      $signingProperties[$Matches[1].Trim()] = $Matches[2].Trim()
+    }
+  }
+  $missingSigningValues = @('keyAlias', 'keyPassword', 'storePassword', 'storeFile') |
+    Where-Object { -not $signingProperties.ContainsKey($_) -or [string]::IsNullOrWhiteSpace($signingProperties[$_]) }
+  if ($missingSigningValues.Count -gt 0) {
+    throw "android\key.properties is missing: $($missingSigningValues -join ', ')"
+  }
+  $keystorePath = $signingProperties['storeFile']
+  if (-not [System.IO.Path]::IsPathRooted($keystorePath)) {
+    $keystorePath = Join-Path (Join-Path $repoRoot 'android\app') $keystorePath
+  }
+  if (-not (Test-Path -LiteralPath $keystorePath -PathType Leaf)) {
+    throw "Android release keystore not found: $keystorePath"
+  }
+
+  $apks = @(
+    @{ Platform = 'android-arm64'; Abi = 'arm64-v8a';   Name = "keqdroid-$version-android.apk" },
     @{ Platform = 'android-arm';   Abi = 'armeabi-v7a'; Name = "keqdroid-$version-armeabi-v7a-android.apk" }
   )
   if ([string]::Compare($apks[0].Name, $apks[1].Name, [StringComparison]::OrdinalIgnoreCase) -ge 0) {
