@@ -141,6 +141,7 @@ class SettingsTab extends ConsumerWidget {
                         children: [
                           _LanSharingCard(settingsAsync: settingsAsync),
                           const _SplitTunnelingSettingsCard(),
+                          if (Platform.isAndroid) const _NetworkRoutingSettingsCard(),
                           if (Platform.isWindows || Platform.isLinux)
                             _SettingsCard(
                               title: Platform.isLinux
@@ -410,6 +411,123 @@ class _SplitTunnelingSettingsCard extends ConsumerWidget {
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => SplitTunnelingScreen()),
+      ),
+    );
+  }
+}
+
+class _NetworkRoutingSettingsCard extends ConsumerWidget {
+  const _NetworkRoutingSettingsCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    return _SettingsCard(
+      title: l10n.settingsNetworkRoutingTitle,
+      subtitle: l10n.settingsNetworkRoutingSubtitle,
+      icon: Icons.swap_horiz_rounded,
+      accent: ExpressiveAccent.secondary,
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const _NetworkServerRoutingScreen()),
+      ),
+    );
+  }
+}
+
+/// Selects server config overrides for Android's current physical transport.
+/// Empty selection deliberately means "use the currently active server".
+class _NetworkServerRoutingScreen extends ConsumerWidget {
+  const _NetworkServerRoutingScreen();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    final servers = ref.watch(serversProvider).servers;
+    final settingsAsync = ref.watch(settingsNotifierProvider);
+
+    Future<void> saveSelection(
+      AppSettings settings,
+      String profile,
+      String value,
+    ) async {
+      try {
+        final next = profile == 'wifi'
+            ? settings.copyWith(wifiServerId: value)
+            : settings.copyWith(cellularServerId: value);
+        await ref.read(settingsNotifierProvider.notifier).save(next);
+      } catch (error) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error.toString())),
+        );
+      }
+    }
+
+    List<DropdownMenuItem<String>> items() => [
+      DropdownMenuItem<String>(
+        value: '',
+        child: Text(l10n.settingsNetworkRoutingDefault),
+      ),
+      for (final server in servers)
+        DropdownMenuItem<String>(
+          value: server.id,
+          child: Text(server.displayName, overflow: TextOverflow.ellipsis),
+        ),
+    ];
+
+    String selectedId(String value) =>
+        value.isNotEmpty && servers.any((server) => server.id == value)
+            ? value
+            : '';
+
+    return Scaffold(
+      backgroundColor: AppTheme.bg(context),
+      appBar: AppBar(title: Text(l10n.settingsNetworkRoutingTitle)),
+      body: settingsAsync.when(
+        data: (settings) => SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            children: [
+              Text(
+                l10n.settingsNetworkRoutingHint,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.textLight(context),
+                ),
+              ),
+              const SizedBox(height: 24),
+              DropdownButtonFormField<String>(
+                key: ValueKey('wifi-${selectedId(settings.wifiServerId)}'),
+                value: selectedId(settings.wifiServerId),
+                isExpanded: true,
+                decoration: InputDecoration(
+                  labelText: l10n.settingsNetworkRoutingWifi,
+                ),
+                items: items(),
+                onChanged: (value) {
+                  unawaited(saveSelection(settings, 'wifi', value ?? ''));
+                },
+              ),
+              const SizedBox(height: 20),
+              DropdownButtonFormField<String>(
+                key: ValueKey(
+                  'cellular-${selectedId(settings.cellularServerId)}',
+                ),
+                value: selectedId(settings.cellularServerId),
+                isExpanded: true,
+                decoration: InputDecoration(
+                  labelText: l10n.settingsNetworkRoutingCellular,
+                ),
+                items: items(),
+                onChanged: (value) {
+                  unawaited(saveSelection(settings, 'cellular', value ?? ''));
+                },
+              ),
+            ],
+          ),
+        ),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, _) => Center(child: Text(error.toString())),
       ),
     );
   }
