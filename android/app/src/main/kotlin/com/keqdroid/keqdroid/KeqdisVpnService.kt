@@ -997,30 +997,34 @@ class KeqdisVpnService : VpnService() {
     /// придётся нам. Если других нет — это первая сеть или возврат
     /// единственной, и рвать нечего.
     private fun onPhysicalNetworkUp(network: Network) {
+        val previousPreferred = preferredPhysicalNetwork()
         val capabilities = getSystemService(ConnectivityManager::class.java)
             ?.getNetworkCapabilities(network)
-        val hadOther = synchronized(liveNetworks) {
-            val other = liveNetworks.any { it != network }
+        synchronized(liveNetworks) {
             liveNetworks.add(network)
             capabilities?.let { physicalNetworkState(it) }?.let {
                 physicalNetworkStates[network] = it
             }
-            other
         }
-        applyHuaweiUnderlying(preferredPhysicalNetwork() ?: network)
-        if (!hadOther) {
-            // A late first callback can arrive after the startup snapshot.
-            if (System.currentTimeMillis() - watchStartedAt >= HANDOVER_DEBOUNCE_MS) {
-                scheduleNetworkRouteUpdate(resetIfUnchanged = false)
-            }
+        val nextPreferred = preferredPhysicalNetwork() ?: network
+        applyHuaweiUnderlying(nextPreferred)
+
+        // Initial enumeration can report both Wi-Fi and LTE; adding an available
+        // background network must not reset a session if the preferred route did
+        // not change. Startup selection is handled once the callback batch settles.
+        if (System.currentTimeMillis() - watchStartedAt < HANDOVER_DEBOUNCE_MS) return
+        if (previousPreferred == null) {
+            scheduleNetworkRouteUpdate(resetIfUnchanged = false)
             return
         }
-        // Registration brings all already-live networks in a batch. Initial
-        // enumeration is not a handover, so wait until that batch has settled.
-        if (System.currentTimeMillis() - watchStartedAt < HANDOVER_DEBOUNCE_MS) return
-
-        NativeLog.i("KEQDIS", "handover: physical network $network became available")
-        scheduleNetworkRouteUpdate(resetIfUnchanged = true)
+        if (previousPreferred != nextPreferred) {
+            NativeLog.i(
+                "KEQDIS",
+                "Preferred physical network changed from " +
+                    previousPreferred.toString() + " to " + nextPreferred.toString(),
+            )
+            scheduleNetworkRouteUpdate(resetIfUnchanged = true)
+        }
     }
 
     private fun onPhysicalNetworkCapabilitiesChanged(
