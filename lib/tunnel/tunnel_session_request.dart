@@ -17,6 +17,10 @@ class TunnelSessionRequest {
   final List<String> includePackages;
   final List<String> excludeProcesses;
   final List<String> includeProcesses;
+
+  /// Extra per-network configs, generated for Android VPN mode only.
+  /// Shape: {wifi|cellular: {config, backend, serverName}}.
+  final Map<String, Map<String, String>> networkConfigs;
   final String? serverName;
   final bool systemProxy;
 
@@ -40,6 +44,7 @@ class TunnelSessionRequest {
     this.includePackages = const [],
     this.excludeProcesses = const [],
     this.includeProcesses = const [],
+    this.networkConfigs = const {},
     this.serverName,
     this.systemProxy = true,
     this.coreEngine = 'chain',
@@ -65,6 +70,7 @@ class TunnelSessionRequest {
         'includePackages': includePackages,
         'excludeProcesses': excludeProcesses,
         'includeProcesses': includeProcesses,
+        if (networkConfigs.isNotEmpty) 'networkConfigs': networkConfigs,
         'systemProxy': systemProxy,
         'coreEngine': coreEngine,
         if (serverName != null && serverName!.isNotEmpty) 'serverName': serverName,
