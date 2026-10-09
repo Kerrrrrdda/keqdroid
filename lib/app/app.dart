@@ -449,6 +449,9 @@ class KeqdisApp extends ConsumerWidget {
     // работало и там. Нет акцента (Android < 12 / не Android) — фирменный fallback.
     final systemAccent = ref.watch(systemAccentColorProvider).value;
     final fallbackSeed = systemAccent ?? kSeedFallback;
+    // Списки по ссылкам из маршрутизации обновляются раз в сутки сами, а не
+    // только пока открыт экран с ними: заводим их вместе с приложением.
+    ref.listen(ruleListsProvider, (_, _) {});
 
     return DynamicColorBuilder(
       builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {

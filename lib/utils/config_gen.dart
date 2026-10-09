@@ -9,6 +9,7 @@ import '../utils/geo_asset_index.dart';
 import '../utils/hysteria_uri.dart';
 import '../utils/proxy_chain.dart';
 import '../utils/routing_entry.dart';
+import '../utils/rule_lists.dart';
 import '../utils/socks5_credentials.dart';
 import '../utils/tls_fingerprint.dart';
 
@@ -674,11 +675,12 @@ class ConfigGeneratorV2 {
 
   /// Разделители списков правил — и запятая, и перевод строки: UI обещает «по
   /// одному в строке или через запятую», а сплит только по ',' склеивал
-  /// построчные записи в один несрабатывающий токен.
+  /// построчные записи в один несрабатывающий токен. Ссылки на списки сюда
+  /// не попадают: их домены приходят уже скачанными (см. [RuleListDomains]).
   static List<String> _parseRuleList(String s) => s
       .split(RegExp(r'[\r\n,]+'))
       .map((e) => e.trim())
-      .where((e) => e.isNotEmpty)
+      .where((e) => e.isNotEmpty && !isRuleListUrl(e))
       .toList();
 
   /// Пользовательская запись домена → форма, понятная роутингу xray.

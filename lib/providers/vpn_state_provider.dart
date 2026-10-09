@@ -331,6 +331,29 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
     return engine.getCurrentState();
   }
 
+  /// Домены из списков по ссылкам — из того, что уже лежит на диске: сети
+  /// подключение не ждёт, свежесть держит [ruleListsProvider]. Нечитаемый
+  /// кэш — не повод не подключаться: тогда едем без списков.
+  Future<RuleListDomains> _cachedRuleLists(AppSettings settings) async {
+    try {
+      final lists = await ref.read(ruleListServiceProvider).domainsFor(settings);
+      if (!lists.isEmpty) {
+        AppLogger.instance.info(
+          'Rule lists: block ${lists.blocked.length}, '
+          'direct ${lists.direct.length}, proxy ${lists.proxy.length} domains',
+        );
+      }
+      return lists;
+    } catch (e, st) {
+      AppLogger.instance.warn(
+        'Rule lists unreadable, connecting without them',
+        error: e,
+        stackTrace: st,
+      );
+      return RuleListDomains.none;
+    }
+  }
+
   Future<void> connect({bool autostartTunFallback = false}) async {
     if (_connectInFlight) {
       AppLogger.instance.debug('VPN connect() ignored: connect already in progress');
@@ -403,6 +426,7 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
           );
         }
       }
+      final ruleLists = await _cachedRuleLists(settings);
 
       final split = ref.read(splitTunnelingProvider);
       final excludePkgs = split.excludePackages.toList();
@@ -623,6 +647,7 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
               appProcessName: Platform.isAndroid
                   ? ''
                   : p.basename(Platform.resolvedExecutable),
+              ruleLists: ruleLists,
             )
           : null;
 
@@ -686,11 +711,17 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
           connectionMode == ConnectionMode.tun &&
           !mihomoPicked;
 
+      // xray и sing-box получают скачанные домены прямо в полях; у mihomo они
+      // уже в его конфиге набором (см. MihomoConfigGen.buildRuleListProviders).
+      // Только для генераторов: `settings` выше уходит и на диск.
+      final listedSettings =
+          mihomoPicked ? settings : ruleLists.expand(settings);
+
       final xrayConfig = mihomoPicked
           ? ''
           : ConfigGeneratorV2.generateConfig(
               server.config,
-              settings,
+              listedSettings,
               resolvedServerIp: serverIp,
               localInboundsNoAuth: proxyModeNoAuth,
               geoIndex: customGeoIndex,
@@ -741,7 +772,7 @@ class VpnStateNotifier extends AsyncNotifier<VpnState> {
       }
 
       final session = TunnelSessionBuilder.build(
-        settings: settings,
+        settings: listedSettings,
         xrayConfig: xrayConfig,
         vpnBackend: vpnBackend,
         mihomoConfig: mihomoConfig,

@@ -8,6 +8,7 @@ import '../tunnel/app_routing_mode.dart';
 import 'fake_ip.dart';
 import 'process_name_utils.dart';
 import 'routing_entry.dart';
+import 'rule_lists.dart';
 
 /// Адрес TUN-интерфейса (тот же, что у sing-box по умолчанию). Вынесен из
 /// генератора: по нему бэкенды понимают, что адаптер уже поднят.
@@ -157,11 +158,12 @@ class SingBoxTunConfigGen {
     final isWindows = windows ?? Platform.isWindows;
     // Разделители — и запятая, и перевод строки: UI обещает «по одному в
     // строке или через запятую», сплит только по ',' склеивал построчные
-    // записи в один несрабатывающий токен.
+    // записи в один несрабатывающий токен. Ссылки на списки пропускаются: их
+    // домены приходят уже скачанными (см. [RuleListDomains]).
     List<String> parseList(String s) => s
         .split(RegExp(r'[\r\n,]+'))
         .map((e) => e.trim())
-        .where((e) => e.isNotEmpty)
+        .where((e) => e.isNotEmpty && !isRuleListUrl(e))
         .toList();
 
     Map<String, dynamic> buildProxyDnsServer() {

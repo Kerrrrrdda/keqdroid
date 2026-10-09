@@ -11,6 +11,7 @@ import 'hysteria_uri.dart';
 import 'mieru_uri.dart';
 import 'process_name_utils.dart';
 import 'routing_entry.dart';
+import 'rule_lists.dart';
 import 'socks5_credentials.dart';
 import 'ssr_uri.dart';
 import 'tls_fingerprint.dart';
@@ -112,6 +113,7 @@ class MihomoConfigGen {
     List<String> managedProcessNames = const [],
     String appProcessName = '',
     bool? windows,
+    RuleListDomains ruleLists = RuleListDomains.none,
   }) =>
       const JsonEncoder.withIndent('  ').convert(
         build(
@@ -128,6 +130,7 @@ class MihomoConfigGen {
           managedProcessNames: managedProcessNames,
           appProcessName: appProcessName,
           windows: windows,
+          ruleLists: ruleLists,
         ),
       );
 
@@ -143,6 +146,8 @@ class MihomoConfigGen {
   /// [tun] непустой — ядро само владеет туннелем; [managedProcessNames] и
   /// [appProcessName] тогда превращаются в правила `PROCESS-NAME`, но только
   /// там, где ядро способно узнать процесс (десктоп).
+  ///
+  /// [ruleLists] — домены из списков по ссылкам, см. [buildRuleListProviders].
   static Map<String, dynamic> build(
     String input,
     AppSettings settings, {
@@ -157,6 +162,7 @@ class MihomoConfigGen {
     List<String> managedProcessNames = const [],
     String appProcessName = '',
     bool? windows,
+    RuleListDomains ruleLists = RuleListDomains.none,
   }) {
     // Правила по процессам умеет только та сторона, где ядро способно найти
     // владельца соединения: десктопный TUN. На Android их роль исполняет сам
@@ -207,6 +213,7 @@ class MihomoConfigGen {
         processRules: processRules,
         fakeIp: fakeIp,
         windows: windows,
+        ruleLists: ruleLists,
       );
     }
 
@@ -246,6 +253,8 @@ class MihomoConfigGen {
         'sub-rules': {lanRuleSet: buildLanRules()},
       },
       'proxies': [proxy],
+      if (!ruleLists.isEmpty)
+        'rule-providers': buildRuleListProviders(ruleLists),
       'rules': buildRules(
         settings,
         serverAddress: proxy['server']?.toString() ?? '',
@@ -255,6 +264,7 @@ class MihomoConfigGen {
         appProcessName: processRules ? appProcessName : '',
         tunOwned: tun != null,
         windows: windows,
+        ruleLists: ruleLists,
       ),
     };
   }
@@ -306,7 +316,9 @@ class MihomoConfigGen {
     bool processRules = false,
     bool fakeIp = false,
     bool? windows,
+    RuleListDomains ruleLists = RuleListDomains.none,
   }) {
+    final authorProviders = clash.map['rule-providers'];
     return clash.buildSessionConfig(
       inbound: _inbound(
         settings,
@@ -342,8 +354,14 @@ class MihomoConfigGen {
       appendRules: buildUserRules(
         settings,
         proxyTarget: clash.primaryTarget,
+        ruleLists: ruleLists,
       ),
       extra: {
+        if (!ruleLists.isEmpty)
+          'rule-providers': {
+            if (authorProviders is Map) ...authorProviders,
+            ...buildRuleListProviders(ruleLists),
+          },
         // Свои адреса для доменов — только когда автор конфига своих не
         // написал: его карта важнее нашей настройки, как и dns-блок.
         if (!clash.map.containsKey('hosts') &&
@@ -2045,6 +2063,39 @@ class MihomoConfigGen {
       .where((e) => e.isNotEmpty)
       .toList();
 
+  /// Записи поля маршрутизации. Ссылки на списки пропускаются: их домены
+  /// приходят уже скачанными, см. [buildRuleListProviders]. В списке DNS
+  /// ссылка, наоборот, законна (DoH), поэтому разбор отдельный.
+  static List<String> _parseRuleList(String s) =>
+      _parseList(s).where((e) => !isRuleListUrl(e)).toList();
+
+  /// Имена наборов со скачанными доменами — по одному на поле.
+  static const blockListSet = 'keq-list-block';
+  static const directListSet = 'keq-list-direct';
+  static const proxyListSet = 'keq-list-proxy';
+
+  /// Домены из списков по ссылкам — набором, встроенным в конфиг.
+  ///
+  /// Не правилом на домен: правила mihomo проходит по одному на каждом
+  /// соединении, и на 100 тысячах доменов это 4,5 мс задержки против 1,4 у
+  /// набора, которому всё равно, сколько в нём записей (замер 09.10.2026).
+  /// Встроенный, а не файлом: файл ядро берёт только из своего дома, а дом у
+  /// Linux-туннеля под root свой на каждую сессию. Встроенный стоит 5 МБ
+  /// памяти сверху на те же 100 тысяч.
+  static Map<String, dynamic> buildRuleListProviders(RuleListDomains lists) {
+    Map<String, dynamic> set(List<String> domains) => {
+          'type': 'inline',
+          'behavior': 'domain',
+          // `+.` — сам домен и все его поддомены, как `domain:` у xray.
+          'payload': [for (final d in domains) '+.$d'],
+        };
+    return {
+      if (lists.blocked.isNotEmpty) blockListSet: set(lists.blocked),
+      if (lists.direct.isNotEmpty) directListSet: set(lists.direct),
+      if (lists.proxy.isNotEmpty) proxyListSet: set(lists.proxy),
+    };
+  }
+
   /// Приватные и спец-диапазоны — всегда DIRECT. Тот же список, что у xray.
   static const _privateRanges = [
     '0.0.0.0/8', '10.0.0.0/8', '100.64.0.0/10', '127.0.0.0/8',
@@ -2068,6 +2119,7 @@ class MihomoConfigGen {
     String appProcessName = '',
     bool tunOwned = false,
     bool? windows,
+    RuleListDomains ruleLists = RuleListDomains.none,
   }) {
     final rules = <String>[
       ...buildProcessRules(
@@ -2076,7 +2128,7 @@ class MihomoConfigGen {
         appProcessName: appProcessName,
         windows: windows,
       ),
-      ...buildUserRules(settings, blockedOnly: true),
+      ...buildUserRules(settings, blockedOnly: true, ruleLists: ruleLists),
       ...buildServerDirectRules(
         serverAddress: serverAddress,
         resolvedServerIp: resolvedServerIp,
@@ -2090,6 +2142,7 @@ class MihomoConfigGen {
         proxyTarget: proxyTarget,
         blockedOnly: false,
         skipBlocked: true,
+        ruleLists: ruleLists,
       ),
     ];
 
@@ -2269,35 +2322,39 @@ class MihomoConfigGen {
     String proxyTarget = proxyName,
     bool blockedOnly = false,
     bool skipBlocked = false,
+    RuleListDomains ruleLists = RuleListDomains.none,
   }) {
     final rules = <String>[];
     final strategy = _ipRuleStrategy(settings);
     final inPlace = strategy == 'IPOnDemand' ? '' : ',no-resolve';
 
     List<String> ipRules(String raw, String target, String suffix) {
-      final geo = splitGeoipTokens(splitDomainsAndIps(_parseList(raw)).ips);
+      final geo = splitGeoipTokens(splitDomainsAndIps(_parseRuleList(raw)).ips);
       return [
         for (final code in geo.geoipCodes) 'GEOIP,$code,$target$suffix',
         for (final ip in geo.plainIps) 'IP-CIDR,${_cidr(ip)},$target$suffix',
       ];
     }
 
-    void addGroup(String raw, String target) {
-      for (final d in splitDomainsAndIps(_parseList(raw)).domains) {
+    void addGroup(String raw, String target, String listSet, List<String> listed) {
+      for (final d in splitDomainsAndIps(_parseRuleList(raw)).domains) {
         rules.add('${_domainRule(d)},$target');
       }
+      if (listed.isNotEmpty) rules.add('RULE-SET,$listSet,$target');
       rules.addAll(ipRules(raw, target, inPlace));
     }
 
-    if (!skipBlocked) addGroup(settings.blockedRules, 'REJECT');
+    if (!skipBlocked) {
+      addGroup(settings.blockedRules, 'REJECT', blockListSet, ruleLists.blocked);
+    }
     if (blockedOnly) return rules;
 
-    addGroup(settings.directRules, 'DIRECT');
+    addGroup(settings.directRules, 'DIRECT', directListSet, ruleLists.direct);
     // Приватные сети резолва не получают ни при какой стратегии, как и раньше.
     for (final range in _privateRanges) {
       rules.add('IP-CIDR,$range,DIRECT,no-resolve');
     }
-    addGroup(settings.proxyRules, proxyTarget);
+    addGroup(settings.proxyRules, proxyTarget, proxyListSet, ruleLists.proxy);
 
     if (strategy == 'IPIfNonMatch') {
       rules
@@ -2316,7 +2373,7 @@ class MihomoConfigGen {
     final chosen = settings.xrayCore.routingDomainStrategy;
     if (chosen != 'AsIs') return chosen;
     List<String> ips(String raw) =>
-        splitGeoipTokens(splitDomainsAndIps(_parseList(raw)).ips).plainIps;
+        splitGeoipTokens(splitDomainsAndIps(_parseRuleList(raw)).ips).plainIps;
     // Приватные сети в обходе своими не считаются — их туда кладёт пресет.
     final hasUserIps = ips(settings.blockedRules).isNotEmpty ||
         ips(settings.proxyRules).isNotEmpty ||

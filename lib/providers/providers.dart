@@ -30,6 +30,7 @@ import '../services/exit_ip_service.dart';
 import '../services/geo_asset_service.dart';
 import '../services/notification_service.dart';
 import '../services/ping_service.dart';
+import '../services/rule_list_service.dart';
 import '../services/storage_service.dart';
 import '../services/subscription_service.dart';
 import '../services/update_service.dart';
@@ -55,6 +56,7 @@ import '../utils/mihomo_api_session.dart';
 import '../utils/mihomo_config_gen.dart';
 import '../utils/proxy_chain.dart';
 import '../utils/routing_rules_fold.dart';
+import '../utils/rule_lists.dart';
 import '../utils/singbox_outbounds.dart';
 import '../utils/singbox_tun_config.dart';
 import '../utils/socks5_credentials.dart';
@@ -72,6 +74,7 @@ export 'ui_state_providers.dart';
 // Состояние приложения разложено по темам, но остаётся одной библиотекой:
 // импортируют отсюда десятки мест, и приватные хелперы вроде
 // _resolveFirstAddress ниже нужны сразу нескольким частям.
+part 'rule_lists_provider.dart';
 part 'servers_provider.dart';
 part 'settings_providers.dart';
 part 'subscriptions_provider.dart';
