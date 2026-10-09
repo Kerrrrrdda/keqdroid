@@ -121,6 +121,13 @@ class AndroidTunnelBackend implements TunnelBackend {
         'socksPort': request.socksPort,
         'excludePackages': request.excludePackages,
         'includePackages': request.includePackages,
+        if (request.networkConfigs.isNotEmpty)
+          'networkConfigs': request.networkConfigs,
+        if (request.appRoutingConfig != null &&
+            request.appRoutingConfig!.isNotEmpty)
+          'appRoutingConfig': request.appRoutingConfig,
+        if (request.appServerConfigs.isNotEmpty)
+          'appServerConfigs': request.appServerConfigs,
         if (request.serverName != null && request.serverName!.isNotEmpty)
           'serverName': request.serverName,
       };
